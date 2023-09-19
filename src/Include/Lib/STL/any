@@ -1,0 +1,33 @@
+#pragma once
+#include <Lib/Types/Uefi.hpp>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    PUBLIC template < typename T >
+    class any
+    {
+    public:
+        explicit any( IN CONST Lib::Types::L_Ref< T > __val ) :
+            any_value_ { __val } {
+        }
+        virtual ~any( VOID ) {
+        }
+
+    public:
+        auto operator=( IN CONST Lib::Types::L_Ref< T > __val ) -> Lib::Types::L_Ref< any< T > >;
+        {
+            this->any_value_ = __val;
+            return *this;
+        }
+
+    private:
+        T any_value_;
+
+    public:
+        auto _cast_( void ) CONST->CONST T {
+            return this->any_value_;
+        }
+    };
+    PUBLIC template < typename T >
+    auto any_cast( CONST Lib::Types::L_Ref< any< T > > _any ) {
+        return _any._cast_( );
+    }
+}

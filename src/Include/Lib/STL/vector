@@ -1,0 +1,5 @@
+#pragma once
+#include <Lib/Types/Uefi.hpp>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    
+}

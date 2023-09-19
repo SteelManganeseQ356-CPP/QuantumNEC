@@ -1,0 +1,81 @@
+#pragma once
+#include <Lib/Types/Uefi.hpp>
+#include <Lib/Types/type_bool.hpp>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    PUBLIC template < typename T >
+    class iterator
+    {
+    public:
+        using value_type = T;
+
+    public:
+        explicit( true ) iterator( IN Lib::Types::Ptr< T > _ptr = nullptr ) noexcept( true ) :
+            ptr_ { _ptr } {
+        }
+        virtual ~iterator( VOID ) noexcept( true ) {
+        }
+
+    public:
+        auto operator*( VOID ) CONST->Lib::Types::L_Ref< T > {
+            return *this->ptr_;
+        }
+        auto operator->( VOID ) CONST->Lib::Types::Ptr< T > {
+            return this->ptr_;
+        }
+        auto operator++( VOID ) -> Lib::Types::L_Ref< iterator > {
+            this->ptr_ = this->ptr_ + 1;
+            return *this;
+        }
+
+        auto operator++( int ) -> iterator {
+            iterator tmp { *this };
+            ++*this;
+            return tmp;
+        }
+
+        auto operator-( CONST iterator &i ) CONST->Lib::Types::uint32_t {
+            return this->ptr_ - i.ptr_;
+        }
+        auto operator-( CONST int &i ) -> iterator {
+            iterator tmp { *this };
+            tmp.ptr_ = tmp.ptr_ - i;
+            return tmp;
+        }
+
+        auto operator+( CONST int &i ) -> iterator {
+            iterator tmp { *this };
+            tmp.ptr_ = tmp.ptr_ + i;
+            return tmp;
+        }
+
+        auto operator==( CONST iterator &i ) CONST->Lib::Types::BOOL {
+            return this->ptr_ == i.ptr_;
+        }
+        auto operator!=( CONST iterator &i ) CONST->Lib::Types::BOOL {
+            return this->ptr_ != i.ptr_;
+        }
+
+        auto operator!=( CONST T &a ) CONST->Lib::Types::BOOL {
+            return *this->ptr_ != a;
+        }
+
+    private:
+        Lib::Types::Ptr< T > ptr_;
+    };
+    // 需要获得所指类型时，调用traits获得
+    template < class It >
+        requires requires {
+            typename It::value_type;
+        }
+    struct iterator_traits
+    {
+        // 这里就是value_type的定义
+        using value_type = It::value_type;
+    };
+
+    template < class It >
+    struct iterator_traits< It * >
+    {
+        using value_type = It;
+    };
+}     // namespace QuantumNEC::Lib::STL

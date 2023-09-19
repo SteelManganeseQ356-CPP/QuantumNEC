@@ -1,0 +1,90 @@
+#pragma once
+#include <Lib/STL/char_traits>
+#include <Lib/STL/cstring>
+#include <Lib/STL/memory>
+#include <Lib/STL/type_traits>
+#include <Lib/Types/Uefi.hpp>
+#include <Lib/Types/type_bool.hpp>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    template < typename _CharT,
+               typename _Traits = char_traits< _CharT >,
+               typename _Alloc = allocator< _CharT > >
+    class basic_string;
+    using string = basic_string< Lib::Types::char_t >;
+    template <>
+    class basic_string< Lib::Types::char_t >
+    {
+    public:
+        explicit basic_string( VOID ) noexcept;
+        explicit basic_string( IN Lib::Types::Ptr< CONST Lib::Types::char_t > ) noexcept;
+        explicit basic_string( IN Lib::Types::R_Ref< basic_string< Lib::Types::char_t > > ) noexcept;
+        explicit basic_string( IN CONST Lib::Types::L_Ref< basic_string< Lib::Types::char_t > > ) noexcept;
+
+    public:
+        virtual ~basic_string( VOID ) noexcept;
+
+    public:
+        friend auto operator+( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::L_Ref< CONST string > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+( IN Lib::Types::Ptr< CONST Lib::Types::char_t >, IN Lib::Types::L_Ref< CONST string > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::Ptr< CONST Lib::Types::char_t > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+( IN Lib::Types::L_Ref< CONST string >, IN CONST Lib::Types::char_t ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+( IN CONST Lib::Types::char_t, IN Lib::Types::L_Ref< CONST string > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+( IN Lib::Types::L_Ref< CONST string >, IN CONST Lib::Types::char_t ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::Ptr< CONST Lib::Types::char_t > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::L_Ref< CONST string > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+=( IN Lib::Types::Ptr< CONST Lib::Types::char_t >, IN Lib::Types::L_Ref< CONST string > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::Ptr< CONST Lib::Types::char_t > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN CONST Lib::Types::char_t ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+=( IN CONST Lib::Types::char_t, IN Lib::Types::L_Ref< CONST string > ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN CONST Lib::Types::char_t ) -> Lib::Types::L_Ref< CONST string >;
+        friend auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::Ptr< CONST Lib::Types::char_t > ) -> Lib::Types::L_Ref< CONST string >;
+
+    public:
+        auto operator=( IN Lib::Types::L_Ref< CONST string > ) -> Lib::Types::L_Ref< CONST string > {
+            return *this;
+        }
+        auto operator=( IN Lib::Types::R_Ref< string > ) -> Lib::Types::L_Ref< CONST string > {
+            return *this;
+        }
+
+    public:
+        auto c_str( VOID ) -> Lib::Types::Ptr< Lib::Types::char_t >;
+
+    public:
+        auto operator[]( IN Lib::Types::size_t ) CONST->Lib::Types::L_Ref< CONST Lib::Types::char_t >;
+
+    public:
+    public:
+        auto size( VOID ) -> Lib::Types::size_t;
+
+    private:
+        // 字符串
+        Lib::Types::Ptr< Lib::Types::char_t > __str { };
+        // 字符串长度
+        Lib::Types::size_t __str__length { };
+    };
+
+    auto operator+( IN Lib::Types::L_Ref< CONST string > s, IN Lib::Types::L_Ref< CONST string > )->Lib::Types::L_Ref< CONST string > {
+        return s;
+    }
+
+    auto operator+( IN Lib::Types::Ptr< CONST Lib::Types::char_t >, IN Lib::Types::L_Ref< CONST string > )->Lib::Types::L_Ref< CONST string >;
+    auto operator+( IN Lib::Types::L_Ref< CONST string > s, IN Lib::Types::Ptr< CONST Lib::Types::char_t > )->Lib::Types::L_Ref< CONST string > {
+        return s;
+    }
+    auto operator+( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::Ptr< CONST Lib::Types::char_t > )->Lib::Types::L_Ref< CONST string >;
+    auto operator+( IN Lib::Types::L_Ref< CONST string >, IN CONST Lib::Types::char_t )->Lib::Types::L_Ref< CONST string >;
+    auto operator+( IN CONST Lib::Types::char_t, IN Lib::Types::L_Ref< CONST string > s )->Lib::Types::L_Ref< CONST string > {
+        return s;
+    }
+    auto operator+( IN Lib::Types::L_Ref< CONST string > s, IN CONST Lib::Types::char_t )->Lib::Types::L_Ref< CONST string > {
+        return s;
+    }
+    auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::L_Ref< CONST string > )->Lib::Types::L_Ref< CONST string >;
+    auto operator+=( IN Lib::Types::Ptr< CONST Lib::Types::char_t >, IN Lib::Types::L_Ref< CONST string > )->Lib::Types::L_Ref< CONST string >;
+    auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::Ptr< CONST Lib::Types::char_t > )->Lib::Types::L_Ref< CONST string >;
+    auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN CONST Lib::Types::char_t )->Lib::Types::L_Ref< CONST string >;
+    auto operator+=( IN CONST Lib::Types::char_t, IN Lib::Types::L_Ref< CONST string > )->Lib::Types::L_Ref< CONST string >;
+    auto operator+=( IN Lib::Types::L_Ref< CONST string > s, IN CONST Lib::Types::char_t )->Lib::Types::L_Ref< CONST string >;
+    auto operator+=( IN Lib::Types::L_Ref< CONST string >, IN Lib::Types::Ptr< CONST Lib::Types::char_t > )->Lib::Types::L_Ref< CONST string >;
+}

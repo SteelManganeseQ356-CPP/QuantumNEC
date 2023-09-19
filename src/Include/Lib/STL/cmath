@@ -1,0 +1,57 @@
+#pragma once
+#include <Lib/Types/Uefi.hpp>
+#include <Lib/Types/type_double.hpp>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    PUBLIC constexpr auto PI { 3.1415926 };
+    PUBLIC inline decltype( auto )
+    min( IN OUT CONST auto &a, IN OUT CONST auto &b ) {
+        return a < b ? a : b;
+    }
+    PUBLIC inline decltype( auto )
+    max( IN OUT CONST auto &a, IN OUT CONST auto &b ) {
+        return a > b ? a : b;
+    }
+    /**
+     * @brief 求绝对值
+     * @param digit 求这个数的绝对值
+     */
+    PUBLIC inline decltype( auto ) abs( IN CONST auto &digit ) {
+        return digit < 0 ? -digit : digit;
+    }
+    PUBLIC auto floor( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+
+    PUBLIC auto ceil( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+
+    PUBLIC auto round( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+
+    PUBLIC auto sqrt( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+
+    PUBLIC auto fmod( IN Lib::Types::double32_t x, Lib::Types::double32_t y )->Lib::Types::double32_t;
+
+    PUBLIC auto atan( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+
+    PUBLIC auto atan2( IN Lib::Types::double32_t x, Lib::Types::double32_t y )->Lib::Types::double32_t;
+
+    PUBLIC auto cos( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+
+    PUBLIC auto acos( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+
+    PUBLIC auto sin( IN Lib::Types::double32_t x )->Lib::Types::double32_t;
+    PUBLIC template < typename T >
+        requires requires( T t ) {
+            { t *t };
+            { t = t };
+        }
+    auto pow( IN CONST T & __base, IN Lib::Types::uint64_t exp )->T {
+        T result { 1 };
+        T base { __base };
+        while ( exp )
+        {
+            if ( exp & 1 )
+                result *= base;
+            exp >>= 1;
+            base *= base;
+        }
+        return result;
+    }
+}

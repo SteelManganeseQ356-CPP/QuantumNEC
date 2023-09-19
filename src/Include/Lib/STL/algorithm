@@ -1,0 +1,33 @@
+#pragma once
+#include <Lib/STL/concepts>
+#include <Lib/Types/Uefi.hpp>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    PUBLIC template < typename Iterator, typename Object >
+        requires requires( Iterator it, Object obj ) {
+            { it++ } -> Lib::STL::same_as< Iterator >;
+            { *it == obj } -> Lib::STL::same_as< bool >;
+        }
+    STATIC auto find( IN Iterator begin, IN Iterator end, IN CONST Object obj )->Iterator {
+        while ( begin++ != end ) {
+            if ( *begin == obj ) {
+                return begin;
+            }
+        }
+        return (Iterator)( 0 );
+    }
+    PUBLIC template < typename RandomIt, typename Compare >
+        requires requires( RandomIt it ) {
+            { *it++ = *it } -> Lib::STL::same_as< decltype( *it ) >;
+        }
+    STATIC auto sort( RandomIt /*begin*/, RandomIt /* end*/, Compare /*comp*/ )->VOID {
+        // while ( begin++ != end )
+        // {
+        // }
+    }
+    PUBLIC template < typename RandomIt >
+        requires requires( RandomIt it ) {
+            { *it++ = *it } -> Lib::STL::same_as< decltype( *it ) >;
+        }
+    STATIC auto sort( RandomIt /*begin*/, RandomIt /*end*/ )->VOID {
+    }
+}

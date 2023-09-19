@@ -1,0 +1,122 @@
+#pragma once
+#include <Lib/Types/Uefi.hpp>
+#include <Lib/STL/type_traits>
+#include <Lib/STL/utility>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    
+    PUBLIC template < typename... >
+    struct tuple;
+    PUBLIC namespace details {
+        template < Lib::Types::size_t Index, typename Type >
+        struct tuple_value
+        {
+            using value_type = Type;
+
+            value_type m_value;
+
+            template < typename ElemType >
+                requires Lib::STL::is_nothrow_constructible_v< value_type, ElemType >
+            constexpr explicit tuple_value( ElemType &&value ) noexcept
+                :
+                m_value( Lib::STL::forward< ElemType >( value ) ) {
+            }
+
+            constexpr ~tuple_value( ) noexcept = default;
+        };
+
+        template < typename, typename... >
+        struct tuple_impl;
+
+        template < Lib::Types::size_t... Indices, typename... Types >
+        struct tuple_impl< Lib::STL::index_sequence< Indices... >, Types... > : public tuple_value< Indices, Types >...
+        {
+            template < typename... Values >
+            constexpr explicit tuple_impl( Values &&...values ) noexcept
+                :
+                tuple_value< Indices, Types >( Lib::STL::forward< Values >( values ) )... {
+            }
+
+            constexpr ~tuple_impl( ) noexcept = default;
+        };
+
+        template < Lib::Types::size_t Index, typename... Types >
+        struct tuple_element;
+
+        template < typename Head, typename... Tail >
+        struct tuple_element< 0, Head, Tail... >
+        {
+            using type = Head;
+        };
+        template < Lib::Types::size_t Index, typename Head, typename... Tail >
+            requires( Index != 0 )
+        struct tuple_element< Index, Head, Tail... >
+        {
+            using type = typename tuple_element< Index - 1, Tail... >::type;
+        };
+
+        template < Lib::Types::size_t Index, typename... Types >
+            requires( Index < sizeof...( Types ) )
+        using tuple_element_t = typename tuple_element< Index, Types... >::type;
+
+        template < Lib::Types::size_t Index, typename... Types >
+            requires( Index < sizeof...( Types ) )
+        struct tuple_helper
+        {
+            using type = tuple_value< Index, tuple_element_t< Index, Types... > >;
+        };
+        template < Lib::Types::size_t Index, typename... Types >
+        using tuple_helper_t = typename tuple_helper< Index, Types... >::type;
+    }
+
+    PUBLIC template < typename... Types >
+    struct tuple : private details::tuple_impl< Lib::STL::make_index_sequence< sizeof...( Types ) >, Types... >
+    {
+        using base_type = details::tuple_impl< Lib::STL::make_index_sequence< sizeof...( Types ) >, Types... >;
+
+        template < typename... Values >
+            requires( sizeof...( Values ) == sizeof...( Types ) )
+        constexpr explicit tuple( Values &&...values ) noexcept
+            :
+            base_type( Lib::STL::forward< Values >( values )... ) {
+        }
+
+        constexpr ~tuple( ) noexcept = default;
+
+        template < Lib::Types::size_t Index, typename... ElemTypes >
+        friend constexpr decltype( auto ) get( tuple< ElemTypes... > &_tuple ) noexcept;
+
+        template < Lib::Types::size_t Index, typename... ElemTypes >
+        friend constexpr decltype( auto ) get( const tuple< ElemTypes... > &_tuple ) noexcept;
+
+        template < Lib::Types::size_t Index, typename... ElemTypes >
+        friend constexpr decltype( auto ) get( tuple< ElemTypes... > &&_tuple ) noexcept;
+    };
+
+    PUBLIC template < Lib::Types::size_t Index, typename... ElemTypes >
+    constexpr decltype( auto ) get( tuple< ElemTypes... > & _tuple ) noexcept {
+        return ( static_cast< details::tuple_helper_t< Index, ElemTypes... > & >( _tuple ).m_value );
+    }
+
+    PUBLIC template < Lib::Types::size_t Index, typename... ElemTypes >
+    constexpr decltype( auto ) get( const tuple< ElemTypes... > &_tuple ) noexcept {
+        return ( static_cast< const details::tuple_helper_t< Index, ElemTypes... > & >( _tuple ).m_value );
+    }
+
+    PUBLIC template < Lib::Types::size_t Index, typename... ElemTypes >
+    constexpr decltype( auto ) get( tuple< ElemTypes... > && _tuple ) noexcept {
+        return Lib::STL::forward< details::tuple_element_t< Index, ElemTypes... > >( static_cast< details::tuple_helper_t< Index, ElemTypes... > && >( _tuple ).m_value );
+    }
+    PUBLIC template < typename... Types >
+    struct tuple_size;
+    PUBLIC template < Lib::Types::size_t Index, typename... Types >
+    struct tuple_element;
+    PUBLIC template < typename... Types >
+    struct tuple_size< tuple< Types... > > : Lib::STL::integral_constant< Lib::Types::size_t, sizeof...( Types ) >
+    {};
+
+    PUBLIC template < Lib::Types::size_t Index, typename... Types >
+    struct tuple_element< Index, tuple< Types... > >
+    {
+        using type = details::tuple_element_t< Index, Types... >;
+    };
+}

@@ -1,0 +1,40 @@
+#pragma once
+#include <Lib/STL/algorithm>
+#include <Lib/STL/cstring>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    PUBLIC template < typename _CharT >
+    struct char_traits;
+    PUBLIC template <>
+    struct char_traits< char >
+    {
+    private:
+        using int_type = int;
+        using char_type = Types::char_t;
+        using size_type = Lib::Types::size_t;
+
+    public:
+        STATIC auto length( IN Lib::Types::Ptr< CONST char_type > __str ) noexcept( true ) -> Lib::Types::size_t {
+            return strlen( const_cast< Lib::Types::Ptr< char_type > >( __str ) );
+        }
+        STATIC auto assign( IN Lib::Types::L_Ref< char_type > __chr, IN Lib::Types::L_Ref< CONST char_type > __val ) noexcept( true ) -> VOID {
+            __chr = __val;
+        }
+        STATIC auto assign( IN Lib::Types::Ptr< char_type > __ptr, IN size_type __num, IN char_type __chr ) -> char_type {
+            memset( __ptr, __chr, __num );
+            return __chr;
+        }
+        STATIC auto compare( IN Lib::Types::Ptr< CONST char_type > __str_one, IN Lib::Types::Ptr< CONST char_type > __str_two, IN size_type __num ) noexcept( true ) -> int_type {
+            return strncmp( __str_one, __str_two, __num );
+        }
+        STATIC auto move( IN Lib::Types::Ptr< char_type > __dst, IN Lib::Types::Ptr< CONST char_type > __str, IN size_type __num ) noexcept( true ) -> Lib::Types::Ptr< char_type > {
+            return reinterpret_cast< Lib::Types::Ptr< char_type > >( memmove( __dst, __str, __num ) );
+        }
+        STATIC auto copy( IN Lib::Types::Ptr< char_type > __dst, IN Lib::Types::Ptr< CONST char_type > __str, IN size_type __num ) noexcept( true ) -> Lib::Types::Ptr< char_type > {
+            return reinterpret_cast< Lib::Types::Ptr< char_type > >( memcpy( __dst, __str, __num ) );
+        }
+        STATIC auto find( IN Lib::Types::Ptr< char_type > __begin, IN Lib::Types::Ptr< char_type > __end, IN Lib::Types::L_Ref< CONST char_type > __val ) noexcept( true ) -> char_type {
+            return *Lib::STL::find< Lib::Types::Ptr< char_type >, char_type >( __begin, __end, __val );
+        }
+        
+    };
+}

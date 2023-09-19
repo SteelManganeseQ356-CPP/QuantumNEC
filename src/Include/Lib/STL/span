@@ -1,0 +1,57 @@
+#pragma once
+#include <Lib/Types/Uefi.hpp>
+#include <Lib/Types/type_bool.hpp>
+PUBLIC namespace QuantumNEC::Lib::STL
+{
+  PUBLIC template <typename T> class span
+  {
+  public:
+    explicit (TRUE) span (Lib::Types::size_t __size) noexcept {}
+    virtual ~span (VOID) noexcept {}
+
+  public:
+    auto
+    isEmpty (VOID) -> Lib::Types::BOOL
+    {
+      return this->index == 0;
+    }
+
+    auto
+    isFull (VOID) -> Lib::Types::BOOL
+    {
+      return this->maxSize == this->index;
+    }
+    auto
+    push (IN CONST T &obj) -> VOID
+    {
+      if (!isFull ())
+        {
+          this->array[this->index++] = obj;
+        }
+    }
+    auto
+    pop (VOID) -> T
+    {
+      if (isEmpty ())
+        return (T)(0);
+      else
+        return this->array[--this->index];
+    }
+    auto
+    length (VOID) -> Lib::Types::size_t
+    {
+      return this->length_;
+    }
+
+    auto
+    size (VOID) -> Lib::Types::size_t
+    {
+      return this->size_;
+    }
+
+  private:
+    Lib::Types::Ptr<T> array_{};
+    Lib::Types::size_t size_{};
+    Lib::Types::size_t length_{};
+  };
+}
