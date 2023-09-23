@@ -22,8 +22,8 @@
   "C_Cpp_Runner.linkerArgs": [],
   "C_Cpp_Runner.includePaths": [
     "${workspaceFolder}/**",
-    "/home/QuantumNEC/QuantumOS/QuantumNEC/src/",
-    "/home/QuantumNEC/QuantumOS/QuantumNEC/src/Include/"
+    "/home/QuantumNEC/QuantumOS/QuantumNEC/source/",
+    "/home/QuantumNEC/QuantumOS/QuantumNEC/source/Include/"
   ],
   "C_Cpp_Runner.includeSearch": [
     "*",

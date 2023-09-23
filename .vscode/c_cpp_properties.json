@@ -5,7 +5,7 @@
       "includePath": [
         "${workspaceFolder}/**",
         "${workspaceFolder}/EDK2/MdePkg/Include/",
-        "${workspaceFolder}/src/Include/"
+        "${workspaceFolder}/source/Include/"
       ],
       "defines": [],
       "compilerPath": "/usr/bin/gcc",
