@@ -2,7 +2,7 @@
 #include <Boot/Include.hpp>
 namespace QuantumNEC::Boot {
 BootServiceAcpi::BootServiceAcpi( IN AcpiConfig *config ) :
-    BootServiceDataManage< AcpiConfig > {
+    BootServiceDataManager< AcpiConfig > {
     config
 }
 {

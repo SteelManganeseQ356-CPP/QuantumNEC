@@ -27,7 +27,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         virtual ~Pic8259aManagement( VOID ) noexcept( true );
 
     public:
-        auto eoi( IN CONST irq_t irq ) -> VOID;
+        STATIC auto eoi( IN CONST irq_t irq ) -> VOID;
 
     private:
     };

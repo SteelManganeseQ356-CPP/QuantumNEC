@@ -56,7 +56,7 @@ auto BootServiceLogger::Close( VOID ) -> EFI_STATUS {
     return Status;
 }
 BootServiceLogger::BootServiceLogger( IN LoggerConfig *config ) :
-    BootServiceDataManage< LoggerConfig > {
+    BootServiceDataManager< LoggerConfig > {
     config
 }
 {

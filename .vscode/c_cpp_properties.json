@@ -4,8 +4,8 @@
       "name": "linux-gcc-x64",
       "includePath": [
         "${workspaceFolder}/**",
-        "${workspaceFolder}/EDK2/MdePkg/Include/",
-        "${workspaceFolder}/source/Include/"
+        "/home/QuantumNEC/QuantumOS/QuantumNEC/source/",
+        "/home/QuantumNEC/QuantumOS/QuantumNEC/source/Include/"
       ],
       "defines": [],
       "compilerPath": "/usr/bin/gcc",

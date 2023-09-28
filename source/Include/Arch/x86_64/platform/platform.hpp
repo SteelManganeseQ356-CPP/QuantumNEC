@@ -23,6 +23,5 @@ PUBLIC namespace QuantumNEC::Architecture {
     public:
         virtual ~x86_64Architecture( VOID ) noexcept( true ) = default;
 
-
     };
 }

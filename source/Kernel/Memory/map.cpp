@@ -141,7 +141,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
             virtualAddress += pageSize;
         }
 
-        Architecture::CPU::CPUManagement::invlpg( reinterpret_cast< Lib::Types::Ptr< VOID > >( virtualAddress ) );
+        Utils::invlpg( reinterpret_cast< Lib::Types::Ptr< VOID > >( virtualAddress ) );
 
         return;
     }

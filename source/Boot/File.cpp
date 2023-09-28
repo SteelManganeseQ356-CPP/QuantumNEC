@@ -4,7 +4,7 @@
 #include <Boot/Include.hpp>
 namespace QuantumNEC::Boot {
 BootServiceFile::BootServiceFile( VOID ) :
-    BootServiceDataManage< FileConfig > {
+    BootServiceDataManager< FileConfig > {
     {}
 }
 {

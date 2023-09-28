@@ -40,7 +40,7 @@ auto BootServiceGraphics::SetVideoMode( VOID ) -> decltype( auto ) {
     return Status;
 }
 BootServiceGraphics::BootServiceGraphics( IN GraphicsConfig *config ) :
-    BootServiceDataManage< GraphicsConfig > {
+    BootServiceDataManager< GraphicsConfig > {
     config
 }
 {

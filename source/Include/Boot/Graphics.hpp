@@ -19,7 +19,7 @@ typedef struct
     auto put( VOID ) -> VOID {
     }
 } GraphicsConfig;
-class BootServiceGraphics : protected BootServiceDataManage< GraphicsConfig >
+class BootServiceGraphics : protected BootServiceDataManager< GraphicsConfig >
 {
 public:
     explicit BootServiceGraphics( IN GraphicsConfig * );

@@ -6,5 +6,6 @@ PUBLIC namespace QuantumNEC::Kernel {
         Memory::HeapMemoryManagement { _config },
         Memory::MemoryMapManagement { _config },
         Memory::StackMemoryManagement { } {
+            
     }
 }

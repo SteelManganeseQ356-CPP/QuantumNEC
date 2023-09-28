@@ -50,7 +50,7 @@ extern "C" EFI_STATUS EFIAPI UefiMain( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_
         return Status;
     }
     // 读取Unicode字体并弹出
-    Status = bootService.getUnicodeTTF( );
+    Status = bootService.getUnicodeTTF( L"\\QuantumNEC\\font\\Unicode.dll" );
     if ( EFI_ERROR( Status ) ) {
         logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to get Unicode Font file." );
         logger.LogError( Status );

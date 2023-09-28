@@ -30,4 +30,5 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         /* 再写入 counter_value 的高 8 位 */
         Utils::io_out8( counter_port, static_cast< Lib::Types::uint8_t >( counter_value ) >> 8 );
     }
+    
 }

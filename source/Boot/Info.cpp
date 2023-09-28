@@ -86,7 +86,7 @@ auto BootServiceInfo::iniGetString( IN CHAR8 *Name ) -> wchar_t * {
     }
 }
 BootServiceInfo::BootServiceInfo( IN Config *config ) :
-    BootServiceDataManage< Config > {
+    BootServiceDataManager< Config > {
     config
 }
 {

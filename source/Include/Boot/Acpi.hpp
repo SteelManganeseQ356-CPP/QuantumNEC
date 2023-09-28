@@ -29,7 +29,7 @@ typedef struct
  * @brief 引导时服务——Acpi
  */
 class BootServiceAcpi :
-    protected BootServiceDataManage< AcpiConfig >
+    protected BootServiceDataManager< AcpiConfig >
 {
 public:
     explicit BootServiceAcpi( IN AcpiConfig *config );

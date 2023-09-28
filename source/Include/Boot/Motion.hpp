@@ -37,7 +37,7 @@ typedef struct
     UINT32 color_num;
     UINT32 essentail_num;
 } BmpHeader;
-class BootServiceMotion : protected BootServiceDataManage< BmpConfig >
+class BootServiceMotion : protected BootServiceDataManager< BmpConfig >
 {
 private:
     enum class BmpDisplayMode {

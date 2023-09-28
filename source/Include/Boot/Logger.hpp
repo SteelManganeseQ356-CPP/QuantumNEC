@@ -12,7 +12,7 @@ typedef struct
     }
 } _packed LoggerConfig;
 
-class BootServiceLogger : protected BootServiceDataManage< LoggerConfig >
+class BootServiceLogger : protected BootServiceDataManager< LoggerConfig >
 {
 public:
     enum class LoggerLevel : UINT32 {

@@ -20,13 +20,13 @@ template < class T >
         { test.set( ) } -> std::same_as< VOID >;     // 调用约定，以后需要
         { test.put( ) } -> std::same_as< VOID >;
     }
-class BootServiceDataManage
+class BootServiceDataManager
 {
 public:
-    explicit BootServiceDataManage( CONST T *_data ) :
+    explicit BootServiceDataManager( CONST T *_data ) :
         data_ { *_data } {
     }
-    virtual ~BootServiceDataManage( VOID ) = default;
+    virtual ~BootServiceDataManager( VOID ) = default;
 
 public:
     auto put( VOID ) -> T & {

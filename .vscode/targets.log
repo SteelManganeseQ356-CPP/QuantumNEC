@@ -2,60 +2,34 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 make: *** No rule to make target 'all'.  Stop.
 
 # GNU Make 4.4.1
- 
 # Built for x86_64-pc-linux-gnu
- 
 # Copyright (C) 1988-2023 Free Software Foundation, Inc.
- 
 # License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
- 
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
-# Make data base, printed on Sat Sep 23 02:33:54 2023
- 
+# Make data base, printed on Sun Sep 24 15:04:00 2023
 
 # Variables
- 
 
- 
 # environment
- 
 LC_ALL = C
- 
 # environment
- 
 VSCODE_CWD = /home/QuantumNEC
- 
 # default
- 
 MAKE_COMMAND := make
- 
 # environment
- 
 VSCODE_HANDLES_SIGPIPE = true
- 
 # automatic
- 
 @D = $(patsubst %/,%,$(dir $@))
- 
 # environment
- 
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
- 
 # default
- 
 .VARIABLES := 
- 
 # environment
- 
 PWD = /home/QuantumNEC/QuantumOS/QuantumNEC
- 
 # automatic
- 
 %D = $(patsubst %/,%,$(dir $%))
- 
 # environment
 MAIL = /var/spool/mail/QuantumNEC
 # automatic
@@ -121,7 +95,7 @@ MOTD_SHOWN = pam
 # automatic
 ^F = $(notdir $^)
 # environment
-SSH_CLIENT = 192.168.211.1 51244 22
+SSH_CLIENT = 192.168.211.1 58509 22
 # automatic
 ?F = $(notdir $?)
 # automatic
@@ -147,7 +121,7 @@ _ = /usr/bin/make
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-d54b5509-c31f-4c07-a944-46d60f05aff6.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-6793baea-fb0b-40d3-bd0f-5af00b3fdfe3.sock
 # environment
 XDG_SESSION_CLASS = user
 # environment
@@ -157,7 +131,7 @@ HOME = /home/QuantumNEC
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-XDG_SESSION_ID = 10
+XDG_SESSION_ID = 26
 # default
 .RECIPEPREFIX := 
 # automatic
@@ -167,7 +141,7 @@ SUFFIXES :=
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell nocomment grouped-target extra-prereqs notintermediate shell-export archives jobserver jobserver-fifo output-sync check-symlink guile load
 # environment
-SSH_CONNECTION = 192.168.211.1 51244 192.168.211.128 22
+SSH_CONNECTION = 192.168.211.1 58509 192.168.211.128 22
 # variable set hash-table stats:
 # Load=65/1024=6%, Rehash=0, Collisions=2/94=2%
 
@@ -177,9 +151,9 @@ SSH_CONNECTION = 192.168.211.1 51244 192.168.211.128 22
 
 # Directories
 
-# . (device 2050, inode 8916296): 17 files, no impossibilities.
+# . (device 2050, inode 8916296): 18 files, no impossibilities.
 
-# 17 files, no impossibilities in 1 directories.
+# 18 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -239,12 +213,12 @@ all:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 25 / storage = 190 B / avg = 7 B
-# current buf: size = 8162 B / used = 190 B / count = 25 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 26 / storage = 196 B / avg = 7 B
+# current buf: size = 8162 B / used = 196 B / count = 26 / avg = 7 B
 
-# strcache performance: lookups = 31 / hit rate = 19%
+# strcache performance: lookups = 32 / hit rate = 18%
 # hash-table stats:
-# Load=25/8192=0%, Rehash=0, Collisions=0/31=0%
-# Finished Make data base on Sat Sep 23 02:33:54 2023
+# Load=26/8192=0%, Rehash=0, Collisions=0/32=0%
+# Finished Make data base on Sun Sep 24 15:04:00 2023
 
  

@@ -62,7 +62,7 @@ auto BootServiceMotion::logoShow( IN wchar_t *logoPath ) -> EFI_STATUS {
     return Status;
 }
 BootServiceMotion::BootServiceMotion( IN BmpConfig *config, IN EFI_GRAPHICS_OUTPUT_PROTOCOL *gop ) :
-    BootServiceDataManage< BmpConfig > { config },
+    BootServiceDataManager< BmpConfig > { config },
     Gop( gop ) {
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };

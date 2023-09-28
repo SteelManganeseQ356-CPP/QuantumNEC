@@ -25,7 +25,7 @@ typedef struct
     }
 } _packed Config;
 
-class BootServiceInfo : protected BootServiceDataManage< Config >
+class BootServiceInfo : protected BootServiceDataManager< Config >
 {
 private:
     enum class InfoCur {

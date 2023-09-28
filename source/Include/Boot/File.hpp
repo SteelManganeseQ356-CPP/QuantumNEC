@@ -13,7 +13,7 @@ typedef struct
     auto put( VOID ) -> VOID {
     }
 } FileConfig;
-class BootServiceFile : protected BootServiceDataManage< FileConfig >
+class BootServiceFile : protected BootServiceDataManager< FileConfig >
 {
 public:
     explicit BootServiceFile( VOID );

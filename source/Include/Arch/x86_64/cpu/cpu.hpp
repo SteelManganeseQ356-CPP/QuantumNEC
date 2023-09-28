@@ -19,12 +19,9 @@ PUBLIC namespace QuantumNEC::Architecture::CPU {
 
     public:
         /**
-         * @brief 硬件设施信息
+         * @brief 查询处理器硬件设施信息
          */
-        auto cpuInfo( VOID ) -> VOID;
-
-    
-        STATIC auto invlpg( IN Lib::Types::Ptr< VOID > address ) -> VOID;
+        auto cpuID( IN Lib::Types::uint32_t mop, IN Lib::Types::uint32_t sop, IN Lib::Types::Ptr< Lib::Types::uint32_t > eax, IN Lib::Types::Ptr< Lib::Types::uint32_t > ebx, IN Lib::Types::Ptr< Lib::Types::uint32_t > ecx, IN Lib::Types::Ptr< Lib::Types::uint32_t > edx ) -> VOID;
 
     private:
         inline STATIC QuantumNEC::Architecture::CPU::SegmentDescriptor gdt[ QuantumNEC::Architecture::Platform::GDT_MAX ] { };

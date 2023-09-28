@@ -21,7 +21,7 @@ constexpr CONST auto PAGE_GLOBAL { 1ull << 8 };     //  仅在PD/PTE中有效
 constexpr CONST auto PAGE_NX { 1ull << 63 };
 namespace QuantumNEC::Boot {
 BootServiceMemory::BootServiceMemory( IN MemoryConfig *config ) :
-    BootServiceDataManage< MemoryConfig > {
+    BootServiceDataManager< MemoryConfig > {
     config
 }
 {
@@ -253,7 +253,7 @@ auto BootServicePage::updateCr3( VOID ) -> UINTN {
     
 }
 BootServicePage::BootServicePage( IN PageConfig *memoryPages ) :
-    BootServiceDataManage< PageConfig > {
+    BootServiceDataManager< PageConfig > {
     memoryPages
 }
 {

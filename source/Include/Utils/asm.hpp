@@ -1,5 +1,4 @@
 #pragma once
-#include <Arch/ArchInfo.hpp>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_base.hpp>
 #include <Lib/Types/type_int.hpp>
@@ -8,31 +7,9 @@
  */
 #define ASM __asm__ __volatile__
 PUBLIC namespace QuantumNEC::Utils {
-    PUBLIC inline auto port_insw( auto port, auto buffer, auto nr )->VOID {
-#if SYSTEM_ARCH == x86_64
-        ASM( "cld\n\t"
-             "rep\n\t"
-             "insw\n\t"
-             "mfence\n\r" ::"d"( port ),
-             "D"( buffer ), "c"( nr )
-             : "memory" );
-#elif SYSTEM_ARCH == risc_v
+    PUBLIC auto port_insw( IN Lib::Types::uint64_t port, IN Lib::Types::Ptr< VOID > buffer, IN Lib::Types::uint64_t nr )->VOID;
 
-#endif
-    }
-
-    PUBLIC inline auto port_outsw( auto port, auto buffer, auto nr )->VOID {
-#if SYSTEM_ARCH == x86_64
-        ASM( "cld\n\t"
-             "rep\n\t"
-             "outsw\n\t"
-             "mfence\n\r" ::"d"( port ),
-             "S"( buffer ), "c"( nr )
-             : "memory" );
-#elif SYSTEM_ARCH == risc_v
-
-#endif
-    }
+    PUBLIC auto port_outsw( IN Lib::Types::uint64_t port, IN Lib::Types::Ptr< VOID > buffer, IN Lib::Types::uint64_t nr )->VOID;
     /**
      * @brief
      */
@@ -133,4 +110,8 @@ PUBLIC namespace QuantumNEC::Utils {
      * @brief
      */
     PUBLIC auto writeCr0( IN Lib::Types::uint64_t cr0 )->VOID;
+    /**
+     * @brief
+     */
+    PUBLIC auto invlpg( IN Lib::Types::Ptr< VOID > address )->VOID;
 }

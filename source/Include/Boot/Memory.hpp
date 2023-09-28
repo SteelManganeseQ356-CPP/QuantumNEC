@@ -95,7 +95,7 @@ typedef struct
     auto put( VOID ) -> VOID {
     }
 } _packed PageConfig;
-class BootServiceMemory : protected BootServiceDataManage< MemoryConfig >
+class BootServiceMemory : protected BootServiceDataManager< MemoryConfig >
 {
 public:
     explicit BootServiceMemory( IN MemoryConfig * );
@@ -108,7 +108,7 @@ public:
      */
     auto getMemoryMap( VOID ) -> EFI_STATUS;
 };
-class BootServicePage : public BootServiceDataManage< PageConfig >
+class BootServicePage : public BootServiceDataManager< PageConfig >
 {
 private:
     enum class MemoryMode {

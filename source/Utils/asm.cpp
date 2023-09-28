@@ -1,5 +1,30 @@
 #include <Utils/asm.hpp>
+#include <Arch/ArchInfo.hpp>
 PUBLIC namespace QuantumNEC::Utils {
+    PUBLIC auto port_insw( IN Lib::Types::uint64_t port, IN Lib::Types::Ptr< VOID > buffer, IN Lib::Types::uint64_t nr )->VOID {
+#if SYSTEM_ARCH == x86_64
+        ASM( "cld\n\t"
+             "rep\n\t"
+             "insw\n\t"
+             "mfence\n\r" ::"d"( port ),
+             "D"( buffer ), "c"( nr )
+             : "memory" );
+#elif SYSTEM_ARCH == risc_v
+
+#endif
+    }
+    PUBLIC auto port_outsw( IN Lib::Types::uint64_t port, IN Lib::Types::Ptr< VOID > buffer, IN Lib::Types::uint64_t nr )->VOID {
+#if SYSTEM_ARCH == x86_64
+        ASM( "cld\n\t"
+             "rep\n\t"
+             "outsw\n\t"
+             "mfence\n\r" ::"d"( port ),
+             "S"( buffer ), "c"( nr )
+             : "memory" );
+#elif SYSTEM_ARCH == risc_v
+
+#endif
+    }
     PUBLIC auto cli( VOID )->VOID {
 #if SYSTEM_ARCH == x86_64
         ASM( "cli\n\t" ::: "memory" );
@@ -195,6 +220,11 @@ PUBLIC namespace QuantumNEC::Utils {
     PUBLIC auto writeCr0( IN Lib::Types::uint64_t cr0 )->VOID {
 #if SYSTEM_ARCH == x86_64
         ASM( "movq %0, %%cr0" ::"r"( long( cr0 ) ) : "memory" );
+#endif
+    }
+    PUBLIC auto invlpg( IN Lib::Types::Ptr< VOID > address )->VOID {
+#if SYSTEM_ARCH == x86_64
+        ASM( "invlpg (%0)" : : "r"( address ) : "memory" );
 #endif
     }
 }

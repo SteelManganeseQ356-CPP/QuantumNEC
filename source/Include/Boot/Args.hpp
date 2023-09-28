@@ -13,7 +13,7 @@ typedef struct
     }
 } ArgsStackConfig;
 
-class BootServiceArgs : protected BootServiceDataManage< ArgsStackConfig >
+class BootServiceArgs : protected BootServiceDataManager< ArgsStackConfig >
 {
 public:
     explicit BootServiceArgs( IN ArgsStackConfig *config, IN CONST UINT64 size );

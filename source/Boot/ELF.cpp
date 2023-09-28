@@ -16,12 +16,12 @@ auto BootServiceELF::loadKernel( IN CONST wchar_t *kernelPath ) -> EFI_STATUS {
     EFI_FILE_PROTOCOL *Kernel { };
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
-    logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "Loading the system kernel." );
+    logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "Start Loading the kernel file." );
     // 读取内核
     Status = this->fileUtils.GetFileHandle( const_cast< wchar_t * >( kernelPath ), &Kernel );
     if ( EFI_ERROR( Status ) ) {
         logger.LogError( Status );
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to get kernel handle." );
+        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to get kernel handle file." );
         logger.Close( );
         return Status;
     }
@@ -29,7 +29,7 @@ auto BootServiceELF::loadKernel( IN CONST wchar_t *kernelPath ) -> EFI_STATUS {
     Status = this->fileUtils.ReadFile( Kernel, &KernelBuffer );
     if ( EFI_ERROR( Status ) ) {
         logger.LogError( Status );
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to read kernel." );
+        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to read kernel file." );
         logger.Close( );
         return Status;
     }
@@ -112,10 +112,10 @@ auto BootServiceELF::CheckELF( IN EFI_PHYSICAL_ADDRESS KernelBuffer ) -> EFI_STA
     if ( Magic != ELF_MAGIC ) {
         Status = NOT_64_BIT;
         logger.LogError( Status );
-        logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "The format of the file is elf_32" );
+        logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "The format of the file is elf32" );
         return Status;
     }
-    logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "The format of the file is elf_32" );
+    logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "The format of the file is elf64" );
     return Status;
 }
 }     // namespace QuantumNEC::Boot

@@ -4,7 +4,7 @@
 namespace QuantumNEC::Boot {
 BootServiceArgs::BootServiceArgs( IN ArgsStackConfig *config,
                                   IN CONST UINT64 size ) :
-    BootServiceDataManage< ArgsStackConfig > {
+    BootServiceDataManager< ArgsStackConfig > {
     config
 }
 {

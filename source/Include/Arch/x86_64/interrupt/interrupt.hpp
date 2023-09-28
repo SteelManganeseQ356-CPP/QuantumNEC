@@ -11,9 +11,9 @@
 PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     PUBLIC class InterruptManagement :
 #ifndef APIC
-        Pic8259aManagement
+       public Pic8259aManagement
 #else
-        ApicManagement
+        public ApicManagement
 #endif
     {
     public:
