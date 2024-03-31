@@ -1,10 +1,10 @@
 #pragma once
 #include <Lib/STL/string>
-#include <Lib/STL/utility>
 #include <Lib/Types/Uefi.hpp>
+#include <utility>
 PUBLIC namespace QuantumNEC::Lib::IO {
     char int_fmt { 10 };       // 整数输出格式：二进制，八进制，十进制，十六进制
-    char folat_fmt { };        // 浮点输出格式
+    char float_fmt { };        // 浮点输出格式
     char char_fmt { ' ' };     // 参数对齐时填充的字符
 
     template < typename T >
@@ -106,25 +106,20 @@ PUBLIC namespace QuantumNEC::Lib::IO {
     }
     auto check_format( const char **__fmt, auto &&args )->Lib::STL::string {
         Lib::STL::string buf { "" };
-        while ( *( *__fmt ) != '\0' )
-        {
-            if ( *( *__fmt ) == '{' )
-            {
+        while ( *( *__fmt ) != '\0' ) {
+            if ( *( *__fmt ) == '{' ) {
                 ( *__fmt )++;
-                if ( *( *__fmt ) == '}' )
-                {
+                if ( *( *__fmt ) == '}' ) {
                     buf += format( args );
                     ( *__fmt )++;
                     return buf;
                 }
-                if ( *( *__fmt ) == '{' )
-                {
+                if ( *( *__fmt ) == '{' ) {
                     buf += format( "{" );
                     ( *__fmt )++;
                     return buf;
                 }
-                if ( *( *__fmt ) == ':' )
-                {
+                if ( *( *__fmt ) == ':' ) {
                     // 设置要填充的字符（默认）
                     ( *__fmt )++;
                     if ( *( *__fmt ) == '>' )     // 右对齐
@@ -136,18 +131,15 @@ PUBLIC namespace QuantumNEC::Lib::IO {
                     else if ( *( *__fmt ) == '^' )     // 中间对其
                     {
                     }
-                    else
-                    {
+                    else {
                         ( *__fmt )++;
                         // 设置要填充的字符（已选定）
                         if ( *( *__fmt ) == '>' )     // 同上
                         {
                         }
-                        else if ( *( *__fmt ) == '<' )
-                        {
+                        else if ( *( *__fmt ) == '<' ) {
                         }
-                        else if ( *( *__fmt ) == '^' )
-                        {
+                        else if ( *( *__fmt ) == '^' ) {
                         }
                     }
                 }
@@ -159,10 +151,9 @@ PUBLIC namespace QuantumNEC::Lib::IO {
     auto format( const char *__fmt, auto &&...args )->Lib::STL::string {
         Lib::STL::string buf { "" };
         ( ( buf += check_format( &__fmt, args ) ), ... );
-        while ( *__fmt )
-        {
+        while ( *__fmt ) {
             buf += format( *__fmt++ );
         }
-        return STL::move( buf );
+        return buf;
     }
 }

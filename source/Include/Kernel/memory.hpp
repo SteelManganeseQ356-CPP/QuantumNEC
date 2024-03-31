@@ -1,8 +1,8 @@
 #pragma once
 #include <Kernel/Memory/heap.hpp>
+#include <Kernel/Memory/map.hpp>
 #include <Kernel/Memory/paging.hpp>
 #include <Kernel/Memory/stack.hpp>
-#include <Kernel/Memory/map.hpp>
 #include <Lib/Types/Uefi.hpp>
 PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC class MemoryManagement :

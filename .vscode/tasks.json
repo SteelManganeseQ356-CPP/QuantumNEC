@@ -2,47 +2,20 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Build Kernel",
-			"type": "shell",
-			"isBackground": true,
-			"linux": {
-				"command": "make -C ${workspaceFolder}/src/"
-			},
-		},
-		{
-			"label": "LLVM",
-			"type": "shell",
-			"isBackground": true,
-			"command": "qemu-system-x86_64 -nographic -pflash ${workspaceFolder}/build/QemuRun/UEFI.bin -hda fat:rw:${workspaceFolder}/build/QemuRun/esp -net none -m 1G -name QuantumNEC -boot order=dc",
-			"presentation": {
-				"echo": true,
-				"clear": true
+			"type": "cppbuild",
+			"label": "QuantumNEC - Build and debug Kernel",
+			"command": "/usr/bin/gdb",
+			"args": [],
+			"options": {
+				"cwd": "${fileDirname}"
 			},
 			"problemMatcher": [
-				{
-					"pattern": [
-						{
-							"regexp": ".",
-							"file": 1,
-							"location": 2,
-							"message": 3
-						}
-					],
-					"background": {
-						"activeOnStart": true,
-						"beginsPattern": ".",
-						"endsPattern": ".",
-					}
-				}
-			]
-		},
-		{
-			"label": "QuantumNEC - Build and debug Kernel",
-			"dependsOrder": "sequence",
-			"dependsOn": [
-				"Build Kernel"
-				//"LLVM",
-			]
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 		}
 	]
 }

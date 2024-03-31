@@ -39,11 +39,10 @@ public:
     virtual ~BootServiceInfo( VOID ) = default;
 
 private:
-    auto iniParseLine( IN IniConfig *, IN CHAR8 * ) -> decltype( auto );
-    auto iniGet( IniConfig *ini, CHAR8 *key ) -> decltype( auto );
-    auto iniLoad( IN wchar_t * ) -> decltype( auto );
-
+    auto iniParseLine( IN IniConfig *, IN CHAR8 * ) -> EFI_STATUS;
+    auto iniGet( IniConfig *ini, CHAR8 *key ) -> EFI_STATUS;
 public:
+    auto iniLoad( IN CONST wchar_t * ) -> EFI_STATUS;
     auto configGetString( IN CHAR8 *Name ) -> decltype( auto ) {
         return this->iniGetString( Name );
     }

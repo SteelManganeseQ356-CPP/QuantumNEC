@@ -1,9 +1,11 @@
 #include <Arch/ArchInfo.hpp>
 #include <Lib/STL/cmath>
 #include <Utils/asm.hpp>
-using namespace QuantumNEC::Lib::Types;
-PUBLIC namespace QuantumNEC::Lib::STL {
+PUBLIC namespace {
+    using namespace QuantumNEC::Lib::Types;
     PRIVATE constexpr auto __Accuracy { 0.0000001f };
+}     // namespace
+PUBLIC namespace QuantumNEC::Lib::STL {
     PUBLIC auto floor( IN Lib::Types::double32_t x )->Lib::Types::double32_t {
         return ( x - 1 + __Accuracy ) / 1;
     }

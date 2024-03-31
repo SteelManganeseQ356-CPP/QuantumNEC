@@ -7,8 +7,11 @@
 #endif
 #include <Lib/Types/Uefi.hpp>
 #include <Arch/x86_64/device/timer.hpp>
+#include <Arch/x86_64/device/fpu.hpp>
 PUBLIC namespace QuantumNEC::Architecture::Device {
-    PUBLIC class DeviceManagement : TimerDeviceManagement
+    PUBLIC class DeviceManagement :
+        public TimerDeviceManagement,
+        public FPUDriverManagement
     {
     public:
         explicit( true ) DeviceManagement( VOID ) noexcept( true );

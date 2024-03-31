@@ -16,6 +16,8 @@ using int64_t = signed long long int;
 using int128_t = signed __int128;
 using intptr_t = signed long long int;
 
+using byte_t = uint8_t;
+
 /* 特殊类型 */
 
 using size_t = unsigned long long int;
@@ -38,6 +40,9 @@ using UINT16 = unsigned short int;
 using UINT32 = unsigned int;
 using UINT64 = unsigned long long int;
 using UINT128 = unsigned __int128;
+
+using BYTE = byte_t;
+
 /* 只是大写法 */
 
 // 有符号整型

@@ -4,7 +4,7 @@
 #define ASSERT ( CONDITION )
 #else
 #define ASSERT( CONDITION ) \
-    ( ( CONDITION ) || QuantumNEC::Lib::Debug::Assert( __FILE__, __LINE__, __func__, #CONDITION ) );
+    ( ( CONDITION ) || QuantumNEC::Lib::Debug::assert( __FILE__, __LINE__, __func__, #CONDITION ) );
 #endif
 PUBLIC namespace QuantumNEC::Lib::Debug {
     PUBLIC auto assert(

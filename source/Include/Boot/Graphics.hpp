@@ -47,11 +47,12 @@ public:
     }
 
 public:
-    auto displayLogo( IN wchar_t *logoPath ) -> decltype( auto ) {
+    auto displayLogo( IN wchar_t *logoPath ) -> EFI_STATUS {
+        EFI_STATUS Status { EFI_SUCCESS };
         BootServiceMotion bmpService { this->config_, this->Gop };
-        bmpService.logoShow( logoPath );
-        displayStep( );
-        return EFI_SUCCESS;
+        Status = bmpService.logoShow( logoPath );
+        Status = displayStep( );
+        return Status;
     }
 
 private:

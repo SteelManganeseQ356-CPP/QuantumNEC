@@ -1,14 +1,12 @@
 #include <Boot/ELF.hpp>
+#include <Boot/Include.hpp>
 #include <Boot/Graphics.hpp>
 #include <Boot/Logger.hpp>
-#include <Boot/Include.hpp>
-
 namespace QuantumNEC::Boot {
 BootServiceELF::BootServiceELF( VOID ) {
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Initialize the ELF file service management." );
-    displayStep( );
     logger.Close( );
 }
 auto BootServiceELF::loadKernel( IN CONST wchar_t *kernelPath ) -> EFI_STATUS {
@@ -44,6 +42,7 @@ auto BootServiceELF::loadKernel( IN CONST wchar_t *kernelPath ) -> EFI_STATUS {
     logger.Close( );
     // 装载内核
     Status = this->LoadSegments( KernelBuffer );
+    Status = displayStep( );
     return Status;
 }
 
@@ -69,6 +68,7 @@ auto BootServiceELF::LoadSegments( IN EFI_PHYSICAL_ADDRESS KernelBufferBase )
     UINTN PageCount { ( ( HighAddr - LowAddr ) >> 12 ) + 1 };
     EFI_PHYSICAL_ADDRESS KernelRelocateBase { };
     Status = gBS->AllocatePages( AllocateAnyPages, EfiLoaderCode, PageCount, &KernelRelocateBase );
+
     if ( EFI_ERROR( Status ) ) {
         logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Allocate pages for kernelrelocatebuffer error." );
         logger.LogError( Status );
@@ -94,7 +94,6 @@ auto BootServiceELF::LoadSegments( IN EFI_PHYSICAL_ADDRESS KernelBufferBase )
         }
     }
     this->address = ElfHeader->Entry + RelocateOffset;
-
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Loading the kernel." );
     logger.Close( );
     return Status;

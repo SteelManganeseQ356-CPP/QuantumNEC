@@ -3,11 +3,9 @@
 #include <Uefi.h>
 #ifdef DEBUG
 #define ERROR_RETURNS( Expression )       \
-    do                                    \
-    {                                     \
+    do {                                  \
         EFI_STATUS Status { Expression }; \
-        if ( EFI_ERROR( Status ) )        \
-        {                                 \
+        if ( EFI_ERROR( Status ) ) {      \
             return Status;                \
         }                                 \
     } while ( FALSE );
@@ -15,12 +13,11 @@
 #define ERR_RETS( Expression )
 #endif
 #ifdef DEBUG
-#define ERROR_RETURN( Status )     \
-    {                              \
-        if ( EFI_ERROR( Status ) ) \
-        {                          \
-            return;                \
-        }                          \
+#define ERROR_RETURN( Status )       \
+    {                                \
+        if ( EFI_ERROR( Status ) ) { \
+            return;                  \
+        }                            \
     }
 #else
 #define ERR_RET( Status )
@@ -36,10 +33,11 @@ VOID *operator new( unsigned long int, VOID *address ) noexcept;
 VOID operator delete( VOID *, size_t ) noexcept;
 VOID operator delete( VOID *address ) noexcept;
 VOID operator delete[]( VOID *address ) noexcept;
-
-#define _cpuid( __func, __eax, __ebx, __ecx, __edx )                                  \
+#if defined( __x86_64__ )
+#define _cpuid( __func, __eax, __ebx, __ecx, __edx )                                   \
     __asm__ __volatile__( "xchgq %%rbx,%q1\n"                                          \
                           "cpuid\n"                                                    \
                           "xchgq %%rbx,%q1"                                            \
                           : "=a"( __eax ), "=r"( __ebx ), "=c"( __ecx ), "=d"( __edx ) \
                           : "0"( __func ) : )
+#endif

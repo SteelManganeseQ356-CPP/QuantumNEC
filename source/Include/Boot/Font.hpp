@@ -12,8 +12,8 @@ typedef struct
 class BootServiceFont : protected BootServiceDataManager< UnicodeTTF >
 {
 public:
-    explicit BootServiceFont( UnicodeTTF * );
-    virtual ~BootServiceFont( VOID ) = default;
+    explicit BootServiceFont( IN UnicodeTTF * ) noexcept( true );
+    virtual ~BootServiceFont( VOID ) noexcept( true ) = default;
 
 public:
     auto getUnicodeTTF( IN CONST wchar_t *fontPath ) -> EFI_STATUS;

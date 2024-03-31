@@ -1,6 +1,5 @@
 #include <Boot/Boot.hpp>
 #include <Boot/Include.hpp>
-
 extern "C" EFI_STATUS EFIAPI UefiMain( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable ) {
     using namespace QuantumNEC::Boot;
     EFI_STATUS Status { EFI_SUCCESS };
@@ -9,6 +8,14 @@ extern "C" EFI_STATUS EFIAPI UefiMain( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_
     BootServiceMain bootService { &bootConfig };
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
+    // 读取Config
+    Status = bootService.iniLoad( CONFIG_PATH );
+    if ( EFI_ERROR( Status ) ) {
+        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to load Config.ini." );
+        logger.LogError( Status );
+        logger.Close( );
+        return Status;
+    }
     // 读取Logo并显示
     Status = bootService.getBmpConfig( &bootConfig.BmpData ).displayLogo( L"\\EFI\\Boot\\Logo.BMP" );
     if ( EFI_ERROR( Status ) ) {
@@ -50,7 +57,7 @@ extern "C" EFI_STATUS EFIAPI UefiMain( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_
         return Status;
     }
     // 读取Unicode字体并弹出
-    Status = bootService.getUnicodeTTF( L"\\QuantumNEC\\font\\Unicode.dll" );
+    Status = bootService.getUnicodeTTF( L"\\QuantumNEC\\SYSTEM64\\Unicode.dll" );
     if ( EFI_ERROR( Status ) ) {
         logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to get Unicode Font file." );
         logger.LogError( Status );

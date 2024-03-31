@@ -5,7 +5,7 @@ namespace QuantumNEC::Boot {
 constexpr CONST auto PF_X { 1 << 0 };
 constexpr CONST auto PF_W { 1 << 1 };
 constexpr CONST auto PF_R { 1 << 2 };
-constexpr CONST auto PE_P { 1 };
+constexpr CONST auto PE_P { 1 << 0 };
 constexpr CONST auto PE_RW { 1 << 1 };
 constexpr CONST auto PE_US { 1 << 2 };
 constexpr CONST auto PE_PWT { 1 << 3 };
@@ -16,12 +16,12 @@ constexpr CONST auto PDPTE_1G { 1 << 7 };
 constexpr CONST auto PDE_2M { 1 << 7 };
 constexpr CONST auto PTE_PAT { 1 << 7 };
 constexpr CONST auto PTE_GLOBAL { 1 << 8 };
-constexpr CONST auto PG_S { 4096 };
-constexpr CONST auto PT_S { 4096 * 512 };
-constexpr CONST auto PD_S { 4096 * 512 * 512 };
-constexpr CONST auto PDPT_S { UINT64( UINT64( UINT64( 4096 ) * 512 ) * 512 ) * 512 };
-constexpr CONST auto PML4_S { UINT64( UINT64( UINT64( UINT64( 4096 ) * 512 ) * 512 ) * 512 ) * 512 };
-constexpr CONST auto CR0_WP { 0x10000 };
+constexpr CONST auto PAGE_4K { 0x1000ULL };
+constexpr CONST auto PAGE_2M { 0x200000ULL };
+constexpr CONST auto PT_SIZE { PAGE_4K * 512ULL };
+constexpr CONST auto PD_SIZE { PAGE_4K * 512ULL * 512ULL };
+constexpr CONST auto PDPT_SIZE { PAGE_4K * 512ULL * 512ULL * 512ULL };
+constexpr CONST auto PML_SIZE { PAGE_4K * 512ULL * 512ULL * 512ULL * 512ULL };
 
 /**
  * @brief 值
@@ -115,7 +115,7 @@ private:
         MEMORY_4K = 0x0,
         MEMORY_2M = 0x1,
         MEMORY_1G = 0x2,
-        MEMORY_ED = 0x3,
+        MEMORY_UNDERSCORE = 0x3,
     };
 
 public:
@@ -129,9 +129,9 @@ private:
      */
     auto PageTableProtect( bool status ) -> decltype( auto ) {
         if ( status )
-            AsmWriteCr0( AsmReadCr0( ) | CR0_WP );
+            AsmWriteCr0( AsmReadCr0( ) | 0x00010000 );
         else
-            AsmWriteCr0( AsmReadCr0( ) & ~CR0_WP );
+            AsmWriteCr0( AsmReadCr0( ) & ~0x00010000 );
         return;
     }
     auto isPageMapped( IN UINT64 pml4TableAddress, IN UINT64 virtualAddress ) -> decltype( auto );
@@ -142,7 +142,7 @@ private:
      * @brief 虚拟地址转换为物理地址
      */
     auto VTPAddress( IN UINT64 pml4TableAddress, IN UINT64 virtualAddress ) -> decltype( auto );
-    auto pml4TableDump( IN UINT64 *pml4Table ) -> decltype( auto );
+    auto pmlDump( IN UINT64 *pml ) -> decltype( auto );
 
 public:
     /**
@@ -151,8 +151,13 @@ public:
     auto updateCr3( VOID ) -> UINTN;
     /**
      * @brief 设置页表
-    */
+     */
     auto setPageTable( ) -> EFI_STATUS;
+
+private:
+    auto make_pd( OUT UINT64 *pdEntry, IN UINT64 pageTableAddress, IN CONST UINT32 flags ) -> VOID;
+    auto make_pdp( OUT UINT64 *pdpEntry, IN UINT64 *pdEntry, IN CONST UINT32 flags ) -> VOID;
+    auto make_pml( OUT UINT64 *pmlEntry, IN UINT64 *pdpEntry, IN CONST UINT32 flags ) -> VOID;
 
 private:
     UINT64 pageTable { };

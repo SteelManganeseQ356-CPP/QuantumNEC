@@ -37,15 +37,15 @@ PUBLIC namespace QuantumNEC::Utils {
     /**
      * @brief
      */
-    PUBLIC auto getRsp( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto get_rsp( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
-    PUBLIC auto getRflags( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto get_rflags( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
-    PUBLIC auto getEflags( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto get_eflags( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
@@ -73,45 +73,49 @@ PUBLIC namespace QuantumNEC::Utils {
     /**
      * @brief
      */
-    PUBLIC auto readCr4( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto read_cr4( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
-    PUBLIC auto writeCr4( IN Lib::Types::uint64_t cr3 )->VOID;
+    PUBLIC auto write_cr4( IN Lib::Types::uint64_t cr3 )->VOID;
     /**
      * @brief
      */
-    PUBLIC auto readCr3( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto read_cr3( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
-    PUBLIC auto writeCr3( IN Lib::Types::uint64_t cr3 )->VOID;
+    PUBLIC auto write_cr3( IN Lib::Types::uint64_t cr3 )->VOID;
     /**
      * @brief
      */
-    PUBLIC auto readCr2( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto read_cr2( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
-    PUBLIC auto writeCr2( IN Lib::Types::uint64_t cr2 )->VOID;
+    PUBLIC auto write_cr2( IN Lib::Types::uint64_t cr2 )->VOID;
     /**
      * @brief
      */
-    PUBLIC auto readCr1( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto read_cr1( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
-    PUBLIC auto writeCr1( IN Lib::Types::uint64_t cr0 )->VOID;
+    PUBLIC auto write_cr1( IN Lib::Types::uint64_t cr0 )->VOID;
     /**
      * @brief
      */
-    PUBLIC auto readCr0( VOID )->Lib::Types::uint64_t;
+    PUBLIC auto read_cr0( VOID )->Lib::Types::uint64_t;
     /**
      * @brief
      */
-    PUBLIC auto writeCr0( IN Lib::Types::uint64_t cr0 )->VOID;
+    PUBLIC auto write_cr0( IN Lib::Types::uint64_t cr0 )->VOID;
     /**
      * @brief
      */
     PUBLIC auto invlpg( IN Lib::Types::Ptr< VOID > address )->VOID;
+    /**
+     * @brief
+     */
+    PUBLIC auto pause( VOID )->VOID;
 }

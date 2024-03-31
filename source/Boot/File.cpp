@@ -1,7 +1,7 @@
 #include <Boot/File.hpp>
+#include <Boot/Include.hpp>
 #include <Boot/Logger.hpp>
 #include <Boot/Utils.hpp>
-#include <Boot/Include.hpp>
 namespace QuantumNEC::Boot {
 BootServiceFile::BootServiceFile( VOID ) :
     BootServiceDataManager< FileConfig > {

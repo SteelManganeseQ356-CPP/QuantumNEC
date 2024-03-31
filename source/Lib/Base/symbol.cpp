@@ -1,7 +1,7 @@
-#include <Lib/Base/symbol.hpp>
-#include <Lib/STL/string>
 #include <Kernel/Memory/heap.hpp>
 #include <Kernel/Memory/paging.hpp>
+#include <Lib/Base/symbol.hpp>
+#include <Lib/STL/string>
 PUBLIC namespace QuantumNEC::Lib::Base {
     SymbolManagement::SymbolManagement( IN Lib::Types::Ptr< SymbolData > _symbolTable, IN Lib::Types::int32_t _symbolNumber ) :
         symbolTable_ { _symbolTable },
@@ -9,11 +9,11 @@ PUBLIC namespace QuantumNEC::Lib::Base {
     }
     SymbolManagement::~SymbolManagement( VOID ) {
     }
-    auto SymbolManagement::cleckAddressAvailable( IN Lib::Types::uint64_t address )->Lib::Types::BOOL {
-        return address >= Kernel::Memory::PAGE_OFFSET && address <= this->symbolTable_[ this->symbolNumber_ - 1 ].address;
+    auto SymbolManagement::cleck_address_available( IN Lib::Types::uint64_t address )->Lib::Types::BOOL {
+        return address >= Kernel::Memory::KERNEL_BASE_ADDRESS && address <= this->symbolTable_[ this->symbolNumber_ - 1 ].address;
     }
 
-    auto SymbolManagement::symbolToAddress( IN Lib::Types::Ptr< CONST Lib::Types::char_t > symbol )->Lib::Types::uint64_t {
+    auto SymbolManagement::symbol_to_address( IN Lib::Types::Ptr< CONST Lib::Types::char_t > symbol )->Lib::Types::uint64_t {
         for ( auto i { 0 }; i < this->symbolNumber_; i++ ) {
             if ( Lib::STL::strcmp( symbol, this->symbolTable_[ i ].symbol ) == 0 ) {
                 return this->symbolTable_[ i ].address;
@@ -22,8 +22,8 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         return 0;
     }
 
-    auto SymbolManagement::addressToSymbol( IN Lib::Types::uint64_t address )->Lib::Types::Ptr< Lib::Types::char_t > {
-        if ( !this->cleckAddressAvailable( address ) ) {
+    auto SymbolManagement::address_to_symbol( IN Lib::Types::uint64_t address )->Lib::Types::Ptr< Lib::Types::char_t > {
+        if ( !this->cleck_address_available( address ) ) {
             return NULL;
         }
         for ( auto i { 0 }; i < this->symbolNumber_; i++ ) {

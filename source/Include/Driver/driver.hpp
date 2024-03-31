@@ -7,8 +7,8 @@
 #include <Driver/Audio/audio.hpp>
 PUBLIC namespace QuantumNEC::Driver {
     class DriverManagement :
-        Display::GraphicsManagement,
-        Acpi::AcpiManagement
+        public Display::GraphicsManagement,
+        public Acpi::AcpiManagement
     {
     public:
         explicit( TRUE ) DriverManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept( TRUE );

@@ -1,5 +1,5 @@
-#include <Boot/Include.hpp>
 #include <Boot/Logger.hpp>
+#include <Boot/Include.hpp>
 namespace QuantumNEC::Boot {
 constexpr CONST auto levelCount { 4 };
 auto GetLevelInfo( IN BootServiceLogger::LoggerLevel level ) -> CONST CHAR8 * {
@@ -21,12 +21,12 @@ auto BootServiceLogger::LogTip( IN LoggerLevel level, IN CONST CHAR8 *Message ) 
     CONST CHAR8 *StrLevel { GetLevel[ (UINT32)level ]( level ) };
     UINTN MsgLen { };
     EFI_STATUS Status { EFI_SUCCESS };
-#ifdef PRINT_LOGGER
-    AsciiPrint( "[" __DATE__ "<=>" __TIME__ "]" );
-    AsciiPrint( StrLevel );
-    AsciiPrint( Message );
-    AsciiPrint( "\n\r" );     // 打印日志 ：[ 日期 <=> 时间 ] [Header] 消息
-#endif
+// #ifdef PRINT_LOGGER
+//     AsciiPrint( "[" __DATE__ "<=>" __TIME__ "]" );
+//     AsciiPrint( StrLevel );
+//     AsciiPrint( Message );
+//     AsciiPrint( "\n\r" );     // 打印日志 ：[ 日期 <=> 时间 ] [Header] 消息
+// #endif
     MsgLen = AsciiStrLen( Message );
     Status = this->put( ).LogFile->Write( this->put( ).LogFile, &MsgLen,
                                           (VOID *)Message );     // 写入文件
@@ -75,7 +75,7 @@ BootServiceLogger::BootServiceLogger( IN LoggerConfig *config ) :
 
     this->put( ).ErrorCode = File->Open(
         File, &this->put( ).LogFile,
-        (CHAR16 *)L"\\QuantumNEC\\Logger\\SystemLogger.log",
+        (CHAR16 *)L"\\QuantumNEC\\SYSTEM64\\SystemLogger.log",
         EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
         EFI_FILE_ARCHIVE );
     if ( EFI_ERROR( this->put( ).ErrorCode ) ) {

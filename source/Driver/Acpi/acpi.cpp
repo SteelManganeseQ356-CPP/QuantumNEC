@@ -15,7 +15,7 @@ PUBLIC namespace {
     PRIVATE consteval auto SIGN_64( auto A, auto B, auto C, auto D, auto E, auto F, auto G, auto H )->decltype( auto ) {
         return SIGN_32( A, B, C, D ) | ( (Lib::Types::uint64_t)SIGN_32( E, F, G, H ) << 32 );
     }
-    PRIVATE constexpr auto bytesSumTotal( IN Lib::Types::Ptr< CONST uint8_t > data, IN size_t bytes )->decltype( auto ) {
+    PRIVATE constexpr auto bytes_sum_total( IN Lib::Types::Ptr< CONST uint8_t > data, IN size_t bytes )->decltype( auto ) {
         uint8_t sum { };
         for ( size_t i { }; i < bytes; ++i ) {
             sum += data[ i ];
@@ -28,7 +28,7 @@ PUBLIC namespace {
     PRIVATE constexpr CONST auto MADT_SIGNED { SIGN_32( 'A', 'P', 'I', 'C' ) };
     PRIVATE constexpr CONST auto APIC_SIGNED { SIGN_32( 'A', 'P', 'I', 'C' ) };
     PRIVATE constexpr CONST auto FADT_SIGNED { SIGN_32( 'F', 'A', 'C', 'P' ) };
-    PRIVATE uint8_t globalSystemInterrupt[ GLOBAL_SYSTEM_INTERRUPT_COUNT ];
+    PRIVATE uint8_t global_system_interrupt[ GLOBAL_SYSTEM_INTERRUPT_COUNT ];
 }
 PUBLIC namespace QuantumNEC::Driver::Acpi {
     AcpiManagement::AcpiManagement( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) :
@@ -45,9 +45,9 @@ PUBLIC namespace QuantumNEC::Driver::Acpi {
         auto getEntry = [ &, this ]( Lib::Types::uint32_t signature ) -> Lib::Types::Ptr< VOID > {
             Lib::Types::size_t size { this->xsdt->size( ) };
             Lib::Types::Ptr< SDTHeader > header { };
-            Lib::Types::Ptr< Lib::Types::uint64_t > address { reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( (char *)this->xsdt + sizeof( Xsdt ) ) };
+            Lib::Types::Ptr< Lib::Types::uint64_t > address { reinterpret_cast< decltype( address ) >( (Lib::Types::uint64_t)this->xsdt + sizeof( Xsdt ) ) };
             for ( size_t i { }; i < size; i++ ) {
-                header = reinterpret_cast< Lib::Types::Ptr< SDTHeader > >( address[ i ] );
+                header = reinterpret_cast< decltype( header ) >( address[ i ] );
                 if ( header->signature == signature ) {
                     if ( checkSum( header, header->length ) )
                         return reinterpret_cast< Lib::Types::Ptr< VOID > >( header );
@@ -56,38 +56,45 @@ PUBLIC namespace QuantumNEC::Driver::Acpi {
             return NULL;
         };
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the advanced configuration power interface." << Lib::IO::endl;
-        if ( !this->isValid< Rsdp >( ) ) {
-            Panic( "RSDP is not valid" );
+        if ( !this->is_valid< Rsdp >( ) ) {
+            Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "RSD pointer found is not valid." << Lib::IO::endl;
+            while ( true )
+                ;
         }
         if ( this->xsdt->signature != ::XSDT_SIGNED || !checkSum( this->xsdt, this->xsdt->length ) ) {
-            Panic( "XSDT is not valid" );
+            Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "XSDT is not valid." << Lib::IO::endl;
+            while ( true )
+                ;
         }
         Lib::Types::Ptr< Madt > madt { reinterpret_cast< Lib::Types::Ptr< Madt > >( getEntry( ::APIC_SIGNED ) ) };
         if ( !madt ) {
-            Panic( "Can not find madt" );
+            Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "Can not find madt." << Lib::IO::endl;
+            while ( true )
+                ;
         }
-        Lib::Types::int64_t length { static_cast< Lib::Types::int64_t >( madt->length - sizeof *madt ) };
-        Lib::Types::Ptr< MadtICS > ICS { reinterpret_cast< Lib::Types::Ptr< MadtICS > >( (char *)( madt ) + sizeof *madt ) };
-        Lib::STL::memset( ::globalSystemInterrupt, 0xFF, ::GLOBAL_SYSTEM_INTERRUPT_COUNT );
+        Lib::Types::int64_t length { static_cast< decltype( length ) >( madt->length - sizeof *madt ) };
+        Lib::Types::Ptr< MadtICS > ICS { reinterpret_cast< decltype( ICS ) >( ( Lib::Types::uint64_t )( madt ) + sizeof *madt ) };
+        Lib::STL::memset( ::global_system_interrupt, 0xFF, ::GLOBAL_SYSTEM_INTERRUPT_COUNT );
         while ( length > 0 ) {
             if ( ICS->type == ICSAttribute::LOCAL_APIC ) {
-                Lib::Types::Ptr< LocalApic > localApic { reinterpret_cast< Lib::Types::Ptr< LocalApic > >( ICS ) };
+                Lib::Types::Ptr< LocalApic > local_apic { reinterpret_cast< decltype( local_apic ) >( ICS ) };
                 Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
                     DisplayColor::WHITE,
                     DisplayColor::BLACK,
                     "Local Apic ================>> | Acpi Processor UID <=> %8u | Apic ID <=> %27u | Flags <=> %41x |\n",
-                    localApic->acpiProcessorUID, localApic->apicID, localApic->flags );
+                    local_apic->acpiProcessorUID, local_apic->apicID, local_apic->flags );
             }
             else if ( ICS->type == ICSAttribute::I_O_APIC ) {
-                Lib::Types::Ptr< IOApic > i_o_apic { reinterpret_cast< Lib::Types::Ptr< IOApic > >( ICS ) };
+                Lib::Types::Ptr< IOApic > io_apic { reinterpret_cast< decltype( io_apic ) >( ICS ) };
                 Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
                     DisplayColor::WHITE,
                     DisplayColor::BLACK,
                     "I/O Apic ==================>> | I/O Apic ID <=> %15u | I/O Apic Address <=> %#18x | Global System Interrupt Base <=> %18x |\n",
-                    i_o_apic->IOApicID, i_o_apic->IOApicAddress, i_o_apic->globalSystemInterruptBase );
+                    io_apic->IOApicID, io_apic->IOApicAddress, io_apic->globalSystemInterruptBase );
+                this->io_apic_address = reinterpret_cast< decltype( this->io_apic_address ) >( io_apic->IOApicAddress );
             }
             else if ( ICS->type == ICSAttribute::INTERRUPT_SOURCE_OVERRIDE ) {
-                Lib::Types::Ptr< InterruptSourceOverride > ics { reinterpret_cast< Lib::Types::Ptr< InterruptSourceOverride > >( ICS ) };
+                Lib::Types::Ptr< InterruptSourceOverride > ics { reinterpret_cast< decltype( ics ) >( ICS ) };
                 Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
                     DisplayColor::WHITE,
                     DisplayColor::BLACK,
@@ -95,20 +102,21 @@ PUBLIC namespace QuantumNEC::Driver::Acpi {
                     ics->bus, ics->source, ics->flags, ics->globalSystemInterrupt );
             }
             length -= ICS->length;
-            ICS = reinterpret_cast< Lib::Types::Ptr< MadtICS > >( (char *)( ICS ) + ICS->length );
+            ICS = reinterpret_cast< decltype( ICS ) >( (char *)( ICS ) + ICS->length );
         }
+        this->local_apic_address = reinterpret_cast< decltype( this->local_apic_address ) >( madt->localApicAddress );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the advanced configuration power interface." << Lib::IO::endl;
     }
 
     template <>
-    auto AcpiManagement::isValid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL {
+    auto AcpiManagement::is_valid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL {
         if ( Lib::STL::strncmp( this->rsdp->signature, "RSD PTR ", 8 ) || this->rsdp->revision != 2 ) {
             return FALSE;
         }
-        if ( auto sum { bytesSumTotal( reinterpret_cast< Lib::Types::Ptr< CONST Lib::Types::uint8_t > >( this->rsdp ), 20 ) }; sum ) {
+        if ( auto sum { bytes_sum_total( reinterpret_cast< Lib::Types::Ptr< CONST Lib::Types::uint8_t > >( this->rsdp ), 20 ) }; sum ) {
             return FALSE;
         }
-        if ( auto sum { bytesSumTotal( reinterpret_cast< Lib::Types::Ptr< CONST Lib::Types::uint8_t > >( this->rsdp ), 36 ) }; sum ) {
+        if ( auto sum { bytes_sum_total( reinterpret_cast< Lib::Types::Ptr< CONST Lib::Types::uint8_t > >( this->rsdp ), 36 ) }; sum ) {
             return FALSE;
         }
         return TRUE;

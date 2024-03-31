@@ -115,7 +115,7 @@ PUBLIC namespace QuantumNEC::Lib::STL {
      * @return 当找到，返回指向ch的指针
      */
     PUBLIC auto memchr( IN OUT Lib::Types::Ptr< VOID > buf,
-                        IN Lib::Types::int8_t ch, IN Lib::Types::size_t count )
+                        IN Lib::Types::int8_t value, IN Lib::Types::size_t size )
         ->Lib::Types::Ptr< VOID >;
 
     /**
@@ -141,14 +141,14 @@ PUBLIC namespace QuantumNEC::Lib::STL {
      */
     PUBLIC auto memmove( IN OUT Lib::Types::Ptr< VOID > dest,
                          IN OUT Lib::Types::Ptr< CONST VOID > src,
-                         IN Lib::Types::size_t n )
+                         IN Lib::Types::size_t size )
         ->Lib::Types::Ptr< VOID >;
 
     /**
      * @brief 设置内存内容
      * @param dest 所指向的内存单元
-     * @param value dest前几个的字节
-     * @param size 要替换的整数
+     * @param value 要替换的数
+     * @param size dest前几个的字节
      */
     PUBLIC auto memset( IN OUT Lib::Types::Ptr< VOID > dest,
                         IN CONST Lib::Types::uint8_t value,

@@ -1,6 +1,6 @@
-#include <Boot/Data.hpp>
 #include <Boot/Utils.hpp>
 #include <Boot/Include.hpp>
+#include <Boot/Data.hpp>
 namespace QuantumNEC::Boot {
 
 bool PowerU64( IN UINT64 X, IN UINTN Y ) {

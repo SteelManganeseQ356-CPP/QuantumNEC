@@ -4,100 +4,114 @@
 #include <Lib/Types/type_bool.hpp>
 #include <Lib/Types/type_int.hpp>
 #include <Lib/Types/type_ptr.hpp>
-PUBLIC namespace QuantumNEC::Lib::STL
-{
-  PUBLIC typedef struct ListNode
-  {
-    ListNode huge *prev{}; /* 上一个节点 */
-    ListNode huge *next{}; /* 下一个节点 */
-    VOID huge *container{};
-  } ListNode; // 双向链表
-  PUBLIC typedef struct
-  {
-    ListNode head{}; /* 链表头 */
-    ListNode end{};  /* 链表尾 */
-  } ListTable;
+#include <concepts>
+PUBLIC namespace QuantumNEC::Lib::STL {
+    PUBLIC typedef struct ListNode
+    {
+        Lib::Types::Ptr< ListNode > prev { }; /* 上一个节点 */
+        Lib::Types::Ptr< ListNode > next { }; /* 下一个节点 */
+        Lib::Types::Ptr< VOID > container { };
+    } ListNode;     // 双向链表
+    PUBLIC typedef struct
+    {
+        ListNode head { }; /* 链表头 */
+        ListNode end { };  /* 链表尾 */
+    } ListTable;
 
-  /**
-   * @brief 初始化链表
-   * @param list 待初始化链表的指针
-   */
-  PUBLIC auto list_init (IN OUT Lib::Types::Ptr<ListTable> list)->VOID;
-  /**
-   * @brief 插入节点到链表末尾
-   * @param entry 链表指针
-   * @param New 要添加的元素的指针
-   */
-  PUBLIC auto list_add_to_end (IN OUT Lib::Types::Ptr<ListTable> entry,
-                               IN OUT Lib::Types::Ptr<ListNode> New)
-      ->VOID;
-  /**
-   * @brief 插入节点到链表开头
-   * @param entry 链表指针
-   * @param New  要添加的元素的指针
-   */
-  PUBLIC auto list_add_to_head (IN OUT Lib::Types::Ptr<ListTable> entry,
-                                IN OUT Lib::Types::Ptr<ListNode> New)
-      ->VOID;
-  /**
-   * @brief 删除节点
-   * @param entry 要弹出的节点
-   */
-  PUBLIC auto list_delete (IN OUT Lib::Types::Ptr<ListNode> entry)->VOID;
+    /**
+     * @brief 初始化链表
+     * @param list 待初始化链表的指针
+     */
+    PUBLIC auto list_init( IN OUT Lib::Types::Ptr< ListTable > list )->VOID;
+    /**
+     * @brief 插入节点到链表末尾
+     * @param entry 链表指针
+     * @param New 要添加的元素的指针
+     */
+    PUBLIC auto list_add_to_end( IN OUT Lib::Types::Ptr< ListTable > entry,
+                                 IN OUT Lib::Types::Ptr< ListNode > New )
+        ->VOID;
+    /**
+     * @brief 插入节点到链表开头
+     * @param entry 链表指针
+     * @param New  要添加的元素的指针
+     */
+    PUBLIC auto list_add_to_head( IN OUT Lib::Types::Ptr< ListTable > entry,
+                                  IN OUT Lib::Types::Ptr< ListNode > New )
+        ->VOID;
+    /**
+     * @brief 删除节点
+     * @param entry 要弹出的节点
+     */
+    PUBLIC auto list_delete( IN OUT Lib::Types::Ptr< ListNode > entry )->VOID;
 
-  /**
-   * @brief 将链表第一个元素弹出并返回
-   * @param objList 要操作的链表
-   * @return 第一个元素
-   */
-  PUBLIC auto list_pop (IN OUT Lib::Types::Ptr<ListTable> entry)
-      ->Lib::Types::Ptr<ListNode>;
-  /**
-   * @brief 判断下一节点是否相同
-   * @param entry 要判断的链表
-   */
-  PUBLIC auto list_is_empty (IN Lib::Types::Ptr<ListTable> entry)->Types::BOOL;
-  /**
-   * @brief 在链表中查找节点
-   * @param entry 在此链表中查找
-   * @param objNode 要查找的节点
-   * @retval false 查找失败
-   * @retval true  找到元素
-   */
-  PUBLIC auto list_find (IN Lib::Types::Ptr<ListTable> entry,
-                         IN Lib::Types::Ptr<ListNode> objnode)
-      ->Types::BOOL;
-  /**
-   * @brief 判断上一节点十分为空
-   * @param node 要判断的节点
-   */
-  PUBLIC auto list_prev (IN Lib::Types::Ptr<ListNode> node)
-      ->Lib::Types::Ptr<ListNode>;
-  /**
-   * @brief 判断下一节点十分为空
-   * @param node 要判断的节点
-   */
-  PUBLIC auto list_next (IN Lib::Types::Ptr<ListNode> node)
-      ->Lib::Types::Ptr<ListNode>;
+    /**
+     * @brief 将链表第一个元素弹出并返回
+     * @param objList 要操作的链表
+     * @return 第一个元素
+     */
+    PUBLIC auto list_pop( IN OUT Lib::Types::Ptr< ListTable > entry )
+        ->Lib::Types::Ptr< ListNode >;
+    /**
+     * @brief 判断下一节点是否相同
+     * @param entry 要判断的链表
+     */
+    PUBLIC auto list_is_empty( IN Lib::Types::Ptr< ListTable > entry )->Types::BOOL;
+    /**
+     * @brief 在链表中查找节点
+     * @param entry 在此链表中查找
+     * @param objNode 要查找的节点
+     * @retval false 查找失败
+     * @retval true  找到元素
+     */
+    PUBLIC auto list_find( IN Lib::Types::Ptr< ListTable > entry,
+                           IN Lib::Types::Ptr< ListNode > objnode )
+        ->Types::BOOL;
+    /**
+     * @brief 判断上一节点十分为空
+     * @param node 要判断的节点
+     */
+    PUBLIC auto list_prev( IN Lib::Types::Ptr< ListNode > node )
+        ->Lib::Types::Ptr< ListNode >;
+    /**
+     * @brief 判断下一节点十分为空
+     * @param node 要判断的节点
+     */
+    PUBLIC auto list_next( IN Lib::Types::Ptr< ListNode > node )
+        ->Lib::Types::Ptr< ListNode >;
 
-  /**
-   * @brief 遍历列表内所有元素，逐个判断是否有符合条件的元素
-   * @param objList 要遍历的链表
-   * @param func 回调函数
-   * @param arg 给func用来判断下一节点是否符合条件
-   * @return 找到符合条件的元素返回元素指针，否则返回 NULL
-   */
-  PUBLIC auto list_traversal (
-      IN OUT ListTable far * objList,
-      IN CONST Lib::Types::FuncPtr<Lib::Types::BOOL, Lib::Types::Ptr<ListNode>,
-                                   Lib::Types::int32_t>
-          func,
-      IN CONST Lib::Types::int32_t arg)
-      ->Lib::Types::Ptr<ListNode>;
-  /**
-   * @brief 测量链表长度
-   * @param objList 要测量的链表
-   * @return 链表长度
-   */
-  PUBLIC auto list_length (IN ListTable far * objList)->Lib::Types::size_t;
+    /**
+     * @brief 遍历列表内所有元素，逐个判断是否有符合条件的元素
+     * @param objList 要遍历的链表
+     * @param func 回调函数
+     * @param arg 给func用来判断下一节点是否符合条件
+     * @return 找到符合条件的元素返回元素指针，否则返回 NULL
+     */
+    template < typename Func, typename Args >
+        requires requires( Func f, Lib::Types::Ptr< ListNode > n, Args a ) {
+            { f( n, a ) } -> std::same_as< Lib::Types::BOOL >;
+        }
+    PUBLIC auto list_traversal( IN OUT Lib::Types::Ptr< ListTable > objList, IN CONST Func func, IN CONST Args arg )
+        ->Lib::Types::Ptr< ListNode > {
+        Lib::Types::Ptr< ListNode > node { objList->head.next };
+        /* 如果队列为空，就必然没有符合条件的结点，故直接返回 NULL */
+        if ( list_is_empty( objList ) )
+            return NULL;
+        while ( node != &objList->end ) {
+            if ( func(
+                     node,
+                     arg ) )     // func 返回
+                                 // ture，则认为该元素在回调函数中符合条件，命中，故停止继续遍历
+                return node;
+            // 若回调函数 func 返回 true，则继续遍历
+            node = node->next;
+        }
+        return NULL;
+    }
+    /**
+     * @brief 测量链表长度
+     * @param objList 要测量的链表
+     * @return 链表长度
+     */
+    PUBLIC auto list_length( IN Lib::Types::Ptr< ListTable > objList )->Lib::Types::size_t;
 }

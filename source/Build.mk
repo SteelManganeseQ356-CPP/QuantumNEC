@@ -1,14 +1,6 @@
 include build.ini
 SHELL:= /bin/sh					# 开启source
 # 编译所有文件
-# %.ld: 
-# 	@$(ECHO) Start compiling $*.cpp ...
-# 	$(GXX) $(C_CPP_INCLUDE_PATH) $(CPPFLAGS) -c $*.cpp -o $*.ld
-# 	@$(ECHO) Done.
-# %.sld:
-# 	@$(ECHO) Start compiling $*.asm ...
-# 	$(NASM) $(NASMFLAGS) $*.asm -o $*.sld
-# 	@$(ECHO) Done.
 BUILD_FIEL:= \
 	$(OBJECT_BUILD_PATH)/obj/kernel.o  \
  	$(OBJECT_BUILD_PATH)/obj/start.o  \
@@ -37,7 +29,6 @@ BUILD_FIEL:= \
 	$(OBJECT_BUILD_PATH)/obj/cpu.o \
 	$(OBJECT_BUILD_PATH)/obj/smp.o \
 	$(OBJECT_BUILD_PATH)/obj/xdt.o \
-	$(OBJECT_BUILD_PATH)/obj/entry.o \
 	$(OBJECT_BUILD_PATH)/obj/apic.o \
 	$(OBJECT_BUILD_PATH)/obj/interrupt.o \
 	$(OBJECT_BUILD_PATH)/obj/pic_8259A.o \
@@ -50,7 +41,14 @@ BUILD_FIEL:= \
 	$(OBJECT_BUILD_PATH)/obj/platform.o \
 	$(OBJECT_BUILD_PATH)/obj/acpi.o \
 	$(OBJECT_BUILD_PATH)/obj/audio.o \
-	$(OBJECT_BUILD_PATH)/obj/driver.o 
+	$(OBJECT_BUILD_PATH)/obj/driver.o \
+	$(OBJECT_BUILD_PATH)/obj/process.o \
+	$(OBJECT_BUILD_PATH)/obj/task.o \
+	$(OBJECT_BUILD_PATH)/obj/thread.o \
+	$(OBJECT_BUILD_PATH)/obj/entry.o \
+	$(OBJECT_BUILD_PATH)/obj/time.o \
+	$(OBJECT_BUILD_PATH)/obj/task_utils.o \
+	$(OBJECT_BUILD_PATH)/obj/fpu.o
 
 %.elf: $(BUILD_FIEL)
 	@$(ECHO) Start linking all obj-file ...
@@ -58,7 +56,7 @@ BUILD_FIEL:= \
 	@$(ECHO) Done.
 %.efi:
 	@$(ECHO) Start building UEFI boot file ...
-	source "$(THE_FILE_ULD_PATH)/build.sh"
+	source "$(THE_FILE_PATH)/build.sh"
 	@$(ECHO) Done.
 .PHONY: buildDir
 buildDir:
@@ -68,16 +66,15 @@ buildDir:
 	mkdir "$(OBJECT_BUILD_PATH)/esp/EFI"
 	mkdir "$(OBJECT_BUILD_PATH)/esp/EFI/Boot"
 	mkdir "$(OBJECT_BUILD_PATH)/esp/QuantumNEC"
-	mkdir "$(OBJECT_BUILD_PATH)/esp/QuantumNEC/font"
-	mkdir "$(OBJECT_BUILD_PATH)/esp/QuantumNEC/Logger"
+	mkdir "$(OBJECT_BUILD_PATH)/esp/QuantumNEC/SYSTEM64"
 	cp $(OVME) $(OBJECT_BUILD_PATH)/ -r
 	cp $(THE_FILE_PATH)/Boot/Info/target.txt $(EDK2_PATH)/Conf/ -r
 	cp $(THE_FILE_PATH)/build.sh $(THE_FILE_ULD_PATH)/ -r
 	cp $(THE_FILE_PATH) $(EDK2_PATH)/QuantumNECPkg -r
 	cp $(THE_FILE_PATH)/Boot/Logo/SystemLogo.bmp $(OBJECT_BUILD_PATH)/esp/EFI/Boot/Logo.BMP -r
 	cp "$(THE_FILE_PATH)/Boot/Logo/SystemLogo(4-3).bmp" $(OBJECT_BUILD_PATH)/esp/EFI/Boot/Narrow.BMP -r
-	cp $(THE_FILE_PATH)/Boot/Info/SystemLog.log $(OBJECT_BUILD_PATH)/esp/QuantumNEC/Logger/SystemLogger.log
-	cp $(THE_FILE_ULD_PATH)/font/Unicode.dll $(OBJECT_BUILD_PATH)/esp/QuantumNEC/font/ -r
+	cp $(THE_FILE_PATH)/Boot/Info/SystemLog.log $(OBJECT_BUILD_PATH)/esp/QuantumNEC/SYSTEM64/SystemLogger.log
+	cp $(THE_FILE_ULD_PATH)/resource/Unicode.dll $(OBJECT_BUILD_PATH)/esp/QuantumNEC/SYSTEM64/Unicode.dll -r
 	cp $(THE_FILE_PATH)/Boot/Info/Config.ini $(OBJECT_BUILD_PATH)/esp/EFI/Boot/Config.ini -r
 	cp $(THE_FILE_PATH)/Arch/$(OBJ_ARCH)/System.lds $(OBJECT_BUILD_PATH)/obj/System.lds -r
 .PHONY: outFile

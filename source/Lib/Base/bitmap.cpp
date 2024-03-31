@@ -1,44 +1,52 @@
 #include <Lib/Base/bitmap.hpp>
-#include <Lib/STL/string>
-
 #include <Lib/IO/Stream/iostream>
+#include <Lib/STL/string>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    BitmapManagement::BitmapManagement( Lib::Types::Ptr< BitMapData > btmp ) :
-        bitmap { btmp } {
-        Lib::STL::memset( this->bitmap->bits, 0, this->bitmap->mapLen );
+    BitmapManagement::BitmapManagement( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) {
+        bitmap_.length = bit_length;
+        bitmap_.bits = bits;
+    }
+    BitmapManagement::BitmapManagement( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) {
+        this->bitmap_.bits = _bitmap.bitmap_.bits;
+        this->bitmap_.length = _bitmap.bitmap_.length;
+    }
+    auto BitmapManagement::operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< BitmapManagement > {
+        this->bitmap_.bits = _bitmap.bitmap_.bits;
+        this->bitmap_.length = _bitmap.bitmap_.length;
+        return *this;
     }
     BitmapManagement::~BitmapManagement( VOID ) {
     }
     auto BitmapManagement::scan( Lib::Types::size_t bit_idx )->Lib::Types::BOOL {
-        return this->bitmap->bits[ bit_idx / 8 ] & ( BITMAP_MASK << ( bit_idx % 8 ) );
+        return this->bitmap_.bits[ bit_idx / 8 ] & ( BITMAP_MASK << ( bit_idx % 8 ) );
     }
-    auto BitmapManagement::alloc( Lib::Types::size_t cnt )->Types::int64_t {
+    auto BitmapManagement::allocate( Lib::Types::size_t cnt )->Types::int64_t {
         Lib::Types::size_t index { };
         /* 寻找第一个空的bit所在位 */
         /* 位图已满,找不到空位 */
-        while ( index < this->bitmap->mapLen && this->bitmap->bits[ index ] == 0xff ) {
+        while ( index < this->bitmap_.length && this->bitmap_.bits[ index ] == 0xff ) {
             index++;
         }
-        if ( index >= this->bitmap->mapLen || index == this->bitmap->mapLen ) {
+        if ( index >= this->bitmap_.length || index == this->bitmap_.length ) {
             return -1; /* 分配失败 */
         }
         /* 发现有空位,*/
-        Lib::Types::size_t bitIndex { };
+        Lib::Types::size_t bit_index { };
         /* 位图中寻找空闲位的索引 */
-        while ( ( ( Lib::Types::uint8_t )( BITMAP_MASK << bitIndex ) ) & this->bitmap->bits[ index ] ) {
-            bitIndex++;
+        while ( ( ( Lib::Types::uint8_t )( BITMAP_MASK << bit_index ) ) & this->bitmap_.bits[ index ] ) {
+            bit_index++;
         }
-        Lib::Types::int64_t bitIndexStart { static_cast< Lib::Types::int64_t >( index * 8 + bitIndex ) }; /* 空闲位在整个位图中的下标 */
-        /* 只分配一个位, 那就是bitIndexStart位 */
+        Lib::Types::int64_t bit_index_start { static_cast< Lib::Types::int64_t >( index * 8 + bit_index ) }; /* 空闲位在整个位图中的下标 */
+        /* 只分配一个位, 那就是bit_index_start位 */
         if ( cnt == 1 ) {
-            return bitIndexStart;
+            return bit_index_start;
         }
-        Lib::Types::size_t bitRem { this->bitmap->mapLen * 8 - bitIndexStart }; /* 剩下的位 */
-        Lib::Types::int64_t nextBitIndex { bitIndexStart + 1 };
+        Lib::Types::size_t bit_free { this->bitmap_.length * 8 - bit_index_start }; /* 剩下的位 */
+        Lib::Types::int64_t next_bit_index { bit_index_start + 1 };
         Lib::Types::size_t count { 1 }; /* 找到的空闲位的个数,上面已经找到一个了 */
-        bitIndexStart = -1;             /* 找不到时直接返回-1 */
-        while ( bitRem > 0 ) {
-            if ( !( this->scan( nextBitIndex ) ) ) {
+        bit_index_start = -1;           /* 找不到时直接返回-1 */
+        while ( bit_free > 0 ) {
+            if ( !( this->scan( next_bit_index ) ) ) {
                 /* 下一个bit位是0,那就又找到一个空bit位 */
                 count++;
             }
@@ -48,26 +56,26 @@ PUBLIC namespace QuantumNEC::Lib::Base {
             }
             if ( count == cnt ) {
                 /* 找到了连续cnt个空闲位 */
-                bitIndexStart = nextBitIndex - cnt + 1; /* 空闲位的起始下标 */
-                break;                                  /* 寻找结束,退出循环 */
+                bit_index_start = next_bit_index - cnt + 1; /* 空闲位的起始下标 */
+                break;                                      /* 寻找结束,退出循环 */
             }
-            bitRem--;
-            nextBitIndex++;
+            bit_free--;
+            next_bit_index++;
         }
-        return bitIndexStart;
+        return bit_index_start;
     }
     auto BitmapManagement::set( Lib::Types::size_t bit_idx, Lib::Types::int8_t value )->VOID {
         /* 一般都会用个 0x1 这样的数对字节中的位操作 74 * 将 1
          * 任意移动后再取反，或者先取反再移位，可用来对位置 0 操作。*/
         switch ( value ) {
         case 0:     // 如果 value 为 0
-            this->bitmap->bits[ bit_idx / 8 ] &= ( ~( BITMAP_MASK << bit_idx % 8 ) );
+            this->bitmap_.bits[ bit_idx / 8 ] &= ( ~( BITMAP_MASK << bit_idx % 8 ) );
             break;
         case 1:     // 如果 value 为 1
-            this->bitmap->bits[ bit_idx / 8 ] |= ( BITMAP_MASK << bit_idx % 8 );
+            this->bitmap_.bits[ bit_idx / 8 ] |= ( BITMAP_MASK << bit_idx % 8 );
             break;
         default:
             break;
         }
     }
-}     // namespace QuantumNEC::Lib::Base
+}

@@ -1,6 +1,6 @@
 #include <Boot/Args.hpp>
-#include <Boot/Graphics.hpp>
 #include <Boot/Include.hpp>
+#include <Boot/Graphics.hpp>
 namespace QuantumNEC::Boot {
 BootServiceArgs::BootServiceArgs( IN ArgsStackConfig *config,
                                   IN CONST UINT64 size ) :

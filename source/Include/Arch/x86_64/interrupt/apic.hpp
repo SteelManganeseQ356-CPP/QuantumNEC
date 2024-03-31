@@ -10,10 +10,9 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     PUBLIC class ApicManagement
     {
     public:
-        ApicManagement( ) {
-        }
+        explicit( TRUE ) ApicManagement( VOID ) noexcept;
+        virtual ~ApicManagement( VOID ) noexcept;
 
     private:
     };
-    
 }

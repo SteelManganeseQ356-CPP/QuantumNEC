@@ -14,16 +14,14 @@ PUBLIC namespace QuantumNEC::Lib::IO {
         return *this;
     }
     auto basic_ostream< Types::char_t >::write( IN Types::Ptr< Types::char_t > __str, IN Types::size_t __count )->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
-        while ( *__str && __count-- )
-        {
+        while ( *__str && __count-- ) {
             this->printk( this->display.FColor, this->display.BColor, "%c",
                           *__str );
         }
         return *this;
     }
     auto basic_ostream< Types::char_t >::operator[]( IN CONST Lib::Types::R_Ref< HeadLevel > level )->CONST Lib::Types::L_Ref< basic_ostream< Lib::Types::char_t > > {
-        switch ( level )
-        {
+        switch ( level ) {
         case HeadLevel::INFO: {
             this->display.FColor = DisplayColor::INDIGO;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
@@ -33,7 +31,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             break;
         }
         case HeadLevel::DEBUG: {
-            this->display.FColor = DisplayColor::ORANGE;
+            this->display.FColor = DisplayColor::GRAYISH;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "DEBUG" );
             this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
@@ -67,7 +65,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
         case HeadLevel::OK: {
             this->display.FColor = DisplayColor::GREEN;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
-            this->printk( this->display.FColor, this->display.BColor, "OK" );
+            this->printk( this->display.FColor, this->display.BColor, "OK/READY" );
             this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
             this->display.FColor = DisplayColor::WHITE;
             break;
@@ -76,6 +74,14 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             this->display.FColor = DisplayColor::YELLOW;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "START" );
+            this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
+            this->display.FColor = DisplayColor::WHITE;
+            break;
+        }
+        case HeadLevel::WARNING: {
+            this->display.FColor = DisplayColor::ORANGE;
+            this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
+            this->printk( this->display.FColor, this->display.BColor, "WARNING" );
             this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
             this->display.FColor = DisplayColor::WHITE;
             break;
@@ -101,14 +107,14 @@ PUBLIC namespace QuantumNEC::Lib::IO {
     auto basic_ostream< Types::char_t >::operator<< < Types::int64_t >(
         IN Types::int64_t __val )
         ->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
-        this->printk( this->display.FColor, this->display.BColor, "%ld", __val );
+        this->operator<<( (Types::int128_t)__val );
         return *this;
     }
     template <>
     auto basic_ostream< Types::char_t >::operator<< < Types::int128_t >(
         IN Types::int128_t __val )
         ->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
-        this->printk( this->display.FColor, this->display.BColor, "%lld", __val );
+        this->printk( this->display.FColor, this->display.BColor, "%ld", __val );
         return *this;
     }
     template <>
@@ -129,14 +135,14 @@ PUBLIC namespace QuantumNEC::Lib::IO {
     auto basic_ostream< Types::char_t >::operator<< < Types::uint64_t >(
         IN Types::uint64_t __val )
         ->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
-        this->printk( this->display.FColor, this->display.BColor, "%lu", __val );
+        this->operator<<( (Types::uint128_t)__val );
         return *this;
     }
     template <>
     auto basic_ostream< Types::char_t >::operator<< < Types::uint128_t >(
         IN Types::uint128_t __val )
         ->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
-        this->printk( this->display.FColor, this->display.BColor, "%llu", __val );
+        this->printk( this->display.FColor, this->display.BColor, "%lu", __val );
         return *this;
     }
     template <>
@@ -154,8 +160,14 @@ PUBLIC namespace QuantumNEC::Lib::IO {
         return *this;
     }
     template <>
-    auto
-    basic_ostream< Types::char_t >::operator<< < Types::Ptr< CONST Types::char_t > >(
+    auto basic_ostream< Types::char_t >::operator<< < Types::Ptr< Types::char_t > >(
+        IN Types::Ptr< Types::char_t > __val )
+        ->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
+        this->operator<<( reinterpret_cast< Types::Ptr< CONST Types::char_t > >( __val ) );
+        return *this;
+    }
+    template <>
+    auto basic_ostream< Types::char_t >::operator<< < Types::Ptr< CONST Types::char_t > >(
         IN Types::Ptr< CONST Types::char_t > __val )
         ->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
         this->printk( this->display.FColor, this->display.BColor, "%s", __val );
@@ -265,6 +277,12 @@ PUBLIC namespace QuantumNEC::Lib::IO {
         this->printk( this->display.FColor, this->display.BColor, "%p", __val );
         return *this;
     }
+    template <>
+    auto basic_ostream< Types::char_t >::operator<< < Lib::Types::BOOL >( IN Lib::Types::BOOL __val )->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
+        this->printk( this->display.FColor, this->display.BColor, "%d", static_cast< Lib::Types::int32_t >( __val ) );
+        return *this;
+    }
+
     template <>
     auto basic_ostream< Types::char_t >::operator<< < Lib::Types::R_Ref< ios::ios_base > >( IN Lib::Types::R_Ref< ios::ios_base > )->CONST Types::L_Ref< basic_ostream< Types::char_t > > {
         // 写入string

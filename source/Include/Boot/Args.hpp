@@ -16,8 +16,8 @@ typedef struct
 class BootServiceArgs : protected BootServiceDataManager< ArgsStackConfig >
 {
 public:
-    explicit BootServiceArgs( IN ArgsStackConfig *config, IN CONST UINT64 size );
-    virtual ~BootServiceArgs( VOID ) = default;
+    explicit BootServiceArgs( IN ArgsStackConfig *config, IN CONST UINT64 size ) noexcept( true );
+    virtual ~BootServiceArgs( VOID ) noexcept( true ) = default;
 
 public:
     auto argsPush( IN OUT VOID **object, IN UINT64 size ) -> EFI_STATUS;

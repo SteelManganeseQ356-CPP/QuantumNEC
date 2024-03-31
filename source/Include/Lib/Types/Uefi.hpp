@@ -79,7 +79,7 @@ typedef struct
 // Root System Description Pointer
 typedef struct
 {
-    CHAR8 signature[8];
+    CHAR8 signature[ 8 ];
     UINT8 checkSum;
     CHAR8 OEMID[ 6 ];
     UINT8 revision;
@@ -147,6 +147,7 @@ typedef struct
 } MemoryConfig;
 typedef struct
 {
+    Lib::Types::Ptr< VOID > fontBuffer;
 } UnicodeTTF;
 typedef struct BootConfig
 {

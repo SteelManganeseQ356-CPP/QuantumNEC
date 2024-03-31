@@ -7,13 +7,22 @@
 PUBLIC namespace QuantumNEC::Architecture::Platform {
     PUBLIC typedef struct
     {
+        Lib::Types::uint64_t cr4;
+        Lib::Types::uint64_t cr3;
+        Lib::Types::uint64_t cr2;
+        Lib::Types::uint64_t cr0;
+        // CR1，CR5~CR7, CR9~CR15为保留，无法访问
+        // CR8目前不知道咋访问
+    } _packed ControlRegisterFrame;
+    PUBLIC typedef struct
+    {
         Lib::Types::uint64_t rax;
         Lib::Types::uint64_t rbx;
         Lib::Types::uint64_t rcx;
         Lib::Types::uint64_t rdx;
+        Lib::Types::uint64_t rbp;
         Lib::Types::uint64_t rsi;
         Lib::Types::uint64_t rdi;
-        Lib::Types::uint64_t rbp;
         Lib::Types::uint64_t r8;
         Lib::Types::uint64_t r9;
         Lib::Types::uint64_t r10;
@@ -22,6 +31,19 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
         Lib::Types::uint64_t r13;
         Lib::Types::uint64_t r14;
         Lib::Types::uint64_t r15;
+    } _packed GeneralRegisterFrame;
+    PUBLIC typedef struct
+    {
+        Lib::Types::uint64_t ds;
+        Lib::Types::uint64_t es;
+        Lib::Types::uint64_t fs;
+        Lib::Types::uint64_t gs;
+    } _packed SegmentRegisterFrame;
+    PUBLIC typedef struct :
+        ControlRegisterFrame,
+        SegmentRegisterFrame,
+        GeneralRegisterFrame
+    {
     } _packed RegisterFrame;
     PUBLIC constexpr const auto AR_G_4K { 0x8000 };
     PUBLIC constexpr const auto AR_D_32 { 0x4000 };
@@ -54,35 +76,25 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
     PUBLIC constexpr const auto RPL3 { 0x3 };
     PUBLIC constexpr const auto TI_GDT { 0x0 };
     PUBLIC constexpr const auto TILDT { 0x4 };
-    PUBLIC constexpr const auto SELECTOR_CODE64_K { ( 1 << 3 ) | TI_GDT | RPL0 }; /* 代码段 */
-    PUBLIC constexpr const auto SELECTOR_DATA64_K { ( 2 << 3 ) | TI_GDT | RPL0 }; /* 数据段 */
-    PUBLIC constexpr const auto SELECTOR_TSS { ( 9 << 3 ) | TI_GDT | RPL0 };      /* TSS段 */
-    PUBLIC constexpr const auto SELECTOR_CODE64_U { ( 3 << 3 ) | TI_GDT | RPL3 }; /* 用户代码段 */
-    PUBLIC constexpr const auto SELECTOR_DATA64_U { ( 4 << 3 ) | TI_GDT | RPL3 }; /* 用户数据段 */
-    PUBLIC constexpr const auto SELECTOR_CODE32_K { ( 7 << 3 ) | TI_GDT | RPL0 };
-    /* 代码段 */
-    PUBLIC constexpr const auto SELECTOR_DATA32_K { ( 8 << 3 ) | TI_GDT | RPL0 }; /* 数据段 */
+    PUBLIC constexpr const auto SELECTOR_CODE64_KERNEL { ( 1 << 3 ) | TI_GDT | RPL0 }; /* 64位内核代码段 */
+    PUBLIC constexpr const auto SELECTOR_DATA64_KERNEL { ( 2 << 3 ) | TI_GDT | RPL0 }; /* 64位内核数据段 */
+    PUBLIC constexpr const auto SELECTOR_TSS { ( 9 << 3 ) | TI_GDT | RPL0 };           /* TSS段 */
+    PUBLIC constexpr const auto SELECTOR_CODE64_USER { ( 3 << 3 ) | TI_GDT | RPL3 };   /* 64位用户代码段 */
+    PUBLIC constexpr const auto SELECTOR_DATA64_USER { ( 4 << 3 ) | TI_GDT | RPL3 };   /* 64位用户数据段 */
 
     /** @brief -------------GDT描述符属性 **/
 
     PUBLIC constexpr const auto KERNEL_PAGE_DIR_TABLE_POS { (unsigned long long)0x5f9000 };
     PUBLIC constexpr const auto KERNEL_VMA_BASE { 0xffff800000000000 };
-
-    PUBLIC constexpr inline auto KADDR_P2V( const auto &addr ) {
-        return addr + KERNEL_VMA_BASE;
-    }
-    PUBLIC constexpr inline auto KADDR_V2P( const auto &addr ) {
-        return addr - KERNEL_VMA_BASE;
-    }
     /** @brief -------------TSS描述符属性 **/
 
     PUBLIC constexpr const auto TSS_D_0 { 0 };
     PUBLIC constexpr const auto AR_TSS32 { AR_G_4K | TSS_D_0 | AR_L | AR_AVL | AR_P | AR_DPL_0 | AR_S_SYS | AR_TYPE_TSS };
     PUBLIC constexpr const auto AR_TSS64 { AR_G_4K | TSS_D_0 | AR_L | AR_AVL | AR_P | AR_DPL_0 | AR_S_SYS | AR_TYPE_TSS };
-    PUBLIC constexpr const auto EFLAGS_MBS { 1 << 1 };
-    PUBLIC constexpr const auto EFLAGS_IF_1 { 1 << 9 };
-    PUBLIC constexpr const auto EFLAGS_IF_0 { 0 << 9 };
-    PUBLIC constexpr const auto EFLAGS_IOPL_0 { 0 << 12 };
+    PUBLIC constexpr const auto RFLAGS_MBS { 1 << 1 };
+    PUBLIC constexpr const auto RFLAGS_IF_1 { 1 << 9 };
+    PUBLIC constexpr const auto RFLAGS_IF_0 { 0 << 9 };
+    PUBLIC constexpr const auto RFLAGS_IOPL_0 { 0 << 12 };
 
     /** @brief -------------IDT描述符属性 **/
 
@@ -96,7 +108,12 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
 
     /** @brief -------------三种描述符数量 **/
 
-    PUBLIC constexpr const auto IDT_MAX { 256 };
-    PUBLIC constexpr const auto GDT_MAX { 128 };
-    PUBLIC constexpr const auto TSS_MAX { 8 };
+    PUBLIC constexpr const auto INTERRUPT_DESCRIPTOR_COUNT { 256 };
+    PUBLIC constexpr const auto GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT { 32 };
+    PUBLIC constexpr const auto SEGMENT_DESCRIPTOR_COUNT { 11 };
+    PUBLIC constexpr const auto TASK_STATE_SEGMENT_DESCRIPTOR_COUNT { GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT };
+    PUBLIC constexpr const auto LOCAL_DESCRIPTOR_COUNT { GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT * SEGMENT_DESCRIPTOR_COUNT - TASK_STATE_SEGMENT_DESCRIPTOR_COUNT };
+
+    /** @brief -------------最大CORE数量 **/
+    PUBLIC constexpr const auto CORE_COUNT { GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT };
 }     // namespace QuantumNEC::Architecture::Platform

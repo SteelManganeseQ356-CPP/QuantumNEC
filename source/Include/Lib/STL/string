@@ -1,14 +1,11 @@
 #pragma once
-#include <Lib/STL/char_traits>
 #include <Lib/STL/cstring>
-#include <Lib/STL/memory>
-#include <Lib/STL/type_traits>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 PUBLIC namespace QuantumNEC::Lib::STL {
     template < typename _CharT,
-               typename _Traits = char_traits< _CharT >,
-               typename _Alloc = allocator< _CharT > >
+               typename _Traits = char,
+               typename _Alloc = char >
     class basic_string;
     using string = basic_string< Lib::Types::char_t >;
     template <>

@@ -34,7 +34,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
          * @param counter_mode 计数器模式
          * @param counter_value 初始值
          */
-        auto frequencySet(
+        auto frequency_set(
             IN Lib::Types::uint8_t counter_port,
             IN Lib::Types::uint8_t counter_no,
             IN Lib::Types::uint8_t rwl,

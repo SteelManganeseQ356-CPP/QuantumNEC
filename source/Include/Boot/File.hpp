@@ -16,8 +16,8 @@ typedef struct
 class BootServiceFile : protected BootServiceDataManager< FileConfig >
 {
 public:
-    explicit BootServiceFile( VOID );
-    virtual ~BootServiceFile( VOID ) = default;
+    explicit BootServiceFile( VOID ) noexcept( true );
+    virtual ~BootServiceFile( VOID ) noexcept( true ) = default;
 
 public:
     /**
@@ -25,15 +25,13 @@ public:
      * @param FileName 文件名
      * @param FileHandle 文件服务
      */
-    auto GetFileHandle( IN wchar_t *FileName, OUT EFI_FILE_PROTOCOL **FileHandle )
-        -> EFI_STATUS;
+    auto GetFileHandle( IN wchar_t *FileName, OUT EFI_FILE_PROTOCOL **FileHandle ) -> EFI_STATUS;
     /**
      * @brief 读取文件
      * @param File 文件服务
      * @param FileBase 存储地址
      */
     auto ReadFile( IN EFI_FILE_PROTOCOL *File, OUT EFI_PHYSICAL_ADDRESS *FileBase ) -> EFI_STATUS;
-
     /**
      * @brief 关闭文件
      * @brief File 文件服务
@@ -41,6 +39,6 @@ public:
     auto CloseFile( IN EFI_FILE_PROTOCOL *File ) -> EFI_STATUS;
 
 private:
-    EFI_FILE_PROTOCOL *gFP { NULL };
+    inline STATIC EFI_FILE_PROTOCOL *gFP { };
 };
 }     // namespace QuantumNEC::Boot

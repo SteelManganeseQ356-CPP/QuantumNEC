@@ -110,21 +110,26 @@ using ElfProgramHeader = ProgramHeader32;
 class BootServiceELF
 {
 public:
-    explicit BootServiceELF( VOID );
-    virtual ~BootServiceELF( VOID ) = default;
+    explicit BootServiceELF( VOID ) noexcept( true );
+    virtual ~BootServiceELF( VOID ) noexcept( true ) = default;
 
 protected:
     EFI_PHYSICAL_ADDRESS address { };
 
 private:
-    BootServiceFile fileUtils;
-
+    inline STATIC BootServiceFile fileUtils { }; // 文件读取
 private:
-    auto CheckELF( IN EFI_PHYSICAL_ADDRESS KernelBuffer ) -> EFI_STATUS;
+    /**
+     * @brief 解析文件是否为ELF格式
+    */
+    auto CheckELF( IN EFI_PHYSICAL_ADDRESS path ) -> EFI_STATUS;
 
-    auto LoadSegments( IN EFI_PHYSICAL_ADDRESS KernelBufferBase ) -> EFI_STATUS;
-
+    auto LoadSegments( IN EFI_PHYSICAL_ADDRESS base ) -> EFI_STATUS;
 public:
+    /**
+     * @brief 装载内核
+     * @param kernelPath 内核地址
+    */
     auto loadKernel( IN CONST wchar_t *kernelPath ) -> EFI_STATUS;
 };
 }     // namespace QuantumNEC::Boot

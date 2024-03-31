@@ -43,7 +43,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
         Lib::Types::uint64_t row;
     } Position;
     // 64kb缓冲区
-    PUBLIC Lib::Types::char_t buffer[ 65535 ] { };
+    PUBLIC Lib::Types::char_t buffer[ 0x10000 ] { };
     /**
      * @brief 基本输出
      */

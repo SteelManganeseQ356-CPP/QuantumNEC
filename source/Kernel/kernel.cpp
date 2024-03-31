@@ -1,3 +1,2 @@
 extern "C" void kernelMain( ) {
-    
 }

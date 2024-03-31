@@ -14,3 +14,5 @@
 #define _packed __attribute__( ( packed ) )     // 定义特殊结构
 #define _weak __attribute__( ( weak ) )
 #define _aligned( n ) __attribute__( ( __aligned__( ( n ) ) ) )
+#define _used __attribute__( ( used ) )
+#define _unused __attribute__( ( unused ) )

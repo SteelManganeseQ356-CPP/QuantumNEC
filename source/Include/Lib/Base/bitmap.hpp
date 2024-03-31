@@ -3,21 +3,29 @@
 #include <Lib/Types/type_bool.hpp>
 #define BITMAP_MASK 1
 PUBLIC namespace QuantumNEC::Lib::Base {
-    PUBLIC typedef struct
-    {
-        Lib::Types::uint64_t mapLen;                     // 位图以字节为单位的长度
-        Lib::Types::Ptr< Lib::Types::uint8_t > bits;     // 位图
-    } BitMapData;
-
     PUBLIC class BitmapManagement
     {
+    private:
+        typedef struct
+        {
+            Lib::Types::uint64_t length;                    // 位图以字节为单位的长度
+            Lib::Types::Ptr< Lib::Types::byte_t > bits;     // 位图
+        } BitMapData;
+
     public:
+        explicit( TRUE ) BitmapManagement( VOID ) noexcept {
+        }
         /**
          * @brief 初始化位图
-         * @param btmp 要初始化的位图指针
+         * @param bit_length 要初始化的位图长度
+         * @param bits       要初始化的位图指针
          */
-        explicit( TRUE ) BitmapManagement( IN Lib::Types::Ptr< BitMapData > btmp ) noexcept;
+        explicit( TRUE ) BitmapManagement( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) noexcept;
+        explicit( TRUE ) BitmapManagement( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept;
         virtual ~BitmapManagement( VOID ) noexcept;
+
+    public:
+        auto operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< BitmapManagement >;
 
     public:
         /**
@@ -33,7 +41,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
          * @param cnt 要分配的位数
          * @retval 分配成功返回位的下标 分配失败返回-1
          */
-        auto alloc( IN Lib::Types::size_t cnt ) -> Lib::Types::int64_t;
+        auto allocate( IN Lib::Types::size_t cnt ) -> Lib::Types::int64_t;
         /**
          * @brief 将位图的bit_index位设为value
          * @param btmp 位图指针
@@ -43,16 +51,14 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         auto set( IN Lib::Types::size_t bit_idx, IN Lib::Types::int8_t value ) -> VOID;
 
     public:
-        /**
-         * @brief 更换bitmap
-         * @param btmp 要更换的对象
-         */
-        auto
-        changeBitmap( IN Lib::Types::Ptr< BitMapData > btmp ) -> VOID {
-            this->bitmap = btmp;
+        auto set_length( IN Lib::Types::uint64_t bit_length ) -> VOID {
+            this->bitmap_.length = bit_length;
+        }
+        auto set_bits( IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) -> VOID {
+            this->bitmap_.bits = bits;
         }
 
     private:
-        Lib::Types::Ptr< BitMapData > bitmap;
+        BitMapData bitmap_ { };
     };
 }

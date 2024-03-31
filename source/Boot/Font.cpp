@@ -1,5 +1,7 @@
 #include <Boot/Font.hpp>
+#include <Boot/Include.hpp>
 #include <Boot/File.hpp>
+#include <Boot/Graphics.hpp>
 #include <Boot/Logger.hpp>
 namespace QuantumNEC::Boot {
 BootServiceFont::BootServiceFont( UnicodeTTF *config ) :
@@ -9,7 +11,7 @@ BootServiceFont::BootServiceFont( UnicodeTTF *config ) :
 {
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
-    logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Initialize the font file management." );
+    logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Initialize the font file management." );
     logger.Close( );
 }
 
@@ -39,6 +41,7 @@ auto BootServiceFont::getUnicodeTTF( IN CONST wchar_t *fontPath ) -> EFI_STATUS 
     this->put( ).fontBuffer = reinterpret_cast< VOID * >( fontBuffer );
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Load the font file is OK." );
     logger.Close( );
-    return EFI_SUCCESS;
+    Status = displayStep( );
+    return Status;
 }
 }     // namespace QuantumNEC::Boot

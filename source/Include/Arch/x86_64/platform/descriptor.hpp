@@ -3,8 +3,8 @@
 #endif
 #pragma once
 #include <Lib/Base/deflib.hpp>
-#include <Lib/STL/concepts>
 #include <Lib/Types/Uefi.hpp>
+#include <concepts>
 PUBLIC namespace QuantumNEC::Architecture::Platform {
     /**
      * @brief 描述符管理模板
@@ -12,7 +12,7 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
      */
     PUBLIC template < typename D >
         requires requires( Lib::Types::Ptr< D > test ) {
-            { test->set( test ) } -> Lib::STL::same_as< D & >;
+            { test->set( test ) } -> std::same_as< D & >;
         }
     class DescriptorManagement
     {

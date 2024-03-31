@@ -1,5 +1,6 @@
 #include <Boot/Acpi.hpp>
 #include <Boot/Include.hpp>
+#include <Boot/Graphics.hpp>
 namespace QuantumNEC::Boot {
 BootServiceAcpi::BootServiceAcpi( IN AcpiConfig *config ) :
     BootServiceDataManager< AcpiConfig > {
@@ -27,6 +28,7 @@ auto BootServiceAcpi::getApicTable( VOID ) -> EFI_STATUS {
     this->put( ).rsdpTable = reinterpret_cast< Rsdp * >( rsdpTable );
     logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "Load the ACPI Table." );
     logger.Close( );
+    Status = displayStep( );
     return Status;
 }
 }     // namespace QuantumNEC::Boot

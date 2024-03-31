@@ -21,37 +21,37 @@ PUBLIC namespace QuantumNEC::Driver::Display {
         /**
          * @brief 图形界面初始化
          */
-        auto windowInitialize( VOID ) noexcept -> Lib::Types::SystemStatus;
+        auto window_initialize( VOID ) noexcept -> Lib::Types::SystemStatus;
         /**
          * @brief 桌面初始化
          */
-        auto GUIInitialize( VOID ) noexcept -> Lib::Types::SystemStatus;
+        auto GUI_initialize( VOID ) noexcept -> Lib::Types::SystemStatus;
         /**
          * @brief 绘制终端
          */
-        auto displayShell( VOID ) noexcept -> Lib::Types::SystemStatus;
+        auto display_shell( VOID ) noexcept -> Lib::Types::SystemStatus;
 
     public:
         /**
          * @brief 蓝屏
-         * @param exceptionNumber 异常中断号
+         * @param irq 异常中断号
          */
-        auto errorBlueScreen( IN CONST Lib::Types::uint8_t exceptionNumber ) noexcept -> Lib::Types::SystemStatus;
+        auto display_error_blue_screen( IN CONST Lib::Types::uint8_t irq ) noexcept -> Lib::Types::SystemStatus;
 
     private:
         /**
          * @brief 绘制像素点
-         * @param VideoHandle 要写入的地址
-         * @param Color 写入像素点的颜色
+         * @param video_handle 要写入的地址
+         * @param color 写入像素点的颜色
          * @param X 横轴指标
          * @param Y 纵轴指标
-         * @param VideoLong 视图长度
+         * @param video_long 视图长度
          */
-        auto displayPixel( IN Lib::Types::Ptr< Lib::Types::uint32_t > VideoHandle,
-                           IN Lib::Types::L_Ref< Lib::IO::DisplayColor > Color,
-                           IN Lib::Types::L_Ref< Lib::Types::int32_t > X,
-                           IN Lib::Types::L_Ref< Lib::Types::int32_t > Y,
-                           IN Lib::Types::L_Ref< Lib::Types::uint32_t > VideoLong ) noexcept -> Lib::Types::SystemStatus;
+        auto display_pixel( IN Lib::Types::Ptr< Lib::Types::uint32_t > video_handle,
+                            IN Lib::Types::L_Ref< Lib::IO::DisplayColor > color,
+                            IN Lib::Types::L_Ref< Lib::Types::int32_t > X,
+                            IN Lib::Types::L_Ref< Lib::Types::int32_t > Y,
+                            IN Lib::Types::L_Ref< Lib::Types::uint32_t > video_long ) noexcept -> Lib::Types::SystemStatus;
         /**
          * @brief 设置Pos参数
          * @param XResolution 横轴长度
@@ -65,7 +65,7 @@ PUBLIC namespace QuantumNEC::Driver::Display {
          * @param FB_addr 起始地址
          * @param FB_length 字的长度
          */
-        auto SetPos(
+        auto set_pos(
             IN Lib::Types::L_Ref< Lib::Types::uint32_t > XResolution,
             IN Lib::Types::L_Ref< Lib::Types::uint32_t > YResolution,
             IN Lib::Types::int32_t XPosition, IN Lib::Types::int32_t YPosition,
@@ -81,12 +81,12 @@ PUBLIC namespace QuantumNEC::Driver::Display {
          * @param y0 左上角点坐标y
          * @param x1 右下角点坐标x
          * @param y1 右下角点坐标y
-         * @param Color 填充颜色
+         * @param color 填充颜色
          */
-        auto drawFill(
+        auto display_fill(
             IN CONST Lib::Types::int32_t x0, IN CONST Lib::Types::int32_t y0,
             IN CONST Lib::Types::int32_t x1, IN CONST Lib::Types::int32_t y1,
-            IN CONST Lib::Types::R_Ref< Lib::IO::DisplayColor > Color )
+            IN CONST Lib::Types::R_Ref< Lib::IO::DisplayColor > color )
             -> Lib::Types::SystemStatus;
         ;
 

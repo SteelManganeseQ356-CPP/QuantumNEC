@@ -3,9 +3,7 @@
     {
       "name": "linux-gcc-x64",
       "includePath": [
-        "${workspaceFolder}/**",
-        "/home/QuantumNEC/QuantumOS/QuantumNEC/source/",
-        "/home/QuantumNEC/QuantumOS/QuantumNEC/source/Include/"
+        "${workspaceFolder}/source/Include/"
       ],
       "defines": [],
       "compilerPath": "/usr/bin/gcc",

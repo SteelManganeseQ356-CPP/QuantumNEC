@@ -41,20 +41,21 @@ public:
     auto closeTimer( VOID ) -> EFI_STATUS;
     /**
      * @brief 跳转内核
+     * @param _config 启动时获取的信息，要传递给内核
      */
-    auto jumpToKernel( IN BootConfig * ) -> EFI_STATUS;
+    auto jumpToKernel( IN BootConfig * _config ) -> EFI_STATUS;
 
 public:
-    explicit BootServiceMain( IN BootConfig * );
-    virtual ~BootServiceMain( VOID ) = default;
+    explicit BootServiceMain( IN BootConfig * ) noexcept( true );
+    virtual ~BootServiceMain( VOID ) noexcept( true ) = default;
 
 private:
-    Config kernelConfig;
-    PageConfig memoryPage;
+    inline STATIC Config kernelConfig { };
+    inline STATIC PageConfig memoryPage { };
 };
 inline auto initializeGlobalData( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable ) -> VOID {     // 初始化全局变量
     Boot::GlobalImageHandle = ImageHandle;
     Boot::GlobalSystemTable = SystemTable;
     return;
 }
-}
+}     // namespace QuantumNEC::Boot

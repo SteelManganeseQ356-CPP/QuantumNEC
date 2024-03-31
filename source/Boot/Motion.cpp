@@ -1,6 +1,6 @@
-#include <Boot/Graphics.hpp>
-#include <Boot/Include.hpp>
 #include <Boot/Motion.hpp>
+#include <Boot/Include.hpp>
+#include <Boot/Graphics.hpp>
 #include <Boot/Utils.hpp>
 #include <Boot/Logger.hpp>
 namespace QuantumNEC::Boot {

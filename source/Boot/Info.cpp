@@ -1,24 +1,24 @@
-#include <Boot/Graphics.hpp>
-#include <Boot/Include.hpp>
 #include <Boot/Info.hpp>
+#include <Boot/Include.hpp>
+#include <Boot/Graphics.hpp>
 #include <Boot/Logger.hpp>
 #include <Boot/Utils.hpp>
 namespace QuantumNEC::Boot {
-auto BootServiceInfo::iniParseLine( IN IniConfig *Ini, IN CHAR8 *Line ) -> decltype( auto ) {
+auto BootServiceInfo::iniParseLine( IN IniConfig *Ini, IN CHAR8 *Line ) -> EFI_STATUS {
 }
-auto BootServiceInfo::iniGet( IniConfig *ini, CHAR8 *key ) -> decltype( auto ) {
+auto BootServiceInfo::iniGet( IniConfig *ini, CHAR8 *key ) -> EFI_STATUS {
 }
-auto BootServiceInfo::iniLoad( IN wchar_t *Path ) -> decltype( auto ) {
+auto BootServiceInfo::iniLoad( IN CONST wchar_t *Path ) -> EFI_STATUS {
     LoggerConfig LogIni { };
     BootServiceLogger logger { &LogIni };
     EFI_STATUS Status { EFI_SUCCESS };
     if ( !Path ) {
         logger.LogError( EFI_INVALID_PARAMETER );
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Path is NULL." );
+        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Config.ini path is null." );
         logger.Close( );
         return EFI_INVALID_PARAMETER;
     }
-    Status = this->fileUtils.GetFileHandle( Path, &this->file );
+    Status = this->fileUtils.GetFileHandle( const_cast< wchar_t * >( Path ), &this->file );
     if ( EFI_ERROR( Status ) ) {
         logger.LogError( Status );
         logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Get Config.ini file handle error." );
@@ -39,29 +39,32 @@ auto BootServiceInfo::iniLoad( IN wchar_t *Path ) -> decltype( auto ) {
         return Status;
     }
     logger.Close( );
-
+    displayStep( );
     return Status;
 }
 
 auto BootServiceInfo::iniGetString( IN CHAR8 *Name ) -> wchar_t * {
-    CHAR8 *IniRaw { reinterpret_cast< CHAR8 * >( this->iniBuffer ) };
+    CHAR16 *IniRaw { reinterpret_cast< CHAR16 * >( this->iniBuffer ) };
     wchar_t *String { };
     UINT64 ComMentCount { };
-    while ( *IniRaw++ ) {
-        switch ( bool flags { true }; *IniRaw ) {
+    while ( *IniRaw++ != -1 ) {
+        switch ( bool flags { true }; *IniRaw != '\n' ) {
         case ':': {
             auto tmp1 { Name };
             auto tmp2 { IniRaw };
             while ( *tmp1++ ) {
-                if ( !( *tmp1++ && *tmp1 == *tmp2++ ) ) {
-                    flags = false;
-                    break;
-                }
-                else {
+                if ( *tmp1 && *tmp1 == *tmp2++ ) {
                     flags = true;
                     continue;
                 }
+                else {
+                    flags = false;
+                    break;
+                }
             }
+            AsciiPrint( "%d\n", flags );
+            while ( true )
+                ;
             if ( !flags ) {
                 break;
             }
@@ -87,13 +90,11 @@ auto BootServiceInfo::iniGetString( IN CHAR8 *Name ) -> wchar_t * {
 }
 BootServiceInfo::BootServiceInfo( IN Config *config ) :
     BootServiceDataManager< Config > {
-    config
-}
-{
+        config
+    } {
     LoggerConfig LogIni { };
     BootServiceLogger logger { &LogIni };
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Initialize the config system service management." );
     logger.Close( );
-    displayStep( );
 }
 }     // namespace QuantumNEC::Boot

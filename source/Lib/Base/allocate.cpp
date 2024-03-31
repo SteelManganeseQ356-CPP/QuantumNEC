@@ -1,34 +1,35 @@
 #include <Lib/Base/allocate.hpp>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    AllocateManagement::AllocateManagement(
-        IN Lib::Types::Ptr< AllocateTable > _table,
-        IN Lib::Types::Ptr< AllocateTableEntry > entries,
-        IN Lib::Types::uint64_t entriesCount ) noexcept :
-        table_ { _table } {
-        this->table_->entriesCount = entriesCount;
-        this->table_->frees = 0;
-        this->table_->entries = entries;
+    AllocateManagement::AllocateManagement( VOID ) {
     }
-    AllocateManagement::AllocateManagement( IN CONST Lib::Types::L_Ref< AllocateManagement > _alloc_table ) noexcept {
-        this->table_ = _alloc_table.table_;
+    AllocateManagement::AllocateManagement( IN Lib::Types::uint64_t entries_count ) {
+        this->entry_ = new AllocateTableEntry[ entries_count ];
+        this->table_.entries_count = entries_count;
+        this->table_.frees_count = 0;
+        this->table_.entries = this->entry_;
     }
-    auto AllocateManagement::operator=( IN CONST Lib::Types::L_Ref< AllocateManagement > _alloc_table ) noexcept -> CONST Lib::Types::L_Ref< AllocateManagement > {
-        this->table_ = _alloc_table.table_;
+    AllocateManagement::AllocateManagement( IN Lib::Types::R_Ref< AllocateManagement > _table ) {
+        this->table_.entries_count = _table.table_.entries_count;
+        this->table_.frees_count = _table.table_.frees_count;
+        this->table_.entries = _table.table_.entries;
+    }
+    auto AllocateManagement::operator=( IN Lib::Types::R_Ref< AllocateManagement > _table )->CONST Lib::Types::L_Ref< AllocateManagement > {
+        this->table_.entries_count = _table.table_.entries_count;
+        this->table_.frees_count = _table.table_.frees_count;
+        this->table_.entries = _table.table_.entries;
         return *this;
     }
-    auto AllocateManagement::alloc( IN Types::uint64_t unitsCount )->Types::int64_t {
+    auto AllocateManagement::allocate( IN Types::uint64_t units_count )->Types::int64_t {
         Lib::Types::uint64_t index { };
-       
-        for ( Lib::Types::uint64_t i { }; i < this->table_->entriesCount; i++ ) {
-                
-            if ( this->table_->entries[ i ].unitsCount >= unitsCount ) {
-                index = this->table_->entries[ i ].index;
-                this->table_->entries[ i ].index += unitsCount;
-                this->table_->entries[ i ].unitsCount -= unitsCount;
-                if ( !(this->table_->entries[ i ].unitsCount) ) {
-                    this->table_->frees--;
-                    while ( i < this->table_->frees ) {
-                        this->table_->entries[ i ] = this->table_->entries[ i + 1 ];
+        for ( Lib::Types::uint64_t i { }; i < this->table_.entries_count; i++ ) {
+            if ( this->table_.entries[ i ].units_count >= units_count ) {
+                index = this->table_.entries[ i ].index;
+                this->table_.entries[ i ].index += units_count;
+                this->table_.entries[ i ].units_count -= units_count;
+                if ( !( this->table_.entries[ i ].units_count ) ) {
+                    this->table_.frees_count--;
+                    while ( i < this->table_.frees_count ) {
+                        this->table_.entries[ i ] = this->table_.entries[ i + 1 ];
                         i++;
                     }
                 }
@@ -37,24 +38,23 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         }
         return -1;
     }
-    auto AllocateManagement::free( IN Types::uint64_t index, IN Types::uint64_t unitsCount )->VOID {
+    auto AllocateManagement::free( IN Types::uint64_t index, IN Types::uint64_t units_count )->VOID {
         Lib::Types::uint64_t i { }, j { };
-        while ( i < this->table_->frees ) {
-            if ( this->table_->entries[ i ].index > index ) {
+        while ( i < this->table_.frees_count ) {
+            if ( this->table_.entries[ i ].index > index ) {
                 break;
             }
             ++i;
         }
         if ( i > 0 ) {
-            if ( this->table_->entries[ i - 1 ].index + this->table_->entries[ i - 1 ].unitsCount == index ) {
-                this->table_->entries[ i - 1 ].unitsCount += unitsCount;
-                if ( i < this->table_->frees ) {
-                    if ( index + unitsCount == this->table_->entries[ i ].index ) {
-                        this->table_->entries[ i - 1 ].unitsCount +=
-                            this->table_->entries[ i ].unitsCount;
-                        this->table_->frees--;
-                        while ( i < this->table_->frees ) {
-                            this->table_->entries[ i ] = this->table_->entries[ i + 1 ];
+            if ( this->table_.entries[ i - 1 ].index + this->table_.entries[ i - 1 ].units_count == index ) {
+                this->table_.entries[ i - 1 ].units_count += units_count;
+                if ( i < this->table_.frees_count ) {
+                    if ( index + units_count == this->table_.entries[ i ].index ) {
+                        this->table_.entries[ i - 1 ].units_count += this->table_.entries[ i ].units_count;
+                        this->table_.frees_count--;
+                        while ( i < this->table_.frees_count ) {
+                            this->table_.entries[ i ] = this->table_.entries[ i + 1 ];
                             i++;
                         }
                     }
@@ -62,29 +62,28 @@ PUBLIC namespace QuantumNEC::Lib::Base {
                 return;
             }
         }
-        if ( i < this->table_->frees ) {
-            if ( index + unitsCount == this->table_->entries[ i ].index ) {
-                this->table_->entries[ i ].index = index;
-                this->table_->entries[ i ].unitsCount += unitsCount;
+        if ( i < this->table_.frees_count ) {
+            if ( index + units_count == this->table_.entries[ i ].index ) {
+                this->table_.entries[ i ].index = index;
+                this->table_.entries[ i ].units_count += units_count;
                 return;
             }
         }
-        if ( this->table_->frees < this->table_->entriesCount ) {
-            for ( j = this->table_->frees; j > i; --j ) {
-                this->table_->entries[ j ] = this->table_->entries[ j - 1 ];
+        if ( this->table_.frees_count < this->table_.entries_count ) {
+            for ( j = this->table_.frees_count; j > i; --j ) {
+                this->table_.entries[ j ] = this->table_.entries[ j - 1 ];
             }
-            this->table_->frees++;
-            this->table_->entries[ i ].index = index;
-            this->table_->entries[ i ].unitsCount = unitsCount;
+            this->table_.frees_count++;
+            this->table_.entries[ i ].index = index;
+            this->table_.entries[ i ].units_count = units_count;
             return;
         }
         return;
     }
-    auto AllocateManagement::total( VOID )->Lib::Types::uint64_t {
-        Lib::Types::uint64_t i;
-        Lib::Types::uint64_t free_units = 0;
-        for ( i = 0; i < this->table_->frees; i++ ) {
-            free_units += this->table_->entries[ i ].unitsCount;
+    auto AllocateManagement::get_free_total( VOID )->Lib::Types::uint64_t {
+        Lib::Types::uint64_t free_units { };
+        for ( Lib::Types::uint64_t i { }; i < this->table_.frees_count; ++i ) {
+            free_units += this->table_.entries[ i ].units_count;
         }
         return free_units;
     }

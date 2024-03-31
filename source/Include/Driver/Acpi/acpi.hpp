@@ -76,12 +76,15 @@ PUBLIC namespace QuantumNEC::Driver::Acpi {
 
     public:
         template < typename T >
-        auto isValid( VOID ) CONST->Lib::Types::BOOL;
+        auto is_valid( VOID ) CONST->Lib::Types::BOOL;
+
+    public:
+        inline STATIC Lib::Types::Ptr< VOID > io_apic_address { }, local_apic_address { };
 
     private:
         Lib::Types::Ptr< Lib::Types::Rsdp > rsdp;
         Lib::Types::Ptr< Xsdt > xsdt;
     };
     template <>
-    auto AcpiManagement::isValid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL;
+    auto AcpiManagement::is_valid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL;
 }

@@ -32,8 +32,8 @@ class BootServiceAcpi :
     protected BootServiceDataManager< AcpiConfig >
 {
 public:
-    explicit BootServiceAcpi( IN AcpiConfig *config );
-    virtual ~BootServiceAcpi( VOID ) = default;
+    explicit BootServiceAcpi( IN AcpiConfig *config ) noexcept( true );
+    virtual ~BootServiceAcpi( VOID ) noexcept( true ) = default;
 
 public:
     auto getApicTable( VOID ) -> EFI_STATUS;

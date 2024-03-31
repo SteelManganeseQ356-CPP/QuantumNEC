@@ -1,35 +1,17 @@
+#include <Boot/Memory.hpp>
+#include <Boot/Include.hpp>
 #include <Boot/Graphics.hpp>
 #include <Boot/Logger.hpp>
-#include <Boot/Memory.hpp>
 #include <Boot/Utils.hpp>
-#include <Boot/Include.hpp>
-constexpr CONST auto PAGE_4K { ( 0x1000 ) };
-constexpr CONST auto PAGE_4KSHIFT { ( 12 ) };
-constexpr CONST auto PAGE_4KMASK { ( 0xfff ) };
-constexpr CONST auto PAGE_2M { ( 0x200000 ) };
-constexpr CONST auto PAGE_2MSHIFT { ( 21 ) };
-constexpr CONST auto PAGE_2MMASK { ( 0x1fffff ) };
-constexpr CONST auto PAGE_P { 1ull << 0 };
-constexpr CONST auto PAGE_RW { 1ull << 1 };
-constexpr CONST auto PAGE_US { 1ull << 2 };
-constexpr CONST auto PAGE_WT { 1ull << 3 };
-constexpr CONST auto PAGE_CD { 1ull << 4 };
-constexpr CONST auto PAGE_AC { 1ull << 5 };
-constexpr CONST auto PAGE_DIRTY { 1ull << 6 };      //  仅在PD/PTE中有效
-constexpr CONST auto PAGE_PAT { 1ull << 7 };        //  仅在PD/PTE中有效
-constexpr CONST auto PAGE_GLOBAL { 1ull << 8 };     //  仅在PD/PTE中有效
-constexpr CONST auto PAGE_NX { 1ull << 63 };
 namespace QuantumNEC::Boot {
 BootServiceMemory::BootServiceMemory( IN MemoryConfig *config ) :
     BootServiceDataManager< MemoryConfig > {
-    config
-}
-{
+        config
+    } {
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Initialize the memory service management." );
     logger.Close( );
-    displayStep( );
 }
 auto BootServiceMemory::getMemoryMap( VOID ) -> EFI_STATUS {
     LoggerConfig logIni { };
@@ -60,6 +42,7 @@ auto BootServiceMemory::getMemoryMap( VOID ) -> EFI_STATUS {
     this->put( ).MemoryCount = this->put( ).MemorySize / this->put( ).DescriptorSize;
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Get Memory Map." );
     logger.Close( );
+    Status = displayStep( );
     return Status;
 }
 auto BootServicePage::map( IN UINT64 pml4TableAddress, IN UINT64 physicsAddress, IN UINT64 virtualAddress, IN UINT64 size, IN UINT64 flags, IN MemoryMode mode ) -> decltype( auto ) {
@@ -81,8 +64,7 @@ auto BootServicePage::map( IN UINT64 pml4TableAddress, IN UINT64 physicsAddress,
         }
         else     // 如果找到了
         {
-            pd_pt = reinterpret_cast< UINT64 * >(
-                PE_V_ADDRESS( pml4Table[ VIRT_PML4E_IDX( virtualAddress ) ] ) );
+            pd_pt = reinterpret_cast< UINT64 * >( PE_V_ADDRESS( pml4Table[ VIRT_PML4E_IDX( virtualAddress ) ] ) );
         }
         // 如果模式为MEMMOY_1G那么设置1G的内存页并回转
         if ( mode == MemoryMode::MEMORY_1G ) {
@@ -180,12 +162,12 @@ auto BootServicePage::VTPAddress( IN UINT64 pml4TableAddress, IN UINT64 virtualA
 
     UINT64 *pml4Table { reinterpret_cast< UINT64 * >( pml4TableAddress ) };
     UINT64 *pd_pt { }, *pd { }, *pt { };
-    // 如果未映射此页面，则返回 FALSE
-    if ( !this->isPageMapped( pml4TableAddress, virtualAddress ) )
-        return static_cast< UINT64 >( FALSE );
+    // 如果未映射此页面，则返回NULL
+    if ( !this->isPageMapped( pml4TableAddress, virtualAddress ) ) {
+        return (UINT64)( NULL );
+    }
     /* 逐步找到页面 */
-    pd_pt = reinterpret_cast< UINT64 * >(
-        PE_V_ADDRESS( pml4Table[ VIRT_PML4E_IDX( virtualAddress ) ] ) );
+    pd_pt = reinterpret_cast< UINT64 * >( PE_V_ADDRESS( pml4Table[ VIRT_PML4E_IDX( virtualAddress ) ] ) );
     if ( pd_pt[ VIRT_PDPTE_IDX( virtualAddress ) ] & PDPTE_1G ) {
         return PE_V_ADDRESS( pd_pt[ VIRT_PDPTE_IDX( virtualAddress ) ] );
     }
@@ -193,93 +175,85 @@ auto BootServicePage::VTPAddress( IN UINT64 pml4TableAddress, IN UINT64 virtualA
     if ( pd[ VIRT_PDE_IDX( virtualAddress ) ] & PDE_2M ) {
         return PE_V_ADDRESS( pd[ VIRT_PDE_IDX( virtualAddress ) ] );
     }
-    pt = reinterpret_cast< UINT64 * >(
-        PE_V_ADDRESS( pd[ VIRT_PDE_IDX( virtualAddress ) ] ) );
-    return PE_V_ADDRESS( pt[ VIRT_PTE_IDX( virtualAddress ) ] )
-           | VIRT_OFFSET( virtualAddress );
+    pt = reinterpret_cast< UINT64 * >( PE_V_ADDRESS( pd[ VIRT_PDE_IDX( virtualAddress ) ] ) );
+    return PE_V_ADDRESS( pt[ VIRT_PTE_IDX( virtualAddress ) ] ) | VIRT_OFFSET( virtualAddress );
 }
-auto BootServicePage::pml4TableDump( IN UINT64 *pml4Table ) -> decltype( auto ) {
-    if ( !pml4Table )
+auto BootServicePage::pmlDump( IN UINT64 *pml ) -> decltype( auto ) {
+    if ( pml == NULL ) {
         return;
+    }
     UINT64 virtualAddress { };
-    UINT64 *pd_pt { }, *pd { }, *pt { };
-    UINT16 ipml4E { }, ipd_ptE { }, ipdE { }, iptE { };
-    // PML4 Level
-    while ( ipml4E < 512 ) {
-        if ( ~*pml4Table & PE_P ) {
-            virtualAddress += PDPT_S;
+    UINT64 *pdpt, *pd, *pt;
+    for ( UINT16 iPML4E = 0; iPML4E < 512; iPML4E++, pml++ ) {
+        if ( ~*pml & PE_P ) {
+            virtualAddress += PDPT_SIZE;
             continue;
         }
-        pd_pt = reinterpret_cast< UINT64 * >( PE_V_ADDRESS( *pml4Table ) );
-        // PDPT Level
-        while ( ipd_ptE < 512 ) {
-            if ( ~*pd_pt & PE_P || *pd_pt & PDPTE_1G ) {
-                virtualAddress += PD_S;
+        pdpt = (UINT64 *)PE_V_ADDRESS( *pml );
+        for ( UINT16 pdptIndex { }; pdptIndex < 512; pdptIndex++, pdpt++ ) {
+            if ( ~*pdpt & PE_P ) {
+                virtualAddress += PD_SIZE;
                 continue;
             }
-            pd = reinterpret_cast< UINT64 * >( PE_V_ADDRESS( *pd_pt ) );
-            // PD Level
-            while ( ipdE < 512 ) {
-                if ( ~*pd & PE_P || *pd & PDE_2M ) {
-                    virtualAddress += PT_S;
+            if ( *pdpt & PDPTE_1G ) {
+                virtualAddress += PD_SIZE;
+                continue;
+            }
+            pd = (UINT64 *)PE_V_ADDRESS( *pdpt );
+            for ( UINT16 pdeIndex { }; pdeIndex < 512; pdeIndex++, pd++ ) {
+                if ( ~*pd & PE_P ) {
+                    virtualAddress += PT_SIZE;
                     continue;
                 }
-                pt = reinterpret_cast< UINT64 * >( PE_V_ADDRESS( *pd ) );
-                // PT level
-                while ( iptE < 512 ) {
+                if ( *pd & PDE_2M ) {
+                    virtualAddress += PT_SIZE;
+                    continue;
+                }
+                pt = (UINT64 *)PE_V_ADDRESS( *pd );
+                for ( UINT16 ptdIndex { }; ptdIndex < 512; ptdIndex++, pt++ ) {
                     if ( ~*pt & PE_P ) {
-                        virtualAddress += PG_S;
+                        virtualAddress += PAGE_4K;
                         continue;
                     }
-                    virtualAddress += PG_S;
-                    ++iptE, ++pt;
+                    virtualAddress += PAGE_4K;
                 }
-                ++ipdE, ++pd;
             }
-            ++ipd_ptE, ++pd_pt;
         }
-        ++ipml4E, ++pml4Table;
     }
 }
 auto BootServicePage::updateCr3( VOID ) -> UINTN {
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
     logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "Update CR3 register." );
-
     UINTN ret { AsmWriteCr3( reinterpret_cast< UINT64 >( this->pageTable ) ) };
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Update CR3 register OK." );
     logger.Close( );
     return ret;
-    
 }
 BootServicePage::BootServicePage( IN PageConfig *memoryPages ) :
     BootServiceDataManager< PageConfig > {
-    memoryPages
-}
-{
+        memoryPages
+    } {
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
     logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS,
                    "Initialize the memory pages service management." );
     logger.Close( );
-    displayStep( );
 }
 //  支持5级分页就是pml5 不然是pml4
 
 auto BootServicePage::setPageTable( ) -> EFI_STATUS {
-    STATIC bool is5LevelPagingSupport = FALSE;
-    STATIC UINT64 kernelPageMap { };
-    STATIC UINT64 kernelPageDirectoryCount { };
     // 设置页表
+    EFI_STATUS Status { EFI_SUCCESS };
+    bool is5LevelPagingSupport = FALSE;
     UINT8 physicalAddressBits { };
     UINT32 pml5EntryCount { 1 };
     UINT32 pml4EntryCount { 1 };
     UINT32 pdpEntryCount { 1 };
-    UINT32 kernelPageTableSize { };
     UINT32 tmp { };
     UINT32 eax { }, ecx { };
     _cpuid( 0x7, tmp, tmp, ecx, tmp );     // 查询各个寄存器
-    is5LevelPagingSupport = ( ecx & ( 1ull << 16 ) != 0 );
+    is5LevelPagingSupport = ( ( ecx & ( 1ull << 16 ) ) != 0 );
     _cpuid( 0x80000000, eax, tmp, tmp, tmp );
     if ( eax >= 0x80000008 ) {
         _cpuid( 0x80000008, eax, tmp, tmp, tmp );
@@ -299,48 +273,50 @@ auto BootServicePage::setPageTable( ) -> EFI_STATUS {
         physicalAddressBits = 39;
     }
     pdpEntryCount = 1ull << ( physicalAddressBits - 30 );
-    kernelPageTableSize = ( ( pdpEntryCount + 1 ) * pml4EntryCount + 1 ) * pml5EntryCount + ( is5LevelPagingSupport ? 1 : 0 );
-    kernelPageDirectoryCount = ( (pdpEntryCount)*pml4EntryCount ) * pml5EntryCount * 512;
-    VOID *kernelPageTable = AllocatePages( kernelPageTableSize );
+    // 这里可以适当更改(比如像我注释掉的方法)，比如改成AllocatePages的方法，我用的是使用固定地址0x0600000与0xffff800000600000
+    // UINT32 kernelPageTableSize { ( ( pdpEntryCount + 1 ) * pml4EntryCount + 1 ) * pml5EntryCount + ( is5LevelPagingSupport ? 1 : 0 ) };
+    // VOID *kernelPageTable = AllocatePages( kernelPageTableSize );
+    VOID *kernelPageTable = reinterpret_cast< VOID * >( KERNEL_PAGE_DIRECTORY_PHYSICAL_ADDRESS );
     UINT64 pageTableAddress { reinterpret_cast< UINT64 >( kernelPageTable ) };
     this->pageTable = pageTableAddress;
-    UINT64 *pml5Entry { };
-    UINT64 *pml4Entry { };
-    UINT64 *pdpEntry { };
-    UINT64 *pdEntry { };
+    UINT64 *pml5Entry { (UINT64 *)pageTableAddress }, *pml4Entry { }, *pdpEntry { }, *pdEntry { };
     UINT64 pageAddress { };
     if ( is5LevelPagingSupport ) {
-        pml5Entry = (UINT64 *)pageTableAddress;
         pageTableAddress += PAGE_4K;
     }
     for ( UINT64 pml5Index { }; pml5Index < (UINT64)( pml5EntryCount ); ++pml5Index ) {
         pml4Entry = (UINT64 *)pageTableAddress;
         pageTableAddress += PAGE_4K;
-
         if ( is5LevelPagingSupport ) {
-            *pml5Entry++ = (UINT64)pml4Entry | PAGE_P | PAGE_RW;
+            this->make_pml( pml5Entry++, pml4Entry, PE_P | PE_RW );
         }
-
         for ( UINT64 pml4Index { }; pml4Index < (UINT64)( pml5EntryCount == 1 ? pml4EntryCount : 512 ); ++pml4Index ) {
             pdpEntry = (UINT64 *)pageTableAddress;
             pageTableAddress += PAGE_4K;
-
-            *pml4Entry++ = (UINT64)pdpEntry | PAGE_P | PAGE_RW;
-
+            this->make_pml( pml4Entry++, pdpEntry, PE_P | PE_RW );
             for ( UINT64 pdpIndex { }; pdpIndex < (UINT64)( pml4EntryCount == 1 ? pdpEntryCount : 512 ); ++pdpIndex ) {
                 pdEntry = (UINT64 *)pageTableAddress;
                 pageTableAddress += PAGE_4K;
-
-                *pdpEntry++ = (UINT64)pdEntry | PAGE_P | PAGE_RW;
-
+                this->make_pdp( pdpEntry++, pdEntry, PE_P | PE_RW );
                 for ( UINT64 pdIndex { }; pdIndex < 512; ++pdIndex ) {
-                    *pdEntry++ = (UINT64)pageAddress | PAGE_P | PAGE_RW | ( 1ull << 7 );
+                    this->make_pd( pdEntry++, pageAddress, PE_P | PE_RW | PTE_PAT );
                     pageAddress += PAGE_2M;
                 }
             }
         }
     }
+    this->pmlDump( (UINT64 *)this->pageTable );
     this->updateCr3( );
-    return EFI_SUCCESS;
+    Status = displayStep( );
+    return Status;
+}
+auto BootServicePage::make_pd( OUT UINT64 *pdEntry, IN UINT64 pageTableAddress, IN CONST UINT32 flags ) -> VOID {
+    *pdEntry = pageTableAddress | flags;
+}
+auto BootServicePage::make_pdp( OUT UINT64 *pdpEntry, IN UINT64 *pdEntry, IN CONST UINT32 flags ) -> VOID {
+    *pdpEntry = (UINT64)pdEntry | flags;
+}
+auto BootServicePage::make_pml( OUT UINT64 *pmlEntry, IN UINT64 *pdpEntry, IN CONST UINT32 flags ) -> VOID {
+    *pmlEntry = (UINT64)pdpEntry | flags;
 }
 }     // namespace QuantumNEC::Boot

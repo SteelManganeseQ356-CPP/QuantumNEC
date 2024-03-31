@@ -23,10 +23,10 @@ template < class T >
 class BootServiceDataManager
 {
 public:
-    explicit BootServiceDataManager( CONST T *_data ) :
+    explicit BootServiceDataManager( CONST T *_data ) noexcept( true ) :
         data_ { *_data } {
     }
-    virtual ~BootServiceDataManager( VOID ) = default;
+    virtual ~BootServiceDataManager( VOID ) noexcept( true ) = default;
 
 public:
     auto put( VOID ) -> T & {
