@@ -31,7 +31,8 @@ PUBLIC namespace {
         ArchitectureManagement< TARGET_ARCH >::InterruptManagement::enable_interrupt( );
         auto return_value { entry( arg ) };
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "A Task Exited. Return Value is " << return_value << Lib::IO::endl;
-        Kernel::Task::ProcessManagement::schedule( );
+        while ( TRUE )
+            ;
     }
 }
 PUBLIC namespace QuantumNEC::Kernel::Task {

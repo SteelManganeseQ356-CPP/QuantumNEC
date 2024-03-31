@@ -7,13 +7,14 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
     PUBLIC auto time_interrupt_entry( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame )->VOID {
         using namespace Kernel;
         using namespace Kernel::Task;
+        Architecture::Interrupt::Pic8259aManagement::eoi( frame->irq );
+        global_ticks++;
         Lib::Types::Ptr< TaskManagement::ProcessPCB > current { TaskManagement::get_current< TaskManagement::ProcessPCB >( ) };
         if ( current->stack_magic != TASK_STACK_MAGIC ) {
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "Task stack error!" << Lib::IO::endl;
             while ( TRUE )
                 ;
         }
-        global_ticks++;
         current->counter++;
         if ( !current->ticks ) {
             TaskManagement::schedule( );
@@ -21,8 +22,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
         else {
             current->ticks--;
         }
-
-        Architecture::Interrupt::Pic8259aManagement::eoi( frame->irq );
+        return;
     }
     TimeEntry::TimeEntry( VOID ) {
         Architecture::CPU::InterruptDescriptorManagement::set_interrupt_handler( 0x20, time_interrupt_entry );     // 注册时间中断入口函数
