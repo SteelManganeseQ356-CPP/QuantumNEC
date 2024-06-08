@@ -2,13 +2,13 @@
 #include <Lib/IO/Base/font>
 #include <Lib/Types/type_file.hpp>
 PUBLIC namespace QuantumNEC::Lib::IO {
-    BasePrint::BasePrint( IN CONST Lib::Types::L_Ref< Position > _Pos ) :
+    BasePrint::BasePrint( IN Lib::Types::L_Ref< CONST Position > _Pos ) noexcept :
         Pos { _Pos } {
     }
-    auto BasePrint::getPos( IN CONST Lib::Types::L_Ref< Position > Pos ) CONST->VOID {
+    auto BasePrint::getPos( IN Lib::Types::L_Ref< CONST Position > Pos ) CONST->VOID {
         this->Pos = Pos;
     }
-    auto BasePrint::putPos( VOID ) CONST->CONST Lib::Types::L_Ref< Position > {
+    auto BasePrint::putPos( VOID ) CONST->Lib::Types::L_Ref< CONST Position > {
         return this->Pos;
     }
     auto BasePrint::putc(

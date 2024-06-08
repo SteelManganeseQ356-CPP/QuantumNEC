@@ -4,6 +4,7 @@
 #pragma once
 #include <Lib/Base/deflib.hpp>
 #include <Lib/Types/Uefi.hpp>
+#include <Lib/Types/type_bool.hpp>
 #include <concepts>
 PUBLIC namespace QuantumNEC::Architecture::Platform {
     /**
@@ -17,7 +18,7 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
     class DescriptorManagement
     {
     public:
-        explicit( TRUE ) DescriptorManagement( IN Lib::Types::Ptr< D > _descriptor, IN Lib::Types::uint16_t _descriptorCount ) noexcept( TRUE ) :
+        explicit( TRUE ) DescriptorManagement( IN Lib::Types::Ptr< D > _descriptor, IN Lib::Types::uint16_t _descriptorCount ) noexcept :
             xdtr { Lib::Types::uint16_t( sizeof( D ) * _descriptorCount - 1 ), _descriptor } {
         }
         virtual ~DescriptorManagement( VOID ) noexcept = default;

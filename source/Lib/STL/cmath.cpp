@@ -1,6 +1,6 @@
-#include <Arch/ArchInfo.hpp>
 #include <Lib/STL/cmath>
-#include <Utils/asm.hpp>
+#include <Arch/ArchInfo.hpp>
+#include <Lib/Base/deflib.hpp>
 PUBLIC namespace {
     using namespace QuantumNEC::Lib::Types;
     PRIVATE constexpr auto __Accuracy { 0.0000001f };
@@ -20,12 +20,9 @@ PUBLIC namespace QuantumNEC::Lib::STL {
 
     PUBLIC auto sqrt( IN Lib::Types::double32_t x )->Lib::Types::double32_t {
         Lib::Types::double32_t result { };
-#if SYSTEM_ARCH == x86_64
         ASM( "fsqrt"
              : "=t"( result )
              : "0"( x ) );
-#elif SYSTEM_ARCH == risc_v
-#endif
         return result;
     }
 

@@ -4,7 +4,6 @@
 #include <Arch/Arch.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
-#include <Utils/asm.hpp>
 #include <Driver/driver.hpp>
 #include <Kernel/task.hpp>
 PUBLIC namespace {
@@ -65,12 +64,12 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         }
         return entry;
     }
-    MemoryMapManagement::MemoryMapManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) {
+    MemoryMapManagement::MemoryMapManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Start mapping the page table." << Lib::IO::endl;
         // 消除页保护
         this->page_table_protect( FALSE );
         // 获取在启动时服务设置的页表
-        this->page_memory_table.pml = reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( Utils::read_cr3( ) );
+        this->page_memory_table.pml = this->get_current_page_tabel( );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::INFO ] << "Get a pages table from cr3, address of page table -> " << (VOID *)( this->page_memory_table.pml ) << "." << Lib::IO::endl;
         // 映射
         /*
@@ -147,7 +146,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         physical_pde.set_pdt( physical_pdt.pdt + PDE_IDX( virtual_address ) );
         virtual_pde.set_pdt( reinterpret_cast< decltype( physical_pdt.pdt ) >( ( physical_pde.pdt ) ) );
         virtual_pde.make_pdt( reinterpret_cast< decltype( virtual_pde.pdt ) >( physics_address ), flags | checkMode( ) );
-        Utils::invlpg( reinterpret_cast< Lib::Types::Ptr< VOID > >( virtual_address ) );
+        Architecture::ArchitectureManagement< TARGET_ARCH >::invlpg( reinterpret_cast< Lib::Types::Ptr< VOID > >( virtual_address ) );
         lock.release( );
     }
     auto MemoryMapManagement::remap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
@@ -188,23 +187,28 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
     }
     auto MemoryMapManagement::page_table_protect( IN Lib::Types::BOOL flags )->VOID {
         if ( !flags ) {
-            Utils::write_cr0( Utils::read_cr0( ) & ~0x10000 );
+            Architecture::ArchitectureManagement< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManagement< TARGET_ARCH >::read_cr0( ) & ~0x10000 );
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "Disable the page protection." << Lib::IO::endl;
         }
         else {
-            Utils::write_cr0( Utils::read_cr0( ) | 0x10000 );
+            Architecture::ArchitectureManagement< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManagement< TARGET_ARCH >::read_cr0( ) | 0x10000 );
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "Enable the page protection." << Lib::IO::endl;
         }
     };
     auto MemoryMapManagement::make_page_directory_table( VOID )->Lib::Types::Ptr< Lib::Types::uint64_t > {
-        pml_t page_directory_address { .pml { reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( HeapMemoryManagement::malloc( PT_SIZE ) ) } };
+        pml_t page_directory_address { .pml { reinterpret_cast< decltype( page_directory_address.pml ) >( HeapMemoryManagement::malloc( PT_SIZE ) ) } };
+
         if ( !page_directory_address.pml ) {
             return NULL;
         }
-        // Lib::STL::memcpy( reinterpret_cast< Lib::Types::Ptr< VOID > >( page_directory_address.pml ), reinterpret_cast< Lib::Types::Ptr< VOID > >( KERNEL_PAGE_DIRECTORY_PHYSICAL_ADDRESS ), 1024 );
+
+        Lib::STL::memcpy( page_directory_address.pml, page_memory_table.pml, 2048 );
         return page_directory_address.pml;
     }
     auto MemoryMapManagement::activate_page_directory_table( IN Lib::Types::Ptr< VOID > )->VOID {
-        // Utils::write_cr3( page_directory_table_address ? reinterpret_cast< Lib::Types::uint64_t >( page_directory_table_address ) : reinterpret_cast< Lib::Types::uint64_t >( page_memory_table.pml ) );
+        // Architecture::ArchitectureManagement< TARGET_ARCH >::write_cr3( page_directory_table_address ? reinterpret_cast< Lib::Types::uint64_t >( page_directory_table_address ) : reinterpret_cast< Lib::Types::uint64_t >( page_memory_table.pml ) );
+    }
+    auto MemoryMapManagement::get_current_page_tabel( VOID )->Lib::Types::Ptr< Lib::Types::uint64_t > {
+        return reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( Architecture::ArchitectureManagement< TARGET_ARCH >::read_cr3( ) );
     }
 }

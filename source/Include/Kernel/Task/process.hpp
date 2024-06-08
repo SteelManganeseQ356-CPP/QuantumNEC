@@ -1,8 +1,10 @@
 #pragma once
+#include "Lib/Types/type_ptr.hpp"
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Arch/Arch.hpp>
 #include <Kernel/memory.hpp>
+#include <Kernel/Task/message.hpp>
 #include <Lib/Base/allocate.hpp>
 #include <Lib/Base/attribute.hpp>
 #include <Lib/STL/list>
@@ -16,8 +18,9 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
     PUBLIC class ProcessManagement
     {
     public:
-        using TaskFunction = Lib::Types::FuncPtr< Lib::Types::int64_t, Lib::Types::uintptr_t >;
         using TaskArg = Lib::Types::uint64_t;
+        using TaskReturnValue = Lib::Types::int64_t;
+        using TaskFunction = Lib::Types::FuncPtr< TaskReturnValue, TaskArg >;
 
         enum class TaskType : Lib::Types::uint64_t {
             PF_KERNEL_THREAD = ( 1 << 0 ),
@@ -65,8 +68,10 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
             Lib::Types::Ptr< VOID > stack;                              // 任务所持有的栈起始地址
             Lib::Base::AllocateManagement allocate_table;               // 虚拟地址表，在page_directory不为空时有效
             // 记录寄存器状态
-            Lib::Types::Ptr< Frame > cpu_frame;                                               // 保存的CPU寄存器状态信息
-            Lib::Types::Ptr< ArchitectureManagement< TARGET_ARCH >::FPUFrame > fpu_frame;     // 保存的FPU寄存器状态信息
+            volatile Lib::Types::Ptr< Frame > cpu_frame;                                                             // 保存的CPU寄存器状态信息
+            volatile Lib::Types::Ptr< Architecture::ArchitectureManagement< TARGET_ARCH >::FPUFrame > fpu_frame;     // 保存的FPU寄存器状态信息
+            // 进程间通信需要的
+            MessageManagement message;     // 进程消息体
             // 任务信息
             Lib::Types::int64_t PID;                       // 任务ID
             Lib::Types::char_t name[ TASK_NAME_SIZE ];     // 任务名
@@ -101,7 +106,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
                 stack_magic { object.stack_magic } {
                 Lib::STL::strncpy( this->name, object.name, TASK_NAME_SIZE );
             };
-            auto operator=( IN CONST Lib::Types::L_Ref< TaskPCB< Frame > > object ) -> Lib::Types::L_Ref< TaskPCB< Frame > > {
+            auto operator=( IN Lib::Types::L_Ref< CONST TaskPCB< Frame > > object ) -> Lib::Types::L_Ref< TaskPCB< Frame > > {
                 this->all_task_queue = object.all_task_queue;
                 this->general_task_queue = object.general_task_queue;
                 this->page_directory = object.page_directory;
@@ -124,27 +129,12 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
         };
 
     public:
-        typedef struct :
 #if defined( __x86_64__ )
-            Architecture::Platform::SegmentRegisterFrame,
-            Architecture::Platform::GeneralRegisterFrame
+        using ProcessFrame = Architecture::CPU::InterruptFrame;     // 进程栈
 #elif defined( __aarch64__ )
 #else
 #error Not any registers
 #endif
-        {
-#if defined( __x86_64__ )
-            Lib::Types::uint64_t reserved[ 2 ];
-            Lib::Types::Ptr< VOID > rip;
-            Lib::Types::uint64_t cs;
-            Lib::Types::uint64_t rflags;
-            Lib::Types::uint64_t rsp;
-            Lib::Types::uint64_t ss;
-#elif defined( __aarch64__ )
-#else
-#error Not any registers
-#endif
-        } ProcessFrame;     // 进程栈
 
         using ProcessPCB = TaskPCB< ProcessFrame >;
 
@@ -183,7 +173,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
          */
         template < typename PCB >
         STATIC auto get_current( VOID ) -> Lib::Types::Ptr< PCB > {
-            return reinterpret_cast< Lib::Types::Ptr< PCB > >( Utils::get_rsp( ) & ~( TASK_STACK_SIZE - 1 ) );
+            return reinterpret_cast< Lib::Types::Ptr< PCB > >( Architecture::ArchitectureManagement< TARGET_ARCH >::get_rsp( ) & ~( TASK_STACK_SIZE - 1 ) );
         }
         /**
          * @brief 激活进程/线程
@@ -193,7 +183,9 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
         template < typename PCB >
         STATIC auto activate_task( IN Lib::Types::Ptr< PCB > pcb ) -> VOID {
             Memory::MemoryMapManagement::activate_page_directory_table( pcb->page_directory );
-            Architecture::CPU::GlobalSegmentDescriptorManagement::set_tss_rsp0( 0, pcb, TASK_STACK_SIZE );
+            if ( pcb->page_directory ) {
+                Architecture::CPU::GlobalSegmentDescriptorManagement::set_tss_rsp0( 0, pcb, TASK_STACK_SIZE );
+            }
         }
 
     public:
@@ -203,7 +195,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
          * @param name 任务名
          * @param type 任务PCB的类型
          */
-        STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN CONST TaskType type, IN CONST Lib::Types::int64_t flags, IN Lib::Types::uint64_t priority ) -> VOID;
+        STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN CONST TaskType type, IN IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN CONST Lib::Types::int64_t flags ) -> Lib::Types::Ptr< ProcessPCB >;
         /**
          * @brief 初始化进程栈
          * @param frame 分配好栈的地址
@@ -215,5 +207,48 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
     protected:
         inline STATIC Lib::STL::ListTable all_task_queue { };
         inline STATIC Lib::STL::ListTable ready_task_queue { };
+
+    public:
+        /**
+         * @brief 通过PID查找任务
+         * @param PID 要查找任务的PID
+         */
+        template < typename PCB >
+        STATIC auto find( IN Lib::Types::uint64_t PID ) -> Lib::Types::Ptr< PCB > {
+            Lib::Types::Ptr< Lib::STL::ListNode > node {
+                Lib::STL::list_traversal(
+                    &all_task_queue,
+                    [ & ]( Lib::Types::Ptr< Lib::STL::ListNode > node, Lib::Types::uint32_t PID ) -> Lib::Types::BOOL { return reinterpret_cast< Lib::Types::Ptr< PCB > >( node->container )->PID == PID; },
+                    PID )
+            };
+            return !node ? NULL : reinterpret_cast< Lib::Types::Ptr< PCB > >( node->container );
+        }
+
+    protected:
+        inline STATIC Lib::Types::Ptr< ProcessPCB > main_task;
+        inline STATIC Lib::Types::Ptr< ProcessPCB > idle_task;
+
+    public:
+        inline STATIC Lib::Types::Ptr< ProcessPCB > ready_task;
+        inline STATIC Lib::Types::Ptr< ProcessPCB > kernel_task;
+
+    public:
+        /**
+         * @brief 检查当前任务是否为内核进程，并对其进行save frame
+         * @param 要保存的frame
+         */
+        STATIC auto save_frame( IN Lib::Types::Ptr< CONST ProcessFrame > frame ) -> VOID {
+            if ( get_current< ProcessPCB >( ) == kernel_task ) {     // 内核进程不可能损坏
+                *main_task->cpu_frame = *frame;
+            }
+            else {
+                if ( get_current< ProcessPCB >( )->stack_magic != TASK_STACK_MAGIC ) {
+                    Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "Task stack error! PCB :" << (VOID *)get_current< ProcessPCB >( ) << Lib::IO::endl;
+                    while ( TRUE )
+                        ;
+                }
+                *get_current< ProcessPCB >( )->cpu_frame = *frame;
+            }
+        }
     };
 }

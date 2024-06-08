@@ -1,6 +1,6 @@
 #include <Lib/Debug/assert.hpp>
 #include <Lib/IO/Stream/iostream>
-#include <Utils/asm.hpp>
+#include <Arch/Arch.hpp>
 PUBLIC namespace QuantumNEC::Lib::Debug {
     PUBLIC auto assert(
         IN CONST Lib::Types::Ptr< Lib::Types::char_t > filename,
@@ -16,7 +16,7 @@ PUBLIC namespace QuantumNEC::Lib::Debug {
         sout[ ostream::HeadLevel::DEBUG ] << cmd << endl;
         sout[ ostream::HeadLevel::DEBUG ] << "!!! Assert !!!" << endl;
         while ( TRUE ) {
-            Utils::hlt( );
+            Architecture::ArchitectureManagement< TARGET_ARCH >::hlt( );
         }
     }
 }

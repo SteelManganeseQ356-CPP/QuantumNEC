@@ -9,15 +9,19 @@
 #define _ENTRY_HPP_
 #endif
 #include <Lib/Types/Uefi.hpp>
-#include <Lib/Types/type_bool.hpp>
 #include <Arch/x86_64/interrupt/entry/time.hpp>
+#include <Arch/x86_64/interrupt/entry/system_call.hpp>
+#include <Arch/x86_64/interrupt/entry/local_apic.hpp>
+
 PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
     PUBLIC class InterruptEntryRegister :
-        TimeEntry     // 时间中断(0x20号中断)入口注册
+        TimeEntry,           // 时间中断(0x20号中断)入口注册
+        SystemcallEntry,     // 系统调用(0x80号中断)入口注册
+        LocalApicEntry       // 本地APIC(0x81与0x82号中断)入口注册
     {
     public:
-        explicit( TRUE ) InterruptEntryRegister( VOID ) noexcept( TRUE );
-        virtual ~InterruptEntryRegister( VOID ) noexcept( TRUE );
+        explicit( TRUE ) InterruptEntryRegister( VOID ) noexcept;
+        virtual ~InterruptEntryRegister( VOID ) noexcept;
 
     private:
     };

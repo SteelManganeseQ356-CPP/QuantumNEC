@@ -1,3 +1,6 @@
+#ifndef _PLATFORM_HPP_
+#error Do not include the header file. Please include platform.hpp
+#endif
 #pragma once
 #include <Lib/Base/deflib.hpp>
 #include <Lib/Types/Uefi.hpp>

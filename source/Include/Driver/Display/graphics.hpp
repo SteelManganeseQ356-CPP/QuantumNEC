@@ -7,7 +7,7 @@
 #include <Lib/Types/type_base.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Lib/Types/type_int.hpp>
-PUBLIC namespace QuantumNEC::Driver::Display {
+PUBLIC namespace QuantumNEC::Driver {
     /**
      * @brief 图形化窗口驱动管理
      */
@@ -86,7 +86,7 @@ PUBLIC namespace QuantumNEC::Driver::Display {
         auto display_fill(
             IN CONST Lib::Types::int32_t x0, IN CONST Lib::Types::int32_t y0,
             IN CONST Lib::Types::int32_t x1, IN CONST Lib::Types::int32_t y1,
-            IN CONST Lib::Types::R_Ref< Lib::IO::DisplayColor > color )
+            IN Lib::Types::R_Ref< Lib::IO::DisplayColor > color )
             -> Lib::Types::SystemStatus;
         ;
 

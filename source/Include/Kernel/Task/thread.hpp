@@ -17,27 +17,28 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
             Lib::Types::uint64_t r14;
             Lib::Types::uint64_t r13;
             Lib::Types::uint64_t r12;
-            Lib::Types::uint64_t rbp;
             Lib::Types::uint64_t rbx;
             Lib::Types::uint64_t rdi;
             Lib::Types::uint64_t rsi;
+            Lib::Types::uint64_t rbp;
             Lib::Types::Ptr< VOID > rip;
             // 栈顶
 #elif defined( __aarch64__ )
 #else
 #error Not any registers
 #endif
-            explicit( TRUE ) ThreadFrame( IN CONST Lib::Types::L_Ref< ThreadFrame > object ) noexcept :
+            explicit( TRUE ) ThreadFrame( IN Lib::Types::L_Ref< CONST ThreadFrame > object ) noexcept :
 #if defined( __x86_64__ )
                 r15 { object.r15 },
                 r14 { object.r14 },
                 r13 { object.r13 },
                 r12 { object.r12 },
-                rbp { object.rbp },
                 rbx { object.rbx },
                 rdi { object.rdi },
                 rsi { object.rsi },
+                rbp { object.rbp },
                 rip { object.rip }
+
 #elif defined( __aarch64__ )
 
 #else
@@ -45,16 +46,16 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
 #endif
             {
             }
-            auto operator=( IN CONST Lib::Types::L_Ref< ThreadFrame > object ) -> Lib::Types::L_Ref< ThreadFrame > {
+            auto operator=( IN Lib::Types::L_Ref< CONST ThreadFrame > object ) -> Lib::Types::L_Ref< ThreadFrame > {
 #if defined( __x86_64__ )
                 r15 = object.r15;
                 r14 = object.r14;
                 r13 = object.r13;
                 r12 = object.r12;
-                rbp = object.rbp;
                 rbx = object.rbx;
                 rdi = object.rdi;
                 rsi = object.rsi;
+                rbp = object.rbp;
                 rip = object.rip;
 #elif defined( __aarch64__ )
 #else
@@ -63,7 +64,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
                 return *this;
             }
             // 栈顶
-        } ThreadFrame;
+        } _packed ThreadFrame;
 
         using ThreadPCB = TaskPCB< ThreadFrame >;
 
@@ -80,11 +81,8 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
          * @param name 线程名
          * @param priority 任务优先级
          */
-        STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN CONST TaskType type, IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN CONST Lib::Types::int64_t flags ) -> Lib::Types::Ptr< ThreadPCB >;
 
-        STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN CONST TaskType type, IN CONST Lib::Types::int64_t flags, IN Lib::Types::uint64_t priority ) -> VOID {
-            ProcessManagement::create( entry, arg, name, type, flags, priority );
-        }
+        STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN CONST TaskType type, IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN CONST Lib::Types::int64_t flags ) -> Lib::Types::Ptr< ThreadPCB >;
         /**
          * @brief 初始化线程栈
          * @param frame 分配好栈的地址
@@ -101,11 +99,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
          * @brief 解除任务阻塞
          * @param pcb 指向的任务PCB
          */
-        STATIC auto reblock( IN Lib::Types::Ptr< VOID > pcb ) -> VOID;
-
-    public:
-        inline STATIC Lib::Types::Ptr< ThreadPCB > main_thread;
-        inline STATIC Lib::Types::Ptr< ThreadPCB > idle_thread;
+        STATIC auto unblock( IN Lib::Types::Ptr< VOID > pcb ) -> VOID;
     };
     class TaskLock : std::atomic_flag
     {

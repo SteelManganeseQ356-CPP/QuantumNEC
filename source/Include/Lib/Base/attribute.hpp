@@ -7,7 +7,7 @@
 #define USED __attribute__( ( used ) )
 #define ALIGN( x ) __attribute__( ( aligned( #x ) ) )
 #define VOLATILE __attribute__( ( volatile ) )
-#define ASMCALL __attribute__( ( regparms( 0 ) ) )
+#define ASMCALL __attribute__( ( sysv_abi ) )
 #define ____cacheline_aligned __attribute__( ( __aligned__( 32 ) ) )
 #define ALIGNED( x ) __attribute__( ( __aligned__( x ) ) )
 #define REGPARMS( x ) __attribute__( regparms( x ) )

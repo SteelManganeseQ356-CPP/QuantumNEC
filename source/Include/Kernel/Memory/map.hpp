@@ -135,6 +135,19 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
          * @param page_directory 页根目录地址
          */
         STATIC auto activate_page_directory_table( IN Lib::Types::Ptr< VOID > page_directory_table_address ) -> VOID;
+        /**
+         * @brief 获取当前页表
+         */
+        STATIC auto get_current_page_tabel( VOID ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
+        /**
+         * @brief 获取当前页表根目录
+         * @param index 当前页表根目录序号
+         */
+        STATIC auto get_page_directory( IN pml_t pml, IN Lib::Types::uint32_t index ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
+        /**
+         * @brief 获取规范地址掩码
+         */
+        STATIC auto get_canonical_address_mask( VOID ) -> Lib::Types::uint64_t;
 
     private:
         STATIC inline pml_t page_memory_table { };

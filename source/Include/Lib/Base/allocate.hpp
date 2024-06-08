@@ -27,7 +27,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         virtual ~AllocateManagement( VOID ) noexcept = default;
 
     public:
-        auto operator=( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept -> CONST Lib::Types::L_Ref< AllocateManagement >;
+        auto operator=( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept -> Lib::Types::L_Ref< CONST AllocateManagement >;
 
     public:
         /**

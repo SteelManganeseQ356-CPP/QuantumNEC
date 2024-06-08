@@ -264,20 +264,20 @@ auto BootServicePage::setPageTable( ) -> EFI_STATUS {
     }
     if ( physicalAddressBits > 48 ) {
         if ( is5LevelPagingSupport ) {
-            pml5EntryCount = 1ull << ( physicalAddressBits - 48 );
+            pml5EntryCount = ( 1ull << ( physicalAddressBits - 48 ) );
         }
         physicalAddressBits = 48;
     }
     if ( physicalAddressBits > 39 ) {
-        pml4EntryCount = 1ull << ( physicalAddressBits - 39 );
+        pml4EntryCount = ( 1ull << ( physicalAddressBits - 39 ) );
         physicalAddressBits = 39;
     }
-    pdpEntryCount = 1ull << ( physicalAddressBits - 30 );
+    pdpEntryCount = ( 1ull << ( physicalAddressBits - 30 ) );
     // 这里可以适当更改(比如像我注释掉的方法)，比如改成AllocatePages的方法，我用的是使用固定地址0x0600000与0xffff800000600000
     // UINT32 kernelPageTableSize { ( ( pdpEntryCount + 1 ) * pml4EntryCount + 1 ) * pml5EntryCount + ( is5LevelPagingSupport ? 1 : 0 ) };
     // VOID *kernelPageTable = AllocatePages( kernelPageTableSize );
-    VOID *kernelPageTable = reinterpret_cast< VOID * >( KERNEL_PAGE_DIRECTORY_PHYSICAL_ADDRESS );
-    UINT64 pageTableAddress { reinterpret_cast< UINT64 >( kernelPageTable ) };
+
+    UINT64 pageTableAddress { KERNEL_PAGE_DIRECTORY_PHYSICAL_ADDRESS };
     this->pageTable = pageTableAddress;
     UINT64 *pml5Entry { (UINT64 *)pageTableAddress }, *pml4Entry { }, *pdpEntry { }, *pdEntry { };
     UINT64 pageAddress { };
@@ -305,7 +305,7 @@ auto BootServicePage::setPageTable( ) -> EFI_STATUS {
             }
         }
     }
-    this->pmlDump( (UINT64 *)this->pageTable );
+    // this->pmlDump( (UINT64 *)this->pageTable );
     this->updateCr3( );
     Status = displayStep( );
     return Status;

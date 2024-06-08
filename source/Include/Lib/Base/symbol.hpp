@@ -12,10 +12,10 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         } SymbolData;
 
     public:
-        explicit( true ) SymbolManagement( IN Lib::Types::Ptr< SymbolData > _symbolTable, IN Lib::Types::int32_t _symbolNumber ) noexcept( true );
+        explicit( true ) SymbolManagement( IN Lib::Types::Ptr< SymbolData > _symbolTable, IN Lib::Types::int32_t _symbolNumber ) noexcept;
 
     public:
-        virtual ~SymbolManagement( VOID ) noexcept( true );
+        virtual ~SymbolManagement( VOID ) noexcept;
 
     public:
         /**

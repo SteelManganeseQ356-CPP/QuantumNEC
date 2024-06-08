@@ -1,11 +1,10 @@
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/IO/Stream/iostream>
-#include <Utils/asm.hpp>
 
 PUBLIC namespace QuantumNEC::Architecture::Interrupt {
-    InterruptManagement::InterruptManagement( VOID ) :
+    InterruptManagement::InterruptManagement( VOID ) noexcept :
 #ifndef APIC
-        Pic8259aManagement { },
+        PIC8259AManagement { },
 #else
         ApicManagement { },
 #endif
@@ -15,7 +14,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         // Interrupt Management 初始化
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the Interrupt Management." << Lib::IO::endl;
     }
-    InterruptManagement::~InterruptManagement( VOID ) {
+    InterruptManagement::~InterruptManagement( VOID ) noexcept {
     }
     auto InterruptManagement::enable_interrupt( VOID )->InterruptStatus {
         InterruptStatus status { InterruptStatus::INTERRUPT_DISABLE };
@@ -25,7 +24,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         }
         else {
             status = InterruptStatus::INTERRUPT_DISABLE;
-            Utils::sti( );
+            CPU::CPUManagement::sti( );
             return status;
         }
     }
@@ -34,7 +33,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         InterruptStatus status { InterruptStatus::INTERRUPT_DISABLE };
         if ( get_interrupt( ) == InterruptStatus::INTERRUPT_ENABLE ) {
             status = InterruptStatus::INTERRUPT_ENABLE;
-            Utils::cli( );
+            CPU::CPUManagement::cli( );
             return status;
         }
         else {
@@ -48,6 +47,6 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     }
 
     auto InterruptManagement::get_interrupt( VOID )->InterruptStatus {
-        return ( Utils::get_eflags( ) & 0x00000200 ) ? InterruptStatus::INTERRUPT_ENABLE : InterruptStatus::INTERRUPT_DISABLE;
+        return ( CPU::CPUManagement::get_rflags( ) & 0x00000200 ) ? InterruptStatus::INTERRUPT_ENABLE : InterruptStatus::INTERRUPT_DISABLE;
     }
 }

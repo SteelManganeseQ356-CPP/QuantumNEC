@@ -1,8 +1,8 @@
 #include <Driver/driver.hpp>
 #include <Lib/IO/Stream/iostream>
-PUBLIC namespace QuantumNEC::Driver::Display {
+PUBLIC namespace QuantumNEC::Driver {
     GraphicsManagement::GraphicsManagement(
-        IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > bootConfig ) :
+        IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > bootConfig ) noexcept :
         config( &bootConfig->GraphicsData ) {
         this->window_initialize( );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the Device Driver." << Lib::IO::endl;
@@ -10,15 +10,14 @@ PUBLIC namespace QuantumNEC::Driver::Display {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "The graphical interface is ready." << Lib::IO::endl;
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the Graphical Management." << Lib::IO::endl;
     }
-    GraphicsManagement::~GraphicsManagement( VOID ) {
+    GraphicsManagement::~GraphicsManagement( VOID ) noexcept {
     }
     auto GraphicsManagement::display_pixel(     // 填充一个像素
         IN Lib::Types::Ptr< Lib::Types::uint32_t > video_handle,
         IN Lib::Types::L_Ref< Lib::IO::DisplayColor > color,
         IN Lib::Types::L_Ref< Lib::Types::int32_t > X,
         IN Lib::Types::L_Ref< Lib::Types::int32_t > Y,
-        IN Lib::Types::L_Ref< Lib::Types::uint32_t > video_long )
-        ->Lib::Types::SystemStatus {
+        IN Lib::Types::L_Ref< Lib::Types::uint32_t > video_long ) noexcept -> Lib::Types::SystemStatus {
         auto pixel { video_handle };
         pixel += Y * video_long + X;
         *pixel = static_cast< Lib::Types::uint32_t >( color );
@@ -34,25 +33,24 @@ PUBLIC namespace QuantumNEC::Driver::Display {
         IN Lib::Types::Ptr< Lib::Types::uint32_t > FB_addr,
         IN Lib::Types::uint64_t FB_length ) noexcept -> Lib::Types::SystemStatus {
         // 设置Pos结构体
-        Lib::IO::Position Pos {
-            .XResolution { static_cast< Lib::Types::int32_t >( XResolution ) },
-            .YResolution { static_cast< Lib::Types::int32_t >( YResolution ) },
-            .XPosition { XPosition },
-            .YPosition { YPosition },
-            .XCharSize { XCharSize },
-            .YCharSize { YCharSize },
-            .FB_addr { FB_addr },
-            .FB_length { FB_length },
-            .column { column },
-            .row { row }
-        };
+        Lib::IO::Position Pos { };
+        Pos.XResolution = static_cast< Lib::Types::int32_t >( XResolution );
+        Pos.YResolution = static_cast< Lib::Types::int32_t >( YResolution );
+        Pos.XPosition = XPosition;
+        Pos.YPosition = YPosition;
+        Pos.XCharSize = XCharSize;
+        Pos.YCharSize = YCharSize;
+        Pos.FB_addr = FB_addr;
+        Pos.FB_length = FB_length;
+        Pos.column = column;
+        Pos.row = row;
         // 初始化系统标准输出函数
         Lib::IO::sout.getPos( Pos );
 
         return SYSTEM_SUCCESS;
     }
     // 窗口初始化
-    auto GraphicsManagement::window_initialize( VOID )->Lib::Types::SystemStatus {
+    auto GraphicsManagement::window_initialize( VOID ) noexcept -> Lib::Types::SystemStatus {
         Lib::Types::SystemStatus Status { SYSTEM_SUCCESS };
         Status = this->set_pos( this->config->HorizontalResolution,
                                 this->config->VerticalResolution,
@@ -73,7 +71,7 @@ PUBLIC namespace QuantumNEC::Driver::Display {
         return Status;
     }
 
-    auto GraphicsManagement::GUI_initialize( VOID )->Lib::Types::SystemStatus {
+    auto GraphicsManagement::GUI_initialize( VOID ) noexcept -> Lib::Types::SystemStatus {
         Lib::Types::SystemStatus Status { SYSTEM_SUCCESS };
         Status = this->set_pos( this->config->HorizontalResolution,
                                 this->config->VerticalResolution,
@@ -93,7 +91,7 @@ PUBLIC namespace QuantumNEC::Driver::Display {
         return Status;
     }
 
-    auto GraphicsManagement::display_shell( VOID )->Lib::Types::SystemStatus {
+    auto GraphicsManagement::display_shell( VOID ) noexcept -> Lib::Types::SystemStatus {
         Lib::Types::SystemStatus Status { SYSTEM_SUCCESS };
 
         // 第一层
@@ -104,9 +102,7 @@ PUBLIC namespace QuantumNEC::Driver::Display {
         this->display_fill( 16, 30, 712, this->config->VerticalResolution - 8, Lib::IO::DisplayColor::BLACK );
         return Status;
     }
-    auto GraphicsManagement::display_error_blue_screen(
-        IN CONST Lib::Types::uint8_t irq )
-        ->Lib::Types::SystemStatus {
+    auto GraphicsManagement::display_error_blue_screen( IN CONST Lib::Types::uint8_t irq ) noexcept -> Lib::Types::SystemStatus {
         if ( irq >= 0x20 ) {     // 如果是中断就没有必要画了
             return SYSTEM_SUCCESS;
         }
@@ -136,7 +132,7 @@ PUBLIC namespace QuantumNEC::Driver::Display {
     auto GraphicsManagement::display_fill(
         IN CONST Lib::Types::int32_t x0, IN CONST Lib::Types::int32_t y0,
         IN CONST Lib::Types::int32_t x1, IN CONST Lib::Types::int32_t y1,
-        IN CONST Lib::Types::R_Ref< Lib::IO::DisplayColor > color )
+        IN Lib::Types::R_Ref< Lib::IO::DisplayColor > color )
         ->Lib::Types::SystemStatus {
         Lib::Types::SystemStatus Status { SYSTEM_SUCCESS };
         auto dark_color { color };

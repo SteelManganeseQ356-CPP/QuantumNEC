@@ -52,18 +52,18 @@ PUBLIC namespace QuantumNEC::Lib::IO {
     public:
         explicit( TRUE ) BasePrint( VOID ) noexcept {
         }
-        explicit( TRUE ) BasePrint( IN CONST Lib::Types::L_Ref< Position > _Pos ) noexcept;
+        explicit( TRUE ) BasePrint( IN Lib::Types::L_Ref< CONST Position > _Pos ) noexcept;
         virtual ~BasePrint( VOID ) noexcept = default;
 
     public:
         /**
          * @brief 获取Pos
          */
-        auto getPos( IN CONST Lib::Types::L_Ref< Position > Pos ) CONST->VOID;
+        auto getPos( IN Lib::Types::L_Ref< CONST Position > Pos ) CONST->VOID;
         /**
          * @brief 给予Pos
          */
-        auto putPos( VOID ) CONST->CONST Lib::Types::L_Ref< Position >;
+        auto putPos( VOID ) CONST->Lib::Types::L_Ref< CONST Position >;
 
     public:
         /**

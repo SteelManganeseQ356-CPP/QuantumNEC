@@ -16,6 +16,7 @@ PUBLIC namespace QuantumNEC::Architecture {
                  && std::derived_from< Arch, typename Architecture::CPU::CPUManagement >
                  && std::derived_from< Arch, typename Architecture::Device::DeviceManagement >
                  && std::derived_from< Arch, typename Architecture::Interrupt::InterruptManagement >
+                 && std::derived_from< Arch, typename Architecture::Platform::SyscallManagement >
     class ArchitectureManagement : public Arch
     {
     public:

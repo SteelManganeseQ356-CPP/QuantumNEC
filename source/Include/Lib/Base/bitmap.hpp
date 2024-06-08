@@ -25,7 +25,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         virtual ~BitmapManagement( VOID ) noexcept;
 
     public:
-        auto operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< BitmapManagement >;
+        auto operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< CONST BitmapManagement >;
 
     public:
         /**

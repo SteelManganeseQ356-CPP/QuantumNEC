@@ -5,15 +5,18 @@
 #ifndef _INTERRUPT_HPP_
 #define _INTERRUPT_HPP_
 #endif
+
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
+#include <Arch/x86_64/interrupt/8259a.hpp>
 #include <Arch/x86_64/interrupt/apic.hpp>
-#include <Arch/x86_64/interrupt/pic_8258A.hpp>
 #include <Arch/x86_64/interrupt/entry/entry.hpp>
+#include <Arch/x86_64/interrupt/pit/pit.hpp>
+
 PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     PUBLIC class InterruptManagement :
 #ifndef APIC
-        public Pic8259aManagement,
+        public PIC8259AManagement,
 #else
         public ApicManagement,
 #endif
@@ -26,10 +29,10 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         };
 
     public:
-        explicit( TRUE ) InterruptManagement( VOID ) noexcept( TRUE );
+        explicit( TRUE ) InterruptManagement( VOID ) noexcept;
 
     public:
-        virtual ~InterruptManagement( VOID ) noexcept( TRUE );
+        virtual ~InterruptManagement( VOID ) noexcept;
 
     public:
         /**

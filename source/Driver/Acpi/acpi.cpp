@@ -2,6 +2,7 @@
 #include <Lib/Debug/panic.hpp>
 #include <Lib/STL/string>
 #include <Lib/IO/Stream/iostream>
+#include <Arch/Arch.hpp>
 PUBLIC namespace {
     PUBLIC using namespace QuantumNEC;
     PUBLIC using namespace QuantumNEC::Lib::Types;
@@ -28,10 +29,12 @@ PUBLIC namespace {
     PRIVATE constexpr CONST auto MADT_SIGNED { SIGN_32( 'A', 'P', 'I', 'C' ) };
     PRIVATE constexpr CONST auto APIC_SIGNED { SIGN_32( 'A', 'P', 'I', 'C' ) };
     PRIVATE constexpr CONST auto FADT_SIGNED { SIGN_32( 'F', 'A', 'C', 'P' ) };
+    PRIVATE constexpr CONST auto HPET_SIGNED { SIGN_32( 'H', 'P', 'E', 'T' ) };
+
     PRIVATE uint8_t global_system_interrupt[ GLOBAL_SYSTEM_INTERRUPT_COUNT ];
 }
-PUBLIC namespace QuantumNEC::Driver::Acpi {
-    AcpiManagement::AcpiManagement( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) :
+PUBLIC namespace QuantumNEC::Driver {
+    AcpiManagement::AcpiManagement( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept :
         rsdp { _config->AcpiData.rsdpTable },
         xsdt { reinterpret_cast< Lib::Types::Ptr< Xsdt > >( this->rsdp->xsdtAddress ) } {
         using namespace Lib::Types;
@@ -66,14 +69,14 @@ PUBLIC namespace QuantumNEC::Driver::Acpi {
             while ( true )
                 ;
         }
-        Lib::Types::Ptr< Madt > madt { reinterpret_cast< Lib::Types::Ptr< Madt > >( getEntry( ::APIC_SIGNED ) ) };
+        this->madt = reinterpret_cast< decltype( this->madt ) >( getEntry( ::APIC_SIGNED ) );
         if ( !madt ) {
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "Can not find madt." << Lib::IO::endl;
             while ( true )
                 ;
         }
-        Lib::Types::int64_t length { static_cast< decltype( length ) >( madt->length - sizeof *madt ) };
-        Lib::Types::Ptr< MadtICS > ICS { reinterpret_cast< decltype( ICS ) >( ( Lib::Types::uint64_t )( madt ) + sizeof *madt ) };
+        Lib::Types::int64_t length { static_cast< decltype( length ) >( this->madt->length - sizeof *this->madt ) };
+        Lib::Types::Ptr< MadtICS > ICS { reinterpret_cast< decltype( ICS ) >( ( Lib::Types::uint64_t )( this->madt ) + sizeof *this->madt ) };
         Lib::STL::memset( ::global_system_interrupt, 0xFF, ::GLOBAL_SYSTEM_INTERRUPT_COUNT );
         while ( length > 0 ) {
             if ( ICS->type == ICSAttribute::LOCAL_APIC ) {
@@ -83,6 +86,7 @@ PUBLIC namespace QuantumNEC::Driver::Acpi {
                     DisplayColor::BLACK,
                     "Local Apic ================>> | Acpi Processor UID <=> %8u | Apic ID <=> %27u | Flags <=> %41x |\n",
                     local_apic->acpiProcessorUID, local_apic->apicID, local_apic->flags );
+                Architecture::ArchitectureManagement< TARGET_ARCH >::apic.local_apic_ID[ Architecture::ArchitectureManagement< TARGET_ARCH >::apic.core_count++ ] = local_apic->apicID;
             }
             else if ( ICS->type == ICSAttribute::I_O_APIC ) {
                 Lib::Types::Ptr< IOApic > io_apic { reinterpret_cast< decltype( io_apic ) >( ICS ) };
@@ -92,19 +96,26 @@ PUBLIC namespace QuantumNEC::Driver::Acpi {
                     "I/O Apic ==================>> | I/O Apic ID <=> %15u | I/O Apic Address <=> %#18x | Global System Interrupt Base <=> %18x |\n",
                     io_apic->IOApicID, io_apic->IOApicAddress, io_apic->globalSystemInterruptBase );
                 this->io_apic_address = reinterpret_cast< decltype( this->io_apic_address ) >( io_apic->IOApicAddress );
+                Architecture::ArchitectureManagement< TARGET_ARCH >::apic.io_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->io_apic_address );
             }
             else if ( ICS->type == ICSAttribute::INTERRUPT_SOURCE_OVERRIDE ) {
-                Lib::Types::Ptr< InterruptSourceOverride > ics { reinterpret_cast< decltype( ics ) >( ICS ) };
+                Lib::Types::Ptr< InterruptSourceOverride > interrupt_source_override { reinterpret_cast< decltype( interrupt_source_override ) >( ICS ) };
                 Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
                     DisplayColor::WHITE,
                     DisplayColor::BLACK,
                     "Interrupt Source Override =>> | Bus <=> %23u | Source <=> %28u | Flags <=> %41x | Global System Interrupt <=> %8u |\n",
-                    ics->bus, ics->source, ics->flags, ics->globalSystemInterrupt );
+                    interrupt_source_override->bus, interrupt_source_override->source, interrupt_source_override->flags, interrupt_source_override->globalSystemInterrupt );
+                this->globalSystemInterrupt[ interrupt_source_override->source ] = interrupt_source_override->globalSystemInterrupt;
             }
             length -= ICS->length;
             ICS = reinterpret_cast< decltype( ICS ) >( (char *)( ICS ) + ICS->length );
         }
-        this->local_apic_address = reinterpret_cast< decltype( this->local_apic_address ) >( madt->localApicAddress );
+        this->local_apic_address = reinterpret_cast< decltype( this->local_apic_address ) >( this->madt->localApicAddress );
+        Architecture::ArchitectureManagement< TARGET_ARCH >::apic.local_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->local_apic_address );
+        Architecture::ArchitectureManagement< TARGET_ARCH >::apic.io_apic_index_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::ArchitectureManagement< TARGET_ARCH >::apic.io_apic_address );
+        Architecture::ArchitectureManagement< TARGET_ARCH >::apic.io_apic_data_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::ArchitectureManagement< TARGET_ARCH >::apic.io_apic_address + 0x10UL );
+        Architecture::ArchitectureManagement< TARGET_ARCH >::apic.io_apic_EOI_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::ArchitectureManagement< TARGET_ARCH >::apic.io_apic_address + 0x40UL );
+        this->hpet = reinterpret_cast< decltype( this->hpet ) >( getEntry( HPET_SIGNED ) );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the advanced configuration power interface." << Lib::IO::endl;
     }
 

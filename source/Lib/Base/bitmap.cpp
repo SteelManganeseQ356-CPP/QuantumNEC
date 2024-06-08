@@ -2,20 +2,20 @@
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    BitmapManagement::BitmapManagement( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) {
+    BitmapManagement::BitmapManagement( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) noexcept {
         bitmap_.length = bit_length;
         bitmap_.bits = bits;
     }
-    BitmapManagement::BitmapManagement( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) {
+    BitmapManagement::BitmapManagement( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept {
         this->bitmap_.bits = _bitmap.bitmap_.bits;
         this->bitmap_.length = _bitmap.bitmap_.length;
     }
-    auto BitmapManagement::operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< BitmapManagement > {
+    auto BitmapManagement::operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< CONST BitmapManagement > {
         this->bitmap_.bits = _bitmap.bitmap_.bits;
         this->bitmap_.length = _bitmap.bitmap_.length;
         return *this;
     }
-    BitmapManagement::~BitmapManagement( VOID ) {
+    BitmapManagement::~BitmapManagement( VOID ) noexcept {
     }
     auto BitmapManagement::scan( Lib::Types::size_t bit_idx )->Lib::Types::BOOL {
         return this->bitmap_.bits[ bit_idx / 8 ] & ( BITMAP_MASK << ( bit_idx % 8 ) );

@@ -1,5 +1,4 @@
 #include <Arch/x86_64/platform/platform.hpp>
-#include <Utils/asm.hpp>
 PUBLIC namespace QuantumNEC::Architecture::ABI {
     PUBLIC using namespace QuantumNEC::Lib::Types;
     /**
@@ -153,48 +152,40 @@ PUBLIC namespace QuantumNEC::Architecture::ABI {
         Ptr< CONST uint8_t > src { reinterpret_cast< Ptr< CONST uint8_t > >( s2 ) };
 
         /* We can't copy < 16 bytes using XMM registers so do it manually. */
-        if ( n < 16 )
-        {
-            if ( n & 0x01 )
-            {
+        if ( n < 16 ) {
+            if ( n & 0x01 ) {
                 *dst = *src;
                 dst += 1;
                 src += 1;
             }
-            if ( n & 0x02 )
-            {
+            if ( n & 0x02 ) {
                 *reinterpret_cast< Ptr< uint16_t > >( dst ) = *reinterpret_cast< Ptr< CONST uint16_t > >( src );
                 dst += 2;
                 src += 2;
             }
-            if ( n & 0x04 )
-            {
+            if ( n & 0x04 ) {
                 *reinterpret_cast< Ptr< uint32_t > >( dst ) = *reinterpret_cast< Ptr< CONST uint32_t > >( src );
                 dst += 4;
                 src += 4;
             }
-            if ( n & 0x08 )
-            {
+            if ( n & 0x08 ) {
                 *reinterpret_cast< Ptr< uint64_t > >( dst ) = *reinterpret_cast< Ptr< CONST uint64_t > >( src );
             }
             return dst;
         }
 
         /* Special fast cases for <= 128 bytes */
-        if ( n <= 32 )
-        {
+        if ( n <= 32 ) {
             mov16( dst, src );
             mov16( dst - 16 + n, src - 16 + n );
             return s1;
         }
-        if ( n <= 64 )
-        {
+        if ( n <= 64 ) {
             mov32( dst, src );
             mov32( dst - 32 + n, src - 32 + n );
             return s1;
         }
-        if ( n <= 128 )
-        {
+        if ( n <= 128 ) {
             mov64( dst, src );
             mov64( dst - 64 + n, src - 64 + n );
             return s1;
@@ -205,8 +196,7 @@ PUBLIC namespace QuantumNEC::Architecture::ABI {
          * copies was found to be faster than doing 128 and 32 byte copies as
          * well.
          */
-        for ( ; n >= 256; n -= 256, dst += 256, src += 256 )
-        {
+        for ( ; n >= 256; n -= 256, dst += 256, src += 256 ) {
             mov256( dst, src );
         }
 
@@ -218,8 +208,7 @@ PUBLIC namespace QuantumNEC::Architecture::ABI {
          * integers, we shift the 2 relevant bits to the LSB position to first
          * get decrementing integers, and then subtract.
          */
-        switch ( 3 - ( n >> 6 ) )
-        {
+        switch ( 3 - ( n >> 6 ) ) {
         case 0x00:
             mov64( dst, src );
             n -= 64;
@@ -242,8 +231,7 @@ PUBLIC namespace QuantumNEC::Architecture::ABI {
          * We split the remaining bytes (which will be less than 64) into
          * 16byte (2^4) chunks, using the same switch structure as above.
          */
-        switch ( 3 - ( n >> 4 ) )
-        {
+        switch ( 3 - ( n >> 4 ) ) {
         case 0x00:
             mov16( dst, src );
             n -= 16;
@@ -263,8 +251,7 @@ PUBLIC namespace QuantumNEC::Architecture::ABI {
         }
 
         /* Copy any remaining bytes, without going beyond end of buffers */
-        if ( n != 0 )
-        {
+        if ( n != 0 ) {
             mov16( dst - 16 + n, src - 16 + n );
         }
         return s1;
@@ -289,8 +276,7 @@ PUBLIC namespace QuantumNEC::Architecture::ABI {
                                   IN size_t size )
         ->Ptr< VOID > {
         Ptr< uint8_t > p1 { reinterpret_cast< Ptr< uint8_t > >( p ) };
-        for ( int64_t i = 0; i < static_cast< int64_t >( size ); ++i )
-        {
+        for ( int64_t i = 0; i < static_cast< int64_t >( size ); ++i ) {
             p1[ i ] = static_cast< uint8_t >( data );
         }
         return p;

@@ -12,10 +12,10 @@ PUBLIC namespace QuantumNEC::Kernel {
         Memory::StackMemoryManagement
     {
     public:
-        explicit( true ) MemoryManagement( Lib::Types::Ptr< Lib::Types::BootConfig > ) noexcept( true );
+        explicit( true ) MemoryManagement( Lib::Types::Ptr< Lib::Types::BootConfig > ) noexcept;
 
     public:
-        virtual ~MemoryManagement( VOID ) noexcept( true ) = default;
+        virtual ~MemoryManagement( VOID ) noexcept = default;
 
     private:
     };

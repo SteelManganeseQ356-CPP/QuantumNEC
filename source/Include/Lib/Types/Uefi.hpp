@@ -4,6 +4,7 @@
 #include "type_char.hpp"
 #include "type_int.hpp"
 #include "type_ptr.hpp"
+#include "type_bool.hpp"
 #define OUT
 #define IN
 namespace QuantumNEC::Lib::Types {

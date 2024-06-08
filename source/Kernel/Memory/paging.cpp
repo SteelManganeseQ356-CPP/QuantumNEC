@@ -3,7 +3,6 @@
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
 #include <Lib/Base/deflib.hpp>
-#include <Utils/asm.hpp>
 #include <Arch/Arch.hpp>
 #include <Kernel/task.hpp>
 PUBLIC namespace {
@@ -26,8 +25,8 @@ PUBLIC namespace {
 
 PUBLIC namespace QuantumNEC::Kernel::Memory {
     STATIC Task::TaskLock lock { };
-    PageMemoryManagement::PageMemoryManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) {             // 计算可用内存数量
-        Lib::Types::Ptr< Lib::Types::EfiMemoryDescriptor > efi_memory_descriptor { _config->MemoryData.Buffer };     // memory map
+    PageMemoryManagement::PageMemoryManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept {     // 计算可用内存数量
+        Lib::Types::Ptr< Lib::Types::EfiMemoryDescriptor > efi_memory_descriptor { _config->MemoryData.Buffer };      // memory map
         bitmap_.set_length( MEMORY_PAGE_DESCRIPTOR );
         bitmap_.set_bits( page_descriptor_entry );
         auto check_memory_type = [ &, this ]( Lib::Types::size_t n ) -> MemoryPageAttribute {

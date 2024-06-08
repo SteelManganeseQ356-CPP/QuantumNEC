@@ -3,7 +3,7 @@
 #include <Boot/Logger.hpp>
 namespace QuantumNEC::Boot {
 constexpr CONST auto GAP { 1 };
-STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL Grey = { 166, 166, 166, 0 };
+STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL Grey { 166, 166, 166, 0 };
 STATIC EFI_GRAPHICS_OUTPUT_PROTOCOL *GlobalGop { };
 auto displayStep( VOID ) -> EFI_STATUS {
     STATIC UINT8 Step { 1 };
@@ -41,9 +41,8 @@ auto BootServiceGraphics::SetVideoMode( VOID ) -> decltype( auto ) {
 }
 BootServiceGraphics::BootServiceGraphics( IN GraphicsConfig *config ) :
     BootServiceDataManager< GraphicsConfig > {
-    config
-}
-{
+        config
+    } {
     // 初始化图形界面
     UINTN HandleCount { };
     EFI_HANDLE *HandleBuffer { };

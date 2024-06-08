@@ -1,6 +1,7 @@
 #pragma once
-#include "attribute.hpp"
+#include <Lib/Base/attribute.hpp>
 #include <Lib/Types/type_base.hpp>
+#define ASM __asm__ __volatile__
 #define container_of( ptr, type, member )                                         \
     ( {                                                                           \
         decltype( ( (type *)0 )->member ) *p = ( ptr );                           \

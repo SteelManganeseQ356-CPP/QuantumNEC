@@ -1,30 +1,27 @@
 #include <Arch/x86_64/platform/platform.hpp>
-#include <Utils/asm.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Kernel/task.hpp>
 PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
-    Lib::Types::uint64_t global_ticks { 0 };
-    PUBLIC auto time_interrupt_entry( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame )->VOID {
+    PRIVATE auto ASMCALL time( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame )->Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > {
         using namespace Kernel;
         using namespace Kernel::Task;
-        Architecture::Interrupt::Pic8259aManagement::eoi( frame->irq );
-        global_ticks++;
-        Lib::Types::Ptr< TaskManagement::ProcessPCB > current { TaskManagement::get_current< TaskManagement::ProcessPCB >( ) };
-        if ( current->stack_magic != TASK_STACK_MAGIC ) {
-            Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "Task stack error!" << Lib::IO::endl;
-            while ( TRUE )
-                ;
-        }
-        current->counter++;
+        Architecture::Interrupt::InterruptManagement::eoi( frame->irq );
+
+        volatile Lib::Types::Ptr< TaskManagement::ProcessPCB > current { TaskManagement::get_current< TaskManagement::ProcessPCB >( ) };
+        Kernel::TaskManagement::save_frame( frame );
+
         if ( !current->ticks ) {
             TaskManagement::schedule( );
+            current->ticks = current->priority;
+            return TaskManagement::ready_task->cpu_frame;
         }
         else {
             current->ticks--;
+            return frame;
         }
-        return;
+        return frame;
     }
-    TimeEntry::TimeEntry( VOID ) {
-        Architecture::CPU::InterruptDescriptorManagement::set_interrupt_handler( 0x20, time_interrupt_entry );     // 注册时间中断入口函数
+    TimeEntry::TimeEntry( VOID ) noexcept {
+        Architecture::CPU::InterruptDescriptorManagement::set_interrupt_handler( 0x20, time );     // 注册时间中断入口函数
     }
 }

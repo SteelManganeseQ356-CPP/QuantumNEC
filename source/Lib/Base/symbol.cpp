@@ -3,11 +3,11 @@
 #include <Lib/Base/symbol.hpp>
 #include <Lib/STL/string>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    SymbolManagement::SymbolManagement( IN Lib::Types::Ptr< SymbolData > _symbolTable, IN Lib::Types::int32_t _symbolNumber ) :
+    SymbolManagement::SymbolManagement( IN Lib::Types::Ptr< SymbolData > _symbolTable, IN Lib::Types::int32_t _symbolNumber ) noexcept :
         symbolTable_ { _symbolTable },
         symbolNumber_ { _symbolNumber } {
     }
-    SymbolManagement::~SymbolManagement( VOID ) {
+    SymbolManagement::~SymbolManagement( VOID ) noexcept {
     }
     auto SymbolManagement::cleck_address_available( IN Lib::Types::uint64_t address )->Lib::Types::BOOL {
         return address >= Kernel::Memory::KERNEL_BASE_ADDRESS && address <= this->symbolTable_[ this->symbolNumber_ - 1 ].address;

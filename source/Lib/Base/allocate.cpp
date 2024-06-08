@@ -1,19 +1,19 @@
 #include <Lib/Base/allocate.hpp>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    AllocateManagement::AllocateManagement( VOID ) {
+    AllocateManagement::AllocateManagement( VOID ) noexcept {
     }
-    AllocateManagement::AllocateManagement( IN Lib::Types::uint64_t entries_count ) {
+    AllocateManagement::AllocateManagement( IN Lib::Types::uint64_t entries_count ) noexcept {
         this->entry_ = new AllocateTableEntry[ entries_count ];
         this->table_.entries_count = entries_count;
         this->table_.frees_count = 0;
         this->table_.entries = this->entry_;
     }
-    AllocateManagement::AllocateManagement( IN Lib::Types::R_Ref< AllocateManagement > _table ) {
+    AllocateManagement::AllocateManagement( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept {
         this->table_.entries_count = _table.table_.entries_count;
         this->table_.frees_count = _table.table_.frees_count;
         this->table_.entries = _table.table_.entries;
     }
-    auto AllocateManagement::operator=( IN Lib::Types::R_Ref< AllocateManagement > _table )->CONST Lib::Types::L_Ref< AllocateManagement > {
+    auto AllocateManagement::operator=( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept -> Lib::Types::L_Ref< CONST AllocateManagement > {
         this->table_.entries_count = _table.table_.entries_count;
         this->table_.frees_count = _table.table_.frees_count;
         this->table_.entries = _table.table_.entries;
