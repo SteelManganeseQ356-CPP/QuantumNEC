@@ -5,9 +5,9 @@ _C_LINK {
     EXTERN QuantumNEC::Lib::Types::byte_t stack_space[];
 }
 PUBLIC namespace QuantumNEC::Architecture {
-    x86_64Architecture::x86_64Architecture( IN Lib::Types::Ptr< Lib::Types::BootConfig > ) :
+    x86_64Architecture::x86_64Architecture( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) :
+        DeviceManagement { _config },
         CPUManagement { },
-        DeviceManagement { },
         InterruptManagement { } {
         this->kernel_stack_space = stack_space;
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::INFO ] << "QuantumNEC-System-Architecture-Mode : intel IA-32e(x86-64)." << Lib::IO::endl;

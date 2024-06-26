@@ -1,6 +1,7 @@
 #include <Lib/IO/Base/base_print.hpp>
 #include <Lib/IO/Base/font>
 #include <Lib/Types/type_file.hpp>
+#include <Arch/Arch.hpp>
 PUBLIC namespace QuantumNEC::Lib::IO {
     BasePrint::BasePrint( IN Lib::Types::L_Ref< CONST Position > _Pos ) noexcept :
         Pos { _Pos } {
@@ -57,6 +58,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             }
             if ( *( buffer + count ) == '\a' )     // 判断字符否为\a
             {
+                Architecture::ArchitectureManagement< TARGET_ARCH >::enable_beep( );
             }
             if ( *( buffer + count ) == '\n' )     // 判断字符否为\n
             {

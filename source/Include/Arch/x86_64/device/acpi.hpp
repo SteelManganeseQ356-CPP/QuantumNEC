@@ -1,12 +1,7 @@
-#include "Lib/Base/attribute.hpp"
-#include "Lib/Types/type_ptr.hpp"
-#ifndef _DRIVER_HPP_
-#error Do not include the header file. Please include driver.hpp
-#endif
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-PUBLIC namespace QuantumNEC::Driver {
+PUBLIC namespace QuantumNEC::Architecture::Device {
     PUBLIC class AcpiManagement
     {
     private:

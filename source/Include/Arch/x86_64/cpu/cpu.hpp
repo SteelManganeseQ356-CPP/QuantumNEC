@@ -1,6 +1,3 @@
-#ifndef _PLATFORM_HPP_
-#error Do not include the header file. Please include platform.hpp
-#endif
 #pragma once
 #include <Arch/x86_64/cpu/xdt.hpp>
 #include <Lib/Types/Uefi.hpp>

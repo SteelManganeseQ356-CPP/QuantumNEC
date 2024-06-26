@@ -6,8 +6,10 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
         using Kernel::TaskManagement;
         Kernel::TaskManagement::save_frame( frame );
         Architecture::Platform::SyscallManagement::get_syscall_table( )[ frame->regs.rbx ]( const_cast< Lib::Types::Ptr< Architecture::CPU::InterruptFrame > >( frame ) );
+
         Lib::IO::sout << TaskManagement::ready_task->cpu_frame->rip << " " << TaskManagement::ready_task->name << "\n";
         Lib::IO::sout << frame->rip << "\n";
+
         return TaskManagement::ready_task->cpu_frame;
     }
 

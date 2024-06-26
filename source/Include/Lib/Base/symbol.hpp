@@ -2,7 +2,7 @@
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    PUBLIC class SymbolManagement
+    PUBLIC class Symbol
     {
     private:
         typedef struct
@@ -12,10 +12,10 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         } SymbolData;
 
     public:
-        explicit( true ) SymbolManagement( IN Lib::Types::Ptr< SymbolData > _symbolTable, IN Lib::Types::int32_t _symbolNumber ) noexcept;
+        explicit( true ) Symbol( IN Lib::Types::Ptr< SymbolData > _symbolTable, IN Lib::Types::int32_t _symbolNumber ) noexcept;
 
     public:
-        virtual ~SymbolManagement( VOID ) noexcept;
+        virtual ~Symbol( VOID ) noexcept;
 
     public:
         /**

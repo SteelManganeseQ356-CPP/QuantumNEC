@@ -30,7 +30,6 @@ set_languages("c17", "c++23")
 target("QuantumNEC")
     set_kind("binary")
     add_files( 
-        "source/Driver/*.cpp", "source/Driver/*/*.cpp",
         "source/Kernel/*.cpp", "source/Kernel/*/*.cpp",
         "source/Lib/*/*.cpp", "source/Lib/*/*/*.cpp",
         "source/Utils/*.cpp"
@@ -53,9 +52,8 @@ target("QuantumNEC")
         os.exec("cp source/Boot/Info/SystemLog.log vm/QuantumNEC/SYSTEM64/SystemLogger.log -r")
         os.exec("cp resource/Unicode.dll vm/QuantumNEC/SYSTEM64/Unicode.dll -r")
         os.exec("cp source/Boot/Info/Config.ini vm/EFI/Boot/Config.ini -r")
-        os.exec("cp source/build.sh ./ -r")
         print("依靠EDK2制作UEFI引导文件")
-        os.exec("make -f source/build.mk Boot")
+        os.exec("bash source/build.sh")
         print("引导文件制作完成")
     end)
     add_files("source/Arch/x86_64/*/*.cpp","source/Arch/x86_64/*/*.S", "source/Arch/x86_64/*/*/*.cpp" )
@@ -90,14 +88,16 @@ target("QuantumNEC")
             -device qxl-vga,vgamem_mb=128 \
             -device ich9-intel-hda \
             -device virtio-serial-pci \
-            -audiodev pipewire,id=snd0 \
-            -device hda-output,audiodev=snd0 \
+            -audiodev pipewire,id=hda \
+            -machine pcspk-audiodev=hda \
+            -device hda-output,audiodev=hda \
             -nic user,model=virtio-net-pci \
             -device virtio-mouse-pci \
             -device virtio-keyboard-pci \
             -name QuantumNEC \
             -boot order=dc \
             -net none \
+            -rtc base=localtime \
             "
         )
         -- os.exec("rm -rf vm")

@@ -1,6 +1,3 @@
-#ifndef _PLATFORM_HPP_
-#error Do not include the header file. Please include platform.hpp
-#endif
 #pragma once
 #include <Arch/x86_64/interrupt/interrupt.hpp>
 #include <Arch/x86_64/platform/descriptor.hpp>
@@ -17,7 +14,6 @@ PUBLIC namespace QuantumNEC::Architecture::CPU {
     {
         Platform::RegisterFrame regs;
         Lib::Types::uint64_t irq;
-        Lib::Types::uint64_t reserved;
         Lib::Types::uint64_t error_code;
         Lib::Types::Ptr< VOID > rip;
         Lib::Types::uint64_t cs;

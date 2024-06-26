@@ -1,6 +1,3 @@
-#ifndef _PLATFORM_HPP_
-#error Do not include the header file. Please include platform.hpp
-#endif
 #include <Lib/Types/Uefi.hpp>
 PUBLIC namespace QuantumNEC::Architecture::ABI {
     PUBLIC using namespace QuantumNEC::Lib::Types;

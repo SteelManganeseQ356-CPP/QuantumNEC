@@ -1,12 +1,5 @@
-#ifndef _PLATFORM_HPP_
-#error Do not include the header file. Please include platform.hpp
-#endif
-#ifndef _INTERRUPT_HPP_
-#error Do not include the header file. Please include interrupt.hpp
-#endif
 #pragma once
 #include <Lib/Types/Uefi.hpp>
-#include <Driver/driver.hpp>
 PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     constexpr CONST auto IA32_APIC_BASE_MSR { 0x1B };
     constexpr CONST auto IA32_APIC_BASE_MSR_BSP { 1UL << 8U };     // 处理器是 BSP
@@ -52,8 +45,6 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     PUBLIC class ApicManagement
     {
     public:
-        friend Driver::AcpiManagement;
-
         using irq_t = Lib::Types::uint8_t;
 
         struct Apic
@@ -89,7 +80,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
          */
         STATIC auto check_apic( VOID ) -> Lib::Types::BOOL;
 
-    private:
+    public:
         inline STATIC Apic apic;
     };
 }

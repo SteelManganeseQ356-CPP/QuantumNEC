@@ -1,24 +1,7 @@
+
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/cstring>
-#define ZERO "PUSHQ $0\n\t"
-#define ERROR_CODE "NOP\n\t"
-#define HANDLE_ENTRY( irq )                              \
-    _C_LINK auto InterruptHandler##irq( VOID ) -> VOID { \
-        ASM( "CLI\n\t"                                   \
-             "PUSHQ $0\n\t"                              \
-             "PUSHQ $" #irq "\n\t"                       \
-             "LEAQ interrupt_entry(%RIP), %RAX\n\t"      \
-             "JMP *%RAX" );                              \
-    }
-#define HANDLE_ENTRY_ERROR( irq )                        \
-    _C_LINK auto InterruptHandler##irq( VOID ) -> VOID { \
-        ASM( "CLI\n\t"                                   \
-             "NOP\n\t"                                   \
-             "PUSHQ $" #irq "\n\t"                       \
-             "LEAQ interrupt_entry(%RIP), %RAX\n\t"      \
-             "JMP *%RAX" );                              \
-    }
 
 using namespace QuantumNEC;
 using namespace QuantumNEC::Architecture;
@@ -26,267 +9,10 @@ using namespace QuantumNEC::Lib::IO;
 /**
  * @brief 中断入口函数表
  */
-PUBLIC Architecture::CPU::InterruptDescriptorManagement::InterruptEntry interrupt_entry_table[ Platform::INTERRUPT_DESCRIPTOR_COUNT ] { };
+PUBLIC Architecture::CPU::InterruptDescriptorManagement::InterruptEntry interrupt_entry_table[ Platform::INTERRUPT_DESCRIPTOR_COUNT ];
+
 PUBLIC Lib::Types::Ptr< CONST Lib::Types::char_t > interrupt_name[ Platform::INTERRUPT_DESCRIPTOR_COUNT ];     // 各个异常的名字
 
-HANDLE_ENTRY( 0x00 );           //	#DE	除以0
-HANDLE_ENTRY( 0x01 );           //	#DB	调试
-HANDLE_ENTRY( 0x02 );           //	--- NMI中断
-HANDLE_ENTRY( 0x03 );           //	#BP	断点
-HANDLE_ENTRY( 0x04 );           //	#OF 溢出
-HANDLE_ENTRY( 0x05 );           //	#BR 数组索引超限
-HANDLE_ENTRY( 0x06 );           //	#UD	未定义指令
-HANDLE_ENTRY( 0x07 );           //	#NM	设备未就绪
-HANDLE_ENTRY_ERROR( 0x08 );     //    #DF	双重错误
-HANDLE_ENTRY( 0x09 );           //    --- 协处理器错误
-HANDLE_ENTRY_ERROR( 0x0a );     //    #TS	无效的TSS
-HANDLE_ENTRY_ERROR( 0x0b );     //    #NP	段不存在
-HANDLE_ENTRY_ERROR( 0x0c );     //    #SS 堆栈段故障
-HANDLE_ENTRY_ERROR( 0x0d );     //    #GP 一般保护故障
-HANDLE_ENTRY_ERROR( 0x0e );     //    #PF	缺页
-HANDLE_ENTRY( 0x0f );           //    --- intel保留，请勿使用
-HANDLE_ENTRY( 0x10 );           //    #MF	x87浮点数异常
-HANDLE_ENTRY_ERROR( 0x11 );     //	#AC 内存数据引用未对齐 仅在Ring3触发
-HANDLE_ENTRY( 0x12 );           //	#MC	处理器内部错误
-HANDLE_ENTRY( 0x13 );           //    #XM	SIMD浮点数异常
-HANDLE_ENTRY( 0x14 );           //    #CP 处理器内部错误
-HANDLE_ENTRY_ERROR( 0x15 );     //    #HV 虚拟机注入的异常
-HANDLE_ENTRY( 0x16 );           //    #VC VMM 通信失败
-HANDLE_ENTRY( 0x17 );           //    #SX 安全异常
-HANDLE_ENTRY( 0x18 );
-HANDLE_ENTRY( 0x19 );
-HANDLE_ENTRY( 0x1a );
-HANDLE_ENTRY( 0x1b );
-HANDLE_ENTRY( 0x1c );
-HANDLE_ENTRY( 0x1d );
-HANDLE_ENTRY( 0x1e );
-HANDLE_ENTRY( 0x1f );
-/*0x00-0x1f	保护模式异常(Intel保留)*/
-HANDLE_ENTRY( 0x20 );     // 时钟中断对应的入口
-HANDLE_ENTRY( 0x21 );     // 键盘中断对应的入口
-HANDLE_ENTRY( 0x22 );     // 级联 (两个芯片内部使用。不会发起)
-HANDLE_ENTRY( 0x23 );     // 串口COM2对应的入口 (如果开启)
-HANDLE_ENTRY( 0x24 );     // 串口COM1对应的入口 (如果启用)
-HANDLE_ENTRY( 0x25 );     // 并口LPT2对应的入口（如果启用）
-HANDLE_ENTRY( 0x26 );     // 软盘对应的入口
-HANDLE_ENTRY( 0x27 );     // 并口LPT1对应的入口 / 通常是“伪”中断（不可靠）
-HANDLE_ENTRY( 0x28 );     // CMOS实时时钟(如果开启)
-HANDLE_ENTRY( 0x29 );     // 自由外设/legacy SCSI/网卡
-HANDLE_ENTRY( 0x2a );     // 自由外设/SCSI/网卡
-HANDLE_ENTRY( 0x2b );     // 自由外设/SCSI/网卡
-HANDLE_ENTRY( 0x2c );     // PS2鼠标
-HANDLE_ENTRY( 0x2d );     // FPU/协处理器/Inter-processor
-HANDLE_ENTRY( 0x2e );     // 主ATA硬盘
-HANDLE_ENTRY( 0x2f );     // 辅ATA硬盘
-HANDLE_ENTRY( 0x30 );
-HANDLE_ENTRY( 0x31 );
-HANDLE_ENTRY( 0x32 );
-HANDLE_ENTRY( 0x33 );
-HANDLE_ENTRY( 0x34 );
-HANDLE_ENTRY( 0x35 );
-HANDLE_ENTRY( 0x36 );
-HANDLE_ENTRY( 0x37 );
-HANDLE_ENTRY( 0x38 );
-HANDLE_ENTRY( 0x39 );
-HANDLE_ENTRY( 0x3a );
-HANDLE_ENTRY( 0x3b );
-HANDLE_ENTRY( 0x3c );
-HANDLE_ENTRY( 0x3d );
-HANDLE_ENTRY( 0x3e );
-HANDLE_ENTRY( 0x3f );
-HANDLE_ENTRY( 0x40 );
-HANDLE_ENTRY( 0x41 );
-HANDLE_ENTRY( 0x42 );
-HANDLE_ENTRY( 0x43 );
-HANDLE_ENTRY( 0x44 );
-HANDLE_ENTRY( 0x45 );
-HANDLE_ENTRY( 0x46 );
-HANDLE_ENTRY( 0x47 );
-HANDLE_ENTRY( 0x48 );
-HANDLE_ENTRY( 0x49 );
-HANDLE_ENTRY( 0x4a );
-HANDLE_ENTRY( 0x4b );
-HANDLE_ENTRY( 0x4c );
-HANDLE_ENTRY( 0x4d );
-HANDLE_ENTRY( 0x4e );
-HANDLE_ENTRY( 0x4f );
-HANDLE_ENTRY( 0x50 );
-HANDLE_ENTRY( 0x51 );
-HANDLE_ENTRY( 0x52 );
-HANDLE_ENTRY( 0x53 );
-HANDLE_ENTRY( 0x54 );
-HANDLE_ENTRY( 0x55 );
-HANDLE_ENTRY( 0x56 );
-HANDLE_ENTRY( 0x57 );
-HANDLE_ENTRY( 0x58 );
-HANDLE_ENTRY( 0x59 );
-HANDLE_ENTRY( 0x5a );
-HANDLE_ENTRY( 0x5b );
-HANDLE_ENTRY( 0x5c );
-HANDLE_ENTRY( 0x5d );
-HANDLE_ENTRY( 0x5e );
-HANDLE_ENTRY( 0x5f );
-HANDLE_ENTRY( 0x60 );
-HANDLE_ENTRY( 0x61 );
-HANDLE_ENTRY( 0x62 );
-HANDLE_ENTRY( 0x63 );
-HANDLE_ENTRY( 0x64 );
-HANDLE_ENTRY( 0x65 );
-HANDLE_ENTRY( 0x66 );
-HANDLE_ENTRY( 0x67 );
-HANDLE_ENTRY( 0x68 );
-HANDLE_ENTRY( 0x69 );
-HANDLE_ENTRY( 0x6a );
-HANDLE_ENTRY( 0x6b );
-HANDLE_ENTRY( 0x6c );
-HANDLE_ENTRY( 0x6d );
-HANDLE_ENTRY( 0x6e );
-HANDLE_ENTRY( 0x6f );
-HANDLE_ENTRY( 0x70 );
-HANDLE_ENTRY( 0x71 );
-HANDLE_ENTRY( 0x72 );
-HANDLE_ENTRY( 0x73 );
-HANDLE_ENTRY( 0x74 );
-HANDLE_ENTRY( 0x75 );
-HANDLE_ENTRY( 0x76 );
-HANDLE_ENTRY( 0x77 );
-HANDLE_ENTRY( 0x78 );
-HANDLE_ENTRY( 0x79 );
-HANDLE_ENTRY( 0x7a );
-HANDLE_ENTRY( 0x7b );
-HANDLE_ENTRY( 0x7c );
-HANDLE_ENTRY( 0x7d );
-HANDLE_ENTRY( 0x7e );
-HANDLE_ENTRY( 0x7f );
-HANDLE_ENTRY( 0x80 );     // 系统调用
-HANDLE_ENTRY( 0x81 );
-HANDLE_ENTRY( 0x82 );
-HANDLE_ENTRY( 0x83 );
-HANDLE_ENTRY( 0x84 );
-HANDLE_ENTRY( 0x85 );
-HANDLE_ENTRY( 0x86 );
-HANDLE_ENTRY( 0x87 );
-HANDLE_ENTRY( 0x88 );
-HANDLE_ENTRY( 0x89 );
-HANDLE_ENTRY( 0x8a );
-HANDLE_ENTRY( 0x8b );
-HANDLE_ENTRY( 0x8c );
-HANDLE_ENTRY( 0x8d );
-HANDLE_ENTRY( 0x8e );
-HANDLE_ENTRY( 0x8f );
-HANDLE_ENTRY( 0x90 );
-HANDLE_ENTRY( 0x91 );
-HANDLE_ENTRY( 0x92 );
-HANDLE_ENTRY( 0x93 );
-HANDLE_ENTRY( 0x94 );
-HANDLE_ENTRY( 0x95 );
-HANDLE_ENTRY( 0x96 );
-HANDLE_ENTRY( 0x97 );
-HANDLE_ENTRY( 0x98 );
-HANDLE_ENTRY( 0x99 );
-HANDLE_ENTRY( 0x9a );
-HANDLE_ENTRY( 0x9b );
-HANDLE_ENTRY( 0x9c );
-HANDLE_ENTRY( 0x9d );
-HANDLE_ENTRY( 0x9e );
-HANDLE_ENTRY( 0x9f );
-HANDLE_ENTRY( 0xa0 );
-HANDLE_ENTRY( 0xa1 );
-HANDLE_ENTRY( 0xa2 );
-HANDLE_ENTRY( 0xa3 );
-HANDLE_ENTRY( 0xa4 );
-HANDLE_ENTRY( 0xa5 );
-HANDLE_ENTRY( 0xa6 );
-HANDLE_ENTRY( 0xa7 );
-HANDLE_ENTRY( 0xa8 );
-HANDLE_ENTRY( 0xa9 );
-HANDLE_ENTRY( 0xaa );
-HANDLE_ENTRY( 0xab );
-HANDLE_ENTRY( 0xac );
-HANDLE_ENTRY( 0xad );
-HANDLE_ENTRY( 0xae );
-HANDLE_ENTRY( 0xaf );
-HANDLE_ENTRY( 0xb0 );
-HANDLE_ENTRY( 0xb1 );
-HANDLE_ENTRY( 0xb2 );
-HANDLE_ENTRY( 0xb3 );
-HANDLE_ENTRY( 0xb4 );
-HANDLE_ENTRY( 0xb5 );
-HANDLE_ENTRY( 0xb6 );
-HANDLE_ENTRY( 0xb7 );
-HANDLE_ENTRY( 0xb8 );
-HANDLE_ENTRY( 0xb9 );
-HANDLE_ENTRY( 0xba );
-HANDLE_ENTRY( 0xbb );
-HANDLE_ENTRY( 0xbc );
-HANDLE_ENTRY( 0xbd );
-HANDLE_ENTRY( 0xbe );
-HANDLE_ENTRY( 0xbf );
-HANDLE_ENTRY( 0xc0 );
-HANDLE_ENTRY( 0xc1 );
-HANDLE_ENTRY( 0xc2 );
-HANDLE_ENTRY( 0xc3 );
-HANDLE_ENTRY( 0xc4 );
-HANDLE_ENTRY( 0xc5 );
-HANDLE_ENTRY( 0xc6 );
-HANDLE_ENTRY( 0xc7 );
-HANDLE_ENTRY( 0xc8 );
-HANDLE_ENTRY( 0xc9 );
-HANDLE_ENTRY( 0xca );
-HANDLE_ENTRY( 0xcb );
-HANDLE_ENTRY( 0xcc );
-HANDLE_ENTRY( 0xcd );
-HANDLE_ENTRY( 0xce );
-HANDLE_ENTRY( 0xcf );
-HANDLE_ENTRY( 0xd0 );
-HANDLE_ENTRY( 0xd1 );
-HANDLE_ENTRY( 0xd2 );
-HANDLE_ENTRY( 0xd3 );
-HANDLE_ENTRY( 0xd4 );
-HANDLE_ENTRY( 0xd5 );
-HANDLE_ENTRY( 0xd6 );
-HANDLE_ENTRY( 0xd7 );
-HANDLE_ENTRY( 0xd8 );
-HANDLE_ENTRY( 0xd9 );
-HANDLE_ENTRY( 0xda );
-HANDLE_ENTRY( 0xdb );
-HANDLE_ENTRY( 0xdc );
-HANDLE_ENTRY( 0xdd );
-HANDLE_ENTRY( 0xde );
-HANDLE_ENTRY( 0xdf );
-HANDLE_ENTRY( 0xe0 );
-HANDLE_ENTRY( 0xe1 );
-HANDLE_ENTRY( 0xe2 );
-HANDLE_ENTRY( 0xe3 );
-HANDLE_ENTRY( 0xe4 );
-HANDLE_ENTRY( 0xe5 );
-HANDLE_ENTRY( 0xe6 );
-HANDLE_ENTRY( 0xe7 );
-HANDLE_ENTRY( 0xe8 );
-HANDLE_ENTRY( 0xe9 );
-HANDLE_ENTRY( 0xea );
-HANDLE_ENTRY( 0xeb );
-HANDLE_ENTRY( 0xec );
-HANDLE_ENTRY( 0xed );
-HANDLE_ENTRY( 0xee );
-HANDLE_ENTRY( 0xef );
-HANDLE_ENTRY( 0xf0 );
-HANDLE_ENTRY( 0xf1 );
-HANDLE_ENTRY( 0xf2 );
-HANDLE_ENTRY( 0xf3 );
-HANDLE_ENTRY( 0xf4 );
-HANDLE_ENTRY( 0xf5 );
-HANDLE_ENTRY( 0xf6 );
-HANDLE_ENTRY( 0xf7 );
-HANDLE_ENTRY( 0xf8 );
-HANDLE_ENTRY( 0xf9 );
-HANDLE_ENTRY( 0xfa );
-HANDLE_ENTRY( 0xfb );
-HANDLE_ENTRY( 0xfc );
-HANDLE_ENTRY( 0xfd );
-HANDLE_ENTRY( 0xfe );
-HANDLE_ENTRY( 0xff );
-#undef HANDLE_ENTRY
 _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame ) -> Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > {
 #ifndef APIC
     if ( frame->irq == 0x27 || frame->irq == 0x2f )     // 0x2f是从片8259A上的最后一个irq引脚，保留
@@ -364,42 +90,47 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
 /**
  * @brief 设置中断入口（Trap）
  */
-#define SET_TRAP_HANDLER( index, ist )                       \
-    this->make_descriptor(                                   \
-        index,                                               \
-        ( Lib::Types::uint64_t )( InterruptHandler##index ), \
-        Platform::SELECTOR_CODE64_KERNEL,                    \
-        ist,                                                 \
+
+#define SET_TRAP_HANDLER( index, ist )                                      \
+    ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
+    this->make_descriptor(                                                  \
+        index,                                                              \
+        function,                                                           \
+        Platform::SELECTOR_CODE64_KERNEL,                                   \
+        ist,                                                                \
         static_cast< Lib::Types::uint8_t >( InterruptDescriptorAttribute::TRAP ) )
 /**
  * @brief 设置中断入口（System）
  */
-#define SET_SYSTEM_HANDLER( index, ist )                     \
-    this->make_descriptor(                                   \
-        index,                                               \
-        ( Lib::Types::uint64_t )( InterruptHandler##index ), \
-        Platform::SELECTOR_CODE64_KERNEL,                    \
-        ist,                                                 \
+#define SET_SYSTEM_HANDLER( index, ist )                                    \
+    ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
+    this->make_descriptor(                                                  \
+        index,                                                              \
+        function,                                                           \
+        Platform::SELECTOR_CODE64_KERNEL,                                   \
+        ist,                                                                \
         static_cast< Lib::Types::uint8_t >( InterruptDescriptorAttribute::SYSTEM ) )
 /**
  * @brief 设置中断入口（System——Interrupt）
  */
-#define SET_SYSTEM_INTERRUPT_HANDLER( index, ist )           \
-    this->make_descriptor(                                   \
-        index,                                               \
-        ( Lib::Types::uint64_t )( InterruptHandler##index ), \
-        Platform::SELECTOR_CODE64_KERNEL,                    \
-        ist,                                                 \
+#define SET_SYSTEM_INTERRUPT_HANDLER( index, ist )                          \
+    ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
+    this->make_descriptor(                                                  \
+        index,                                                              \
+        function,                                                           \
+        Platform::SELECTOR_CODE64_KERNEL,                                   \
+        ist,                                                                \
         static_cast< Lib::Types::uint8_t >( InterruptDescriptorAttribute::SYSTEM_INTERRUPT ) )
 /**
  * @brief 设置中断入口（Interrupt）
  */
-#define SET_INTERRUPT_HANDLER( index, ist )                  \
-    this->make_descriptor(                                   \
-        index,                                               \
-        ( Lib::Types::uint64_t )( InterruptHandler##index ), \
-        Platform::SELECTOR_CODE64_KERNEL,                    \
-        ist,                                                 \
+#define SET_INTERRUPT_HANDLER( index, ist )                                 \
+    ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
+    this->make_descriptor(                                                  \
+        index,                                                              \
+        function,                                                           \
+        Platform::SELECTOR_CODE64_KERNEL,                                   \
+        ist,                                                                \
         static_cast< Lib::Types::uint8_t >( InterruptDescriptorAttribute::INTERRUPT ) )
 PUBLIC namespace QuantumNEC::Architecture::CPU {
     InterruptDescriptorManagement::InterruptDescriptorManagement( IN Lib::Types::Ptr< InterruptDescriptor > _descriptor, IN Lib::Types::uint16_t _num ) noexcept :
@@ -443,7 +174,7 @@ PUBLIC namespace QuantumNEC::Architecture::CPU {
 
         /* 注册所有入口函数到中断描述符表 */
         sout[ ostream::HeadLevel::INFO ] << "Setting the interrupt handler entry for the interrupt descriptor table" << endl;
-
+        Lib::Types::uint64_t function { };
         SET_TRAP_HANDLER( 0x00, 0 );
         SET_TRAP_HANDLER( 0x01, 0 );
         SET_INTERRUPT_HANDLER( 0x02, 0 );

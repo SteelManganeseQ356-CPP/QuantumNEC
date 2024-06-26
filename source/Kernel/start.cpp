@@ -1,5 +1,4 @@
 #include <Arch/Arch.hpp>
-#include <Driver/driver.hpp>
 #include <Kernel/kernel.hpp>
 #include <Kernel/memory.hpp>
 #include <Kernel/task.hpp>
@@ -110,7 +109,6 @@ Lib::Types::int64_t ProcF( Lib::Types::uint64_t code ) {
 
 _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
     SystemStatus Status { SYSTEM_SUCCESS };
-    Driver::DriverManagement driver { config };                                      // 驱动初始化
     Architecture::ArchitectureManagement< TARGET_ARCH > architecture { config };     // 系统架构初始化
     Kernel::MemoryManagement memory { config };                                      // 内存管理初始化
     Kernel::TaskManagement task { config };                                          // 进程管理初始化
@@ -154,11 +152,6 @@ _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
     //    // Utils::sti( );
     task.block( Kernel::TaskManagement::TaskStatus::BLOCKED );
     ASM( "sti\n\t" );
-
-    // ASM( "movq %0, %%rsp\n\t"
-    //      "jmp interrupt_exit\n\t" ::"g"( Kernel::TaskManagement::ready_task->cpu_frame ) );
-
-    // while ( true )
 
     while ( true )
         ;

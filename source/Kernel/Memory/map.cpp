@@ -4,7 +4,6 @@
 #include <Arch/Arch.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
-#include <Driver/driver.hpp>
 #include <Kernel/task.hpp>
 PUBLIC namespace {
     using namespace QuantumNEC::Lib::Types;
@@ -94,8 +93,8 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         // 映射内核PCB
         this->map( KERNEL_TASK_PCB_PHYSICAL_ADDRESS, KERNEL_TASK_PCB_VIRTUAL_ADDRESS, 21, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_4K );
         // 映射内核IO apic与Local apic所占用内存
-        this->map( reinterpret_cast< Lib::Types::uint64_t >( Driver::DriverManagement::io_apic_address ), KERNEL_I_O_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
-        this->map( reinterpret_cast< Lib::Types::uint64_t >( Driver::DriverManagement::local_apic_address ), KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
+        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManagement< TARGET_ARCH >::io_apic_address ), KERNEL_I_O_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
+        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManagement< TARGET_ARCH >::local_apic_address ), KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
         // 映射内核根目录
         this->map( reinterpret_cast< Lib::Types::uint64_t >( this->page_memory_table.pml ), KERNEL_PAGE_DIRECTORY_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_2M );
         // 映射显存

@@ -1,11 +1,4 @@
-#ifndef _PLATFORM_HPP_
-#error Do not include the header file. Please include platform.hpp
-#endif
 #pragma once
-#ifndef _INTERRUPT_HPP_
-#define _INTERRUPT_HPP_
-#endif
-
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Arch/x86_64/interrupt/8259a.hpp>

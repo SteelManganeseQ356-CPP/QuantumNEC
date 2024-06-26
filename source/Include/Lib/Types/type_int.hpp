@@ -63,4 +63,6 @@ using DWORD = unsigned int;
 using QWORD = unsigned long long int;
 using WORD = unsigned short int;
 
+using time_t = unsigned int;
+
 }     // namespace QuantumNEC::Lib::Types

@@ -3,7 +3,9 @@
     {
       "name": "linux-gcc-x64",
       "includePath": [
-        "${workspaceFolder}/source/Include/"
+        "${workspaceFolder}/source/Include/",
+        "${workspaceFolder}/edk2/MdeModulePkg/Include/",
+        "${workspaceFolder}/edk2/MdePkg/Include/"
       ],
       "defines": [],
       "compilerPath": "/usr/bin/gcc",

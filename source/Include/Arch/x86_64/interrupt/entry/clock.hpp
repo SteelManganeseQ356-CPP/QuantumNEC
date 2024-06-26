@@ -3,11 +3,11 @@
 
 PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
     PUBLIC using namespace QuantumNEC::Architecture;
-    PUBLIC class SystemcallEntry
+    PUBLIC class ClockEntry
     {
     public:
-        explicit( TRUE ) SystemcallEntry( VOID ) noexcept;
-        virtual ~SystemcallEntry( VOID ) noexcept = default;
+        explicit( TRUE ) ClockEntry( VOID ) noexcept;
+        virtual ~ClockEntry( VOID ) noexcept = default;
 
     private:
     };

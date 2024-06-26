@@ -1,13 +1,10 @@
-#ifndef _DRIVER_HPP_
-#error Do not include the header file. Please include driver.hpp
-#endif
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/IO/Base/base_print.hpp>
 #include <Lib/Types/type_base.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Lib/Types/type_int.hpp>
-PUBLIC namespace QuantumNEC::Driver {
+PUBLIC namespace QuantumNEC::Architecture::Device {
     /**
      * @brief 图形化窗口驱动管理
      */

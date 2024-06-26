@@ -45,6 +45,16 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         return (unsigned long long)( address ) & 0x1FFFFF;
     }
 
+    // 将BCD码转换为整数
+    PUBLIC constexpr inline auto BCD_TO_BIN( auto value ) {
+        return ( value & 0xf ) + ( value >> 4 ) * 10;
+    }
+
+    // 将整数转换为BCD码
+    PUBLIC constexpr inline auto BIN_TO_BCD( auto value ) {
+        return ( value / 10 ) * 0x10 + ( value % 10 );
+    }
+
 }     // namespace QuantumNEC::Lib::Base
 
 #define CRLF_STR( s ) ( s CRLF )

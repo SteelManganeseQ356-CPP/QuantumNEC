@@ -2,7 +2,7 @@
 #include <Lib/IO/Stream/iostream>
 #include <Kernel/task.hpp>
 PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
-    PRIVATE auto ASMCALL time( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame )->Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > {
+    PRIVATE auto ASMCALL clock( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame )->Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > {
         using namespace Kernel;
         using namespace Kernel::Task;
         Architecture::Interrupt::InterruptManagement::eoi( frame->irq );
@@ -21,7 +21,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
         }
         return frame;
     }
-    TimeEntry::TimeEntry( VOID ) noexcept {
-        Architecture::CPU::InterruptDescriptorManagement::set_interrupt_handler( 0x20, time );     // 注册时间中断入口函数
+    ClockEntry::ClockEntry( VOID ) noexcept {
+        Architecture::CPU::InterruptDescriptorManagement::set_interrupt_handler( 0x20, clock );     // 注册时间中断入口函数
     }
 }

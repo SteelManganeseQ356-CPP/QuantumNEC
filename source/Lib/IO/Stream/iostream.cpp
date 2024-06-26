@@ -26,7 +26,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             this->display.FColor = DisplayColor::INDIGO;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "INFO" );
-            this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
+            this->printk( DisplayColor::WHITE, this->display.BColor, " ]     " );
             this->display.FColor = DisplayColor::WHITE;
             break;
         }
@@ -34,7 +34,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             this->display.FColor = DisplayColor::GRAYISH;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "DEBUG" );
-            this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
+            this->printk( DisplayColor::WHITE, this->display.BColor, " ]    " );
             this->display.FColor = DisplayColor::WHITE;
             break;
         }
@@ -42,7 +42,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             this->display.FColor = DisplayColor::RED;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "ERROR" );
-            this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
+            this->printk( DisplayColor::WHITE, this->display.BColor, " ]    " );
             this->display.FColor = DisplayColor::WHITE;
             break;
         }
@@ -50,7 +50,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             this->display.FColor = DisplayColor::BLUEGRAY;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "SYSTEM" );
-            this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
+            this->printk( DisplayColor::WHITE, this->display.BColor, " ]   " );
             this->display.FColor = DisplayColor::WHITE;
             break;
         }
@@ -58,7 +58,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             this->display.FColor = DisplayColor::GRAY;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "USER" );
-            this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
+            this->printk( DisplayColor::WHITE, this->display.BColor, " ]     " );
             this->display.FColor = DisplayColor::WHITE;
             break;
         }
@@ -74,7 +74,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             this->display.FColor = DisplayColor::YELLOW;
             this->printk( DisplayColor::WHITE, this->display.BColor, "[ " );
             this->printk( this->display.FColor, this->display.BColor, "START" );
-            this->printk( DisplayColor::WHITE, this->display.BColor, " ] " );
+            this->printk( DisplayColor::WHITE, this->display.BColor, " ]    " );
             this->display.FColor = DisplayColor::WHITE;
             break;
         }

@@ -151,6 +151,8 @@
   "clangd.fallbackFlags": [
     "-std=c++23",
     "-I${workspaceFolder}/source/Include",
+    "-I${workspaceFolder}/edk2/MdeModulePkg/Include/",
+    "-I${workspaceFolder}/edk2/MdePkg/Include/",
   ],
   "clangd.onConfigChanged": "restart",
   "clangd.serverCompletionRanking": true,

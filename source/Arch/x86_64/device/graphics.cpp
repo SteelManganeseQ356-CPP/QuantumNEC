@@ -1,6 +1,6 @@
-#include <Driver/driver.hpp>
+#include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/IO/Stream/iostream>
-PUBLIC namespace QuantumNEC::Driver {
+PUBLIC namespace QuantumNEC::Architecture::Device {
     GraphicsManagement::GraphicsManagement(
         IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > bootConfig ) noexcept :
         config( &bootConfig->GraphicsData ) {

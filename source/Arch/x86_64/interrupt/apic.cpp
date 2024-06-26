@@ -1,4 +1,5 @@
 
+#include "Arch/x86_64/platform/global.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Kernel/memory.hpp>
 #include <Lib/IO/Stream/iostream>
@@ -19,7 +20,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
             // from lapic[TICR]，然后发出中断。
             // TODO：使用外部时间校准 TICR
             this->write_apic( LOCAL_APIC_TDCR, LOCAL_APIC_X1, ApicType::LOCAL_APIC );
-            this->write_apic( LOCAL_APIC_TIMER, LOCAL_APIC_PERIODIC | Platform::TIME_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
+            this->write_apic( LOCAL_APIC_TIMER, LOCAL_APIC_PERIODIC | Platform::CLOCK_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
             this->write_apic( LOCAL_APIC_TICR, 10000000, ApicType::LOCAL_APIC );
             // Disable logical interrupt lines.
             this->write_apic( LOCAL_APIC_LINT0, LOCAL_APIC_MASKED, ApicType::LOCAL_APIC );
@@ -44,7 +45,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
             this->write_apic( LOCAL_APIC_TPR, 0, ApicType::LOCAL_APIC );
             // IO APIC
             // 将所有中断标记为边沿触发、高电平有效、禁用、并且不路由到任何 CPU。
-            for ( Lib::Types::int64_t i { }; i <= ( ( this->read_apic( IOAPIC_REG_VER, ApicType::IO_APIC ) >> 16 ) & 0xFF ); i++ ) {
+            for ( Lib::Types::uint64_t i { }; i <= ( ( this->read_apic( IOAPIC_REG_VER, ApicType::IO_APIC ) >> 16 ) & 0xFF ); i++ ) {
                 this->write_apic( IOAPIC_REG_TABLE + 2 * i, INT_DISABLED | ( Platform::IDT_ENTRY_IRQ_0 + i ), ApicType::IO_APIC );
                 this->write_apic( IOAPIC_REG_TABLE + 2 * i + 1, 0, ApicType::IO_APIC );
             }

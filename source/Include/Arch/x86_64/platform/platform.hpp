@@ -1,22 +1,17 @@
 #pragma once
-#include "Lib/Base/deflib.hpp"
-#include "Lib/Types/type_ptr.hpp"
-#ifndef _PLATFORM_HPP_
-#define _PLATFORM_HPP_
-#endif
 #include <Arch/x86_64/abi/builtins.hpp>
 #include <Arch/x86_64/cpu/cpu.hpp>
 #include <Arch/x86_64/cpu/xdt.hpp>
 #include <Arch/x86_64/cpu/smp.hpp>
 #include <Arch/x86_64/interrupt/interrupt.hpp>
-#include <Arch/x86_64/device/device.hpp>
 #include <Arch/x86_64/platform/global.hpp>
 #include <Arch/x86_64/platform/syscall.hpp>
+#include <Arch/x86_64/device/device.hpp>
 PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC class x86_64Architecture :
         // 架构组织
-        public CPU::CPUManagement,
         public Device::DeviceManagement,
+        public CPU::CPUManagement,
         public Interrupt::InterruptManagement,
         public Platform::SyscallManagement
     {

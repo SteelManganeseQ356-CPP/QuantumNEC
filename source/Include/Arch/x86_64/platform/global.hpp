@@ -1,6 +1,3 @@
-#ifndef _PLATFORM_HPP_
-#error Do not include the header file. Please include platform.hpp
-#endif
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 
@@ -154,9 +151,10 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
 
     PUBLIC constexpr const auto IDT_ENTRY_IRQ_0 { 32 };
     PUBLIC constexpr const auto SYSTEM_CALL_INTERRUPTS_INDEX { 0x80 };
-    PUBLIC constexpr const auto TIME_INTERRUPTS_INDEX { 0x20 };
+    PUBLIC constexpr const auto CLOCK_INTERRUPTS_INDEX { 0x20 };
     PUBLIC constexpr const auto KEYBOARD_INTERRUPTS_INDEX { 0x21 };
-    PUBLIC constexpr const auto LOCAL_APIC_SPURIOUS_INTERRUPTS_INDEX { TIME_INTERRUPTS_INDEX + 19 };
-    PUBLIC constexpr const auto LOCAL_APIC_ERROR_INTERRUPTS_INDEX { TIME_INTERRUPTS_INDEX + 31 };
+    PUBLIC constexpr const auto RTC_INTERRUPTS_INDEX { 0x28 };
+    PUBLIC constexpr const auto LOCAL_APIC_SPURIOUS_INTERRUPTS_INDEX { 0x82 };
+    PUBLIC constexpr const auto LOCAL_APIC_ERROR_INTERRUPTS_INDEX { 0x81 };
 
 }     // namespace QuantumNEC::Architecture::Platform
