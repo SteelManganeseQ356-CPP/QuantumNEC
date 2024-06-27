@@ -1,8 +1,7 @@
-#include "Arch/x86_64/cpu/cpu.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/Base/deflib.hpp>
 #include <Lib/IO/Stream/iostream>
-PUBLIC namespace QuantumNEC::Architecture::Device {
+PUBLIC namespace QuantumNEC::Architecture {
     CMOS::CMOS( VOID ) noexcept {
         Time time { };
         // 读取当前时间
@@ -14,7 +13,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         // 读C寄存器，以允许CMOS中断
         this->read_cmos( static_cast< Lib::Types::uint8_t >( CMOSType::CMOS_C ) );
         // 设置CMOS中断频率
-        Architecture::CPU::CPUManagement::io_out8( static_cast< Lib::Types::uint8_t >( CMOSType::CMOS_A ), ( CPU::CPUManagement::io_in8( static_cast< Lib::Types::uint8_t >( CMOSType::CMOS_A ) ) & 0xf ) | 0b1110 );
+        Architecture::CPUs::io_out8( static_cast< Lib::Types::uint8_t >( CMOSType::CMOS_A ), ( CPUs::io_in8( static_cast< Lib::Types::uint8_t >( CMOSType::CMOS_A ) ) & 0xf ) | 0b1110 );
     }
     CMOS::~CMOS( VOID ) noexcept {
     }
@@ -47,12 +46,12 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
     }
 
     auto CMOS::read_cmos( IN Lib::Types::uint8_t address )->Lib::Types::uint8_t {
-        Architecture::CPU::CPUManagement::io_out8( CMOS_ADDRESS, static_cast< Lib::Types::uint8_t >( TimeType::NMI ) | static_cast< Lib::Types::uint8_t >( address ) );
-        return Architecture::CPU::CPUManagement::io_in8( CMOS_DATA );
+        CPUs::io_out8( CMOS_ADDRESS, static_cast< Lib::Types::uint8_t >( TimeType::NMI ) | static_cast< Lib::Types::uint8_t >( address ) );
+        return CPUs::io_in8( CMOS_DATA );
     }
     auto CMOS::write_cmos( IN Lib::Types::uint8_t address, IN Lib::Types::uint8_t value )->VOID {
-        Architecture::CPU::CPUManagement::io_out8( CMOS_ADDRESS, static_cast< Lib::Types::uint8_t >( TimeType::NMI ) | static_cast< Lib::Types::uint8_t >( address ) );
-        Architecture::CPU::CPUManagement::io_out8( CMOS_DATA, value );
+        CPUs::io_out8( CMOS_ADDRESS, static_cast< Lib::Types::uint8_t >( TimeType::NMI ) | static_cast< Lib::Types::uint8_t >( address ) );
+        CPUs::io_out8( CMOS_DATA, value );
     }
     auto CMOS::Time::time_read( IN Lib::Types::L_Ref< CMOS::Time > time )->VOID {
         time_read_bcd( time );

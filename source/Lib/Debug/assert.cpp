@@ -16,7 +16,7 @@ PUBLIC namespace QuantumNEC::Lib::Debug {
         sout[ ostream::HeadLevel::DEBUG ] << cmd << endl;
         sout[ ostream::HeadLevel::DEBUG ] << "!!! Assert !!!" << endl;
         while ( TRUE ) {
-            Architecture::ArchitectureManagement< TARGET_ARCH >::hlt( );
+            Architecture::ArchitectureManager< TARGET_ARCH >::hlt( );
         }
     }
 }

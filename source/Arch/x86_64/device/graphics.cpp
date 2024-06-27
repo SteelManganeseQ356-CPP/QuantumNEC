@@ -1,7 +1,7 @@
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/IO/Stream/iostream>
-PUBLIC namespace QuantumNEC::Architecture::Device {
-    GraphicsManagement::GraphicsManagement(
+PUBLIC namespace QuantumNEC::Architecture {
+    Graphics::Graphics(
         IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > bootConfig ) noexcept :
         config( &bootConfig->GraphicsData ) {
         this->window_initialize( );
@@ -10,9 +10,9 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "The graphical interface is ready." << Lib::IO::endl;
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the Graphical Management." << Lib::IO::endl;
     }
-    GraphicsManagement::~GraphicsManagement( VOID ) noexcept {
+    Graphics::~Graphics( VOID ) noexcept {
     }
-    auto GraphicsManagement::display_pixel(     // 填充一个像素
+    auto Graphics::display_pixel(     // 填充一个像素
         IN Lib::Types::Ptr< Lib::Types::uint32_t > video_handle,
         IN Lib::Types::L_Ref< Lib::IO::DisplayColor > color,
         IN Lib::Types::L_Ref< Lib::Types::int32_t > X,
@@ -24,7 +24,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         return SYSTEM_SUCCESS;
     }
 
-    auto GraphicsManagement::set_pos(
+    auto Graphics::set_pos(
         IN Lib::Types::L_Ref< Lib::Types::uint32_t > XResolution,
         IN Lib::Types::L_Ref< Lib::Types::uint32_t > YResolution,
         IN Lib::Types::int32_t XPosition, IN Lib::Types::int32_t YPosition,
@@ -50,7 +50,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         return SYSTEM_SUCCESS;
     }
     // 窗口初始化
-    auto GraphicsManagement::window_initialize( VOID ) noexcept -> Lib::Types::SystemStatus {
+    auto Graphics::window_initialize( VOID ) noexcept -> Lib::Types::SystemStatus {
         Lib::Types::SystemStatus Status { SYSTEM_SUCCESS };
         Status = this->set_pos( this->config->HorizontalResolution,
                                 this->config->VerticalResolution,
@@ -71,7 +71,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         return Status;
     }
 
-    auto GraphicsManagement::GUI_initialize( VOID ) noexcept -> Lib::Types::SystemStatus {
+    auto Graphics::GUI_initialize( VOID ) noexcept -> Lib::Types::SystemStatus {
         Lib::Types::SystemStatus Status { SYSTEM_SUCCESS };
         Status = this->set_pos( this->config->HorizontalResolution,
                                 this->config->VerticalResolution,
@@ -91,7 +91,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         return Status;
     }
 
-    auto GraphicsManagement::display_shell( VOID ) noexcept -> Lib::Types::SystemStatus {
+    auto Graphics::display_shell( VOID ) noexcept -> Lib::Types::SystemStatus {
         Lib::Types::SystemStatus Status { SYSTEM_SUCCESS };
 
         // 第一层
@@ -102,7 +102,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         this->display_fill( 16, 30, 712, this->config->VerticalResolution - 8, Lib::IO::DisplayColor::BLACK );
         return Status;
     }
-    auto GraphicsManagement::display_error_blue_screen( IN CONST Lib::Types::uint8_t irq ) noexcept -> Lib::Types::SystemStatus {
+    auto Graphics::display_error_blue_screen( IN CONST Lib::Types::uint8_t irq ) noexcept -> Lib::Types::SystemStatus {
         if ( irq >= 0x20 ) {     // 如果是中断就没有必要画了
             return SYSTEM_SUCCESS;
         }
@@ -129,7 +129,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
                             Lib::IO::DisplayColor::BLUE );
         return Status;
     }
-    auto GraphicsManagement::display_fill(
+    auto Graphics::display_fill(
         IN CONST Lib::Types::int32_t x0, IN CONST Lib::Types::int32_t y0,
         IN CONST Lib::Types::int32_t x1, IN CONST Lib::Types::int32_t y1,
         IN Lib::Types::R_Ref< Lib::IO::DisplayColor > color )

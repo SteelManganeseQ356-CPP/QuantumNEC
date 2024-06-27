@@ -9,6 +9,7 @@ PUBLIC namespace {
     using namespace QuantumNEC::Lib::Types;
     using namespace QuantumNEC::Lib;
     using namespace QuantumNEC;
+    using namespace QuantumNEC::Kernel;
     /**
      *  @brief 页内偏移
      */
@@ -28,10 +29,11 @@ PUBLIC namespace {
         return ( (Lib::Types::uint64_t)address >> 12 ) & 0x1FF;
     }
     PRIVATE constexpr auto FONT_FILE_OCCUPIES_PAGE { 16 };
+
+    PRIVATE TaskLock lock { };
 }
-PUBLIC namespace QuantumNEC::Kernel::Memory {
-    STATIC Task::TaskLock lock { };
-    auto MemoryMapManagement::get_table_entry( IN Lib::Types::Ptr< VOID > address, IN MapLevel level )
+PUBLIC namespace QuantumNEC::Kernel {
+    auto MemoryMap::get_table_entry( IN Lib::Types::Ptr< VOID > address, IN MapLevel level )
         ->Lib::Types::Ptr< Lib::Types::uint64_t > {
         auto get_pmlt_entry = [ &, this ] {
             return reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( ( Lib::Types::uint64_t )( this->page_memory_table.pml ) + PMLE_IDX( address ) );
@@ -63,7 +65,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         }
         return entry;
     }
-    MemoryMapManagement::MemoryMapManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept {
+    MemoryMap::MemoryMap( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Start mapping the page table." << Lib::IO::endl;
         // 消除页保护
         this->page_table_protect( FALSE );
@@ -93,26 +95,26 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         // 映射内核PCB
         this->map( KERNEL_TASK_PCB_PHYSICAL_ADDRESS, KERNEL_TASK_PCB_VIRTUAL_ADDRESS, 21, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_4K );
         // 映射内核IO apic与Local apic所占用内存
-        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManagement< TARGET_ARCH >::io_apic_address ), KERNEL_I_O_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
-        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManagement< TARGET_ARCH >::local_apic_address ), KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
+        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManager< TARGET_ARCH >::io_apic_address ), KERNEL_I_O_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
+        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManager< TARGET_ARCH >::local_apic_address ), KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
         // 映射内核根目录
         this->map( reinterpret_cast< Lib::Types::uint64_t >( this->page_memory_table.pml ), KERNEL_PAGE_DIRECTORY_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_2M );
         // 映射显存
         this->map( _config->GraphicsData.FrameBufferBase, KERNEL_VRAM_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_2M );
         // 字体文件映射到的内存缓存池
-        Lib::Types::uint64_t font_table_buffer { reinterpret_cast< Lib::Types::uint64_t >( PageMemoryManagement::malloc( FONT_FILE_OCCUPIES_PAGE, PageMemoryManagement::MemoryPageType::PAGE_2M ) ) };
+        Lib::Types::uint64_t font_table_buffer { reinterpret_cast< Lib::Types::uint64_t >( PageMemory::malloc( FONT_FILE_OCCUPIES_PAGE, PageMemory::MemoryPageType::PAGE_2M ) ) };
         // 映射字体
         this->map( font_table_buffer, KERNEL_FONT_MEMORY_VIRTUAL_ADDRESS, FONT_FILE_OCCUPIES_PAGE, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_2M );
         // 映射空闲内存
-        for ( Lib::Types::size_t page_address { KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS }; page_address < PageMemoryManagement::memory_total; page_address += PAGE_SIZE ) {
+        for ( Lib::Types::size_t page_address { KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS }; page_address < PageMemory::memory_total; page_address += PAGE_SIZE ) {
             // 从空闲内存起始地址开始映射
             this->map( page_address, KERNEL_BASE_ADDRESS + page_address, 1, PAGE_USER_PAGE, MapMode::MEMORY_MAP_2M );
         }
 
-        Architecture::ArchitectureManagement< TARGET_ARCH >::flush_tlb( );
+        Architecture::ArchitectureManager< TARGET_ARCH >::flush_tlb( );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Mapping the pages table is OK." << Lib::IO::endl;
     }
-    auto MemoryMapManagement::map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode mode, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
+    auto MemoryMap::map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode mode, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
         lock.acquire( );
         STATIC Lib::Types::uint64_t pd_reserved_memory { KERNEL_PAGE_TABLE_RESERVED_PHYSICAL_ADDRESS };
         auto checkMode = [ & ] -> Lib::Types::uint32_t {     // 解析格式
@@ -145,10 +147,10 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         physical_pde.set_pdt( physical_pdt.pdt + PDE_IDX( virtual_address ) );
         virtual_pde.set_pdt( reinterpret_cast< decltype( physical_pdt.pdt ) >( ( physical_pde.pdt ) ) );
         virtual_pde.make_pdt( reinterpret_cast< decltype( virtual_pde.pdt ) >( physics_address ), flags | checkMode( ) );
-        Architecture::ArchitectureManagement< TARGET_ARCH >::invlpg( reinterpret_cast< Lib::Types::Ptr< VOID > >( virtual_address ) );
+        Architecture::ArchitectureManager< TARGET_ARCH >::invlpg( reinterpret_cast< Lib::Types::Ptr< VOID > >( virtual_address ) );
         lock.release( );
     }
-    auto MemoryMapManagement::remap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
+    auto MemoryMap::remap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
         /*
          * 内容大致与map一至，除了取消映射的地方和判断
          */
@@ -174,7 +176,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         *virtual_pde.pdt &= ~PAGE_PRESENT;
         lock.release( );
     }
-    auto MemoryMapManagement::check( IN Lib::Types::Ptr< Lib::Types::uint64_t > virtual_address )->Lib::Types::BOOL {
+    auto MemoryMap::check( IN Lib::Types::Ptr< Lib::Types::uint64_t > virtual_address )->Lib::Types::BOOL {
         if ( ( *virtual_address >> 47 ) & 1 ) {
             if ( *virtual_address >> 48 == 0xFFFF ) {
                 return TRUE;
@@ -184,18 +186,18 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         }
         return TRUE;
     }
-    auto MemoryMapManagement::page_table_protect( IN Lib::Types::BOOL flags )->VOID {
+    auto MemoryMap::page_table_protect( IN Lib::Types::BOOL flags )->VOID {
         if ( !flags ) {
-            Architecture::ArchitectureManagement< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManagement< TARGET_ARCH >::read_cr0( ) & ~0x10000 );
+            Architecture::ArchitectureManager< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManager< TARGET_ARCH >::read_cr0( ) & ~0x10000 );
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "Disable the page protection." << Lib::IO::endl;
         }
         else {
-            Architecture::ArchitectureManagement< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManagement< TARGET_ARCH >::read_cr0( ) | 0x10000 );
+            Architecture::ArchitectureManager< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManager< TARGET_ARCH >::read_cr0( ) | 0x10000 );
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "Enable the page protection." << Lib::IO::endl;
         }
     };
-    auto MemoryMapManagement::make_page_directory_table( VOID )->Lib::Types::Ptr< Lib::Types::uint64_t > {
-        pml_t page_directory_address { .pml { reinterpret_cast< decltype( page_directory_address.pml ) >( HeapMemoryManagement::malloc( PT_SIZE ) ) } };
+    auto MemoryMap::make_page_directory_table( VOID )->Lib::Types::Ptr< Lib::Types::uint64_t > {
+        pml_t page_directory_address { .pml { reinterpret_cast< decltype( page_directory_address.pml ) >( HeapMemory::malloc( PT_SIZE ) ) } };
 
         if ( !page_directory_address.pml ) {
             return NULL;
@@ -204,10 +206,10 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         Lib::STL::memcpy( page_directory_address.pml, page_memory_table.pml, 2048 );
         return page_directory_address.pml;
     }
-    auto MemoryMapManagement::activate_page_directory_table( IN Lib::Types::Ptr< VOID > )->VOID {
+    auto MemoryMap::activate_page_directory_table( IN Lib::Types::Ptr< VOID > )->VOID {
         // Architecture::ArchitectureManagement< TARGET_ARCH >::write_cr3( page_directory_table_address ? reinterpret_cast< Lib::Types::uint64_t >( page_directory_table_address ) : reinterpret_cast< Lib::Types::uint64_t >( page_memory_table.pml ) );
     }
-    auto MemoryMapManagement::get_current_page_tabel( VOID )->Lib::Types::Ptr< Lib::Types::uint64_t > {
-        return reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( Architecture::ArchitectureManagement< TARGET_ARCH >::read_cr3( ) );
+    auto MemoryMap::get_current_page_tabel( VOID )->Lib::Types::Ptr< Lib::Types::uint64_t > {
+        return reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( Architecture::ArchitectureManager< TARGET_ARCH >::read_cr3( ) );
     }
 }

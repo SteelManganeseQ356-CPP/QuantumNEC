@@ -2,8 +2,8 @@
 #include <Kernel/task.hpp>
 #include <Kernel/memory.hpp>
 #include <Lib/IO/Stream/iostream>
-PUBLIC namespace QuantumNEC::Architecture::Device {
-    FPUDriverManagement::FPUDriverManagement( VOID ) noexcept {
+PUBLIC namespace QuantumNEC::Architecture {
+    FPU::FPU( VOID ) noexcept {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the FPU Management" << Lib::IO::endl;
         // Lib::Types::BOOL exist { this->check_fpu( ) };
         // if ( exist ) {
@@ -12,11 +12,11 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         // }
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the FPU Management" << Lib::IO::endl;
     }
-    auto FPUDriverManagement::flush_fpu( VOID )->VOID {
+    auto FPU::flush_fpu( VOID )->VOID {
         ASM( "fnclex \n\t"
              "fninit \n\t" );
     }
-    auto FPUDriverManagement::check_fpu( VOID )->Lib::Types::BOOL {
+    auto FPU::check_fpu( VOID )->Lib::Types::BOOL {
         Lib::Types::uint32_t code { 114514 };
         ASM(
             "MOVQ %%CR0,%%RAX \n\t"
@@ -33,11 +33,11 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
             : "rax" );
         return !code;
     }
-    auto FPUDriverManagement::enable_fpu( IN Lib::Types::Ptr< VOID > task )->VOID {
-        CPU::CPUManagement::write_cr0( CPU::CPUManagement::read_cr0( ) | ( static_cast< Lib::Types::int64_t >( CR0_COMMAND::EM ) | static_cast< Lib::Types::int64_t >( CR0_COMMAND::TS ) ) );
-        Lib::Types::Ptr< Kernel::TaskManagement::ProcessPCB > _last_fpu_task { reinterpret_cast< decltype( _last_fpu_task ) >( last_fpu_task ) };
-        Lib::Types::Ptr< Kernel::TaskManagement::ProcessPCB > _task { reinterpret_cast< decltype( _task ) >( task ) };
-        using enum Kernel::TaskManagement::TaskFlags;
+    auto FPU::enable_fpu( IN Lib::Types::Ptr< VOID > task )->VOID {
+        CPUs::write_cr0( CPUs::read_cr0( ) | ( static_cast< Lib::Types::int64_t >( CR0_COMMAND::EM ) | static_cast< Lib::Types::int64_t >( CR0_COMMAND::TS ) ) );
+        Lib::Types::Ptr< Kernel::Task::ProcessPCB > _last_fpu_task { reinterpret_cast< decltype( _last_fpu_task ) >( last_fpu_task ) };
+        Lib::Types::Ptr< Kernel::Task::ProcessPCB > _task { reinterpret_cast< decltype( _task ) >( task ) };
+        using enum Kernel::Task::TaskFlags;
         if ( _last_fpu_task == task ) {
             // 没有变化，不需要恢复浮点环境
             return;
@@ -68,7 +68,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         }
     }
 
-    auto FPUDriverManagement::disable_fpu( IN Lib::Types::Ptr< VOID > )->VOID {
-        CPU::CPUManagement::write_cr0( CPU::CPUManagement::read_cr0( ) | ( static_cast< Lib::Types::int64_t >( CR0_COMMAND::EM ) | static_cast< Lib::Types::int64_t >( CR0_COMMAND::TS ) ) );
+    auto FPU::disable_fpu( IN Lib::Types::Ptr< VOID > )->VOID {
+        CPUs::write_cr0( CPUs::read_cr0( ) | ( static_cast< Lib::Types::int64_t >( CR0_COMMAND::EM ) | static_cast< Lib::Types::int64_t >( CR0_COMMAND::TS ) ) );
     }
 }

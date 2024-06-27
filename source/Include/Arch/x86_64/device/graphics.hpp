@@ -4,15 +4,15 @@
 #include <Lib/Types/type_base.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Lib/Types/type_int.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Device {
+PUBLIC namespace QuantumNEC::Architecture {
     /**
      * @brief 图形化窗口驱动管理
      */
-    PUBLIC class GraphicsManagement
+    PUBLIC class Graphics
     {
     public:
-        explicit( TRUE ) GraphicsManagement( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > ) noexcept;
-        virtual ~GraphicsManagement( VOID ) noexcept;
+        explicit Graphics( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
+        virtual ~Graphics( VOID ) noexcept;
 
     public:
         /**

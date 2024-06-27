@@ -2,7 +2,7 @@
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    PUBLIC class AllocateManagement
+    PUBLIC class Allocate
     {
     public:
         typedef struct
@@ -20,14 +20,14 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         } AllocateTable;
 
     public:
-        explicit( TRUE ) AllocateManagement( VOID ) noexcept;
-        explicit( TRUE ) AllocateManagement( IN Lib::Types::uint64_t entries_count ) noexcept;
-        explicit( TRUE ) AllocateManagement( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept;
+        explicit( TRUE ) Allocate( VOID ) noexcept;
+        explicit( TRUE ) Allocate( IN Lib::Types::uint64_t entries_count ) noexcept;
+        explicit( TRUE ) Allocate( IN Lib::Types::R_Ref< Allocate > _table ) noexcept;
 
-        virtual ~AllocateManagement( VOID ) noexcept = default;
+        virtual ~Allocate( VOID ) noexcept = default;
 
     public:
-        auto operator=( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept -> Lib::Types::L_Ref< CONST AllocateManagement >;
+        auto operator=( IN Lib::Types::R_Ref< Allocate > _table ) noexcept -> Lib::Types::L_Ref< CONST Allocate >;
 
     public:
         /**

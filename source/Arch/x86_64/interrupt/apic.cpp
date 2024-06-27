@@ -1,26 +1,26 @@
 
-#include "Arch/x86_64/platform/global.hpp"
+#include "Arch/x86_64/interrupt/8259a.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Kernel/memory.hpp>
 #include <Lib/IO/Stream/iostream>
 
-PUBLIC namespace QuantumNEC::Architecture::Interrupt {
-    ApicManagement::ApicManagement( VOID ) noexcept {
+PUBLIC namespace QuantumNEC::Architecture {
+    Apic::Apic( VOID ) noexcept {
         // 关闭8259A PIC
-        PIC8259AManagement::disable_8259A_pic( );
+        PIC8259A::disable_8259A_pic( );
         // 开启APIC
         if ( this->check_apic( ) ) {
-            Lib::Types::uint64_t apic_base_pa = CPU::CPUManagement::rdmsr( IA32_APIC_BASE_MSR );
+            Lib::Types::uint64_t apic_base_pa = CPUs::rdmsr( IA32_APIC_BASE_MSR );
             Lib::Types::Ptr< volatile Lib::Types::uint32_t > lapic = (Lib::Types::Ptr< volatile Lib::Types::uint32_t >)( apic_base_pa & IA32_APIC_BASE_MSR_BASE_ADDR_MSK );
             // LOCAL APIC
 
             // 启用本地 APIC;设置杂散中断向量。
-            this->write_apic( LOCAL_APIC_SVR, LOCAL_APIC_ENABLE | Platform::LOCAL_APIC_SPURIOUS_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
+            this->write_apic( LOCAL_APIC_SVR, LOCAL_APIC_ENABLE | LOCAL_APIC_SPURIOUS_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
             // 计时器在总线频率下反复倒计时
             // from lapic[TICR]，然后发出中断。
             // TODO：使用外部时间校准 TICR
             this->write_apic( LOCAL_APIC_TDCR, LOCAL_APIC_X1, ApicType::LOCAL_APIC );
-            this->write_apic( LOCAL_APIC_TIMER, LOCAL_APIC_PERIODIC | Platform::CLOCK_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
+            this->write_apic( LOCAL_APIC_TIMER, LOCAL_APIC_PERIODIC | CLOCK_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
             this->write_apic( LOCAL_APIC_TICR, 10000000, ApicType::LOCAL_APIC );
             // Disable logical interrupt lines.
             this->write_apic( LOCAL_APIC_LINT0, LOCAL_APIC_MASKED, ApicType::LOCAL_APIC );
@@ -30,7 +30,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
             if ( ( ( lapic[ LOCAL_APIC_VER ] >> 16 ) & 0xFF ) >= 4 )
                 this->write_apic( LOCAL_APIC_PCINT, LOCAL_APIC_MASKED, ApicType::LOCAL_APIC );
             // 将错误中断映射到IRQ_ERROR。
-            this->write_apic( LOCAL_APIC_ERROR, Platform::LOCAL_APIC_ERROR_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
+            this->write_apic( LOCAL_APIC_ERROR, LOCAL_APIC_ERROR_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
             // 清除错误状态寄存器（需要背靠背写入）。
             this->write_apic( LOCAL_APIC_ESR, 0, ApicType::LOCAL_APIC );
             this->write_apic( LOCAL_APIC_ESR, 0, ApicType::LOCAL_APIC );
@@ -46,7 +46,7 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
             // IO APIC
             // 将所有中断标记为边沿触发、高电平有效、禁用、并且不路由到任何 CPU。
             for ( Lib::Types::uint64_t i { }; i <= ( ( this->read_apic( IOAPIC_REG_VER, ApicType::IO_APIC ) >> 16 ) & 0xFF ); i++ ) {
-                this->write_apic( IOAPIC_REG_TABLE + 2 * i, INT_DISABLED | ( Platform::IDT_ENTRY_IRQ_0 + i ), ApicType::IO_APIC );
+                this->write_apic( IOAPIC_REG_TABLE + 2 * i, INT_DISABLED | ( IDT_ENTRY_IRQ_0 + i ), ApicType::IO_APIC );
                 this->write_apic( IOAPIC_REG_TABLE + 2 * i + 1, 0, ApicType::IO_APIC );
             }
             ASM( "MOVQ %0, %%CR8" ::"r"( 0ull ) );
@@ -57,54 +57,54 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
             Lib::IO::sout << "CPU can not support apic!" << Lib::IO::endl;
         }
     }
-    ApicManagement::~ApicManagement( VOID ) noexcept {
+    Apic::~Apic( VOID ) noexcept {
     }
-    auto ApicManagement::eoi( IN CONST irq_t )->VOID {
+    auto Apic::eoi( IN CONST irq_t )->VOID {
         write_apic( LOCAL_APIC_EOI, 0, ApicType::LOCAL_APIC );
     }
-    auto ApicManagement::check_apic( VOID )->Lib::Types::BOOL {
+    auto Apic::check_apic( VOID )->Lib::Types::BOOL {
         Lib::Types::uint32_t eax { }, ebx { }, ecx { }, edx { };
-        CPU::CPUManagement::cpuid( 1, 0, &eax, &ebx, &ecx, &edx );
-        return ( edx & ( 1 << 9 ) ) && ( CPU::CPUManagement::rdmsr( IA32_APIC_BASE_MSR ) & ( 1 << 11 ) );
+        CPUs::cpuid( 1, 0, &eax, &ebx, &ecx, &edx );
+        return ( edx & ( 1 << 9 ) ) && ( CPUs::rdmsr( IA32_APIC_BASE_MSR ) & ( 1 << 11 ) );
     }
-    auto ApicManagement::read_apic( IN Lib::Types::uint16_t index, IN ApicType type )->Lib::Types::uint64_t {
+    auto Apic::read_apic( IN Lib::Types::uint16_t index, IN ApicType type )->Lib::Types::uint64_t {
         if ( type == ApicType::LOCAL_APIC ) {
             return reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint32_t volatile > >( apic.local_apic_address )[ index ];
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
         }
         else {
             Lib::Types::uint64_t ret { };
             *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_index_address ) = index + 1;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
             ret = *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_data_address );
             ret <<= 32;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
             *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_index_address ) = index;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
             ret |= *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_data_address );
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
         }
         return 0;
     }
-    auto ApicManagement::write_apic( IN Lib::Types::uint16_t index, IN Lib::Types::uint32_t value, IN ApicType type )->VOID {
+    auto Apic::write_apic( IN Lib::Types::uint16_t index, IN Lib::Types::uint32_t value, IN ApicType type )->VOID {
         if ( type == ApicType::LOCAL_APIC ) {
             reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint32_t volatile > >( apic.local_apic_address )[ index ] = value;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
         }
         else {
             Lib::Types::uint64_t value_ { value };
             *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_index_address ) = index;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
             *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_data_address ) = value_ & 0xffffffff;
             value_ >>= 32;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
             *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_index_address ) = index + 1;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
             *reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint8_t > >( apic.io_apic_data_address ) = value_ & 0xffffffff;
-            CPU::CPUManagement::mfence( );
+            CPUs::mfence( );
         }
     }
-    auto ApicManagement::enable_ioapic( IN Lib::Types::uint64_t pin, IN Lib::Types::uint64_t vector )->VOID {
+    auto Apic::enable_ioapic( IN Lib::Types::uint64_t pin, IN Lib::Types::uint64_t vector )->VOID {
         Lib::Types::uint64_t value { read_apic( pin * 2 + 0x10, ApicType::IO_APIC ) };
         value = value & ~0x100ff;
         write_apic( pin * 2 + 0x10, value | vector, ApicType::IO_APIC );

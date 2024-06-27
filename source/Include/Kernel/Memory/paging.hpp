@@ -2,7 +2,7 @@
 #include <Lib/Base/bitmap.hpp>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-PUBLIC namespace QuantumNEC::Kernel::Memory {
+PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC constexpr CONST auto PAGE_SIZE { 0x200000 };
     PUBLIC constexpr CONST auto KERNEL_BASE_ADDRESS { 0xffff800000000000ULL };
     PUBLIC constexpr CONST auto KERNEL_PHYSICAL_ADDRESS { 0x100000ULL };
@@ -94,7 +94,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         return reinterpret_cast< Lib::Types::Ptr< VOID > >( ( QuantumNEC::Lib::Types::uint64_t )(address)-KERNEL_BASE_ADDRESS );
     }
 
-    PUBLIC class PageMemoryManagement
+    PUBLIC class PageMemory
     {
     private:
         enum class MemoryPageAttribute {
@@ -115,10 +115,10 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         };
 
     public:
-        explicit PageMemoryManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept( true );
+        explicit PageMemory( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
 
     public:
-        virtual ~PageMemoryManagement( VOID ) noexcept( true ) = default;
+        virtual ~PageMemory( VOID ) noexcept = default;
 
     public:
         STATIC auto malloc( IN Lib::Types::size_t size, IN MemoryPageType type ) -> Lib::Types::Ptr< VOID >;
@@ -138,6 +138,6 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
 
     private:
         inline STATIC BitMapEntry page_descriptor_entry[ MEMORY_PAGE_DESCRIPTOR ] { };
-        inline STATIC Lib::Base::BitmapManagement bitmap_ { };
+        inline STATIC Lib::Base::Bitmap bitmap_ { };
     };
 }

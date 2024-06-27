@@ -4,20 +4,23 @@
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
 #include <cstring>
+PUBLIC namespace {
+    using namespace QuantumNEC::Kernel;
 
-PUBLIC namespace QuantumNEC::Kernel::Task {
-    STATIC TaskLock lock { };
-    ThreadManagement::ThreadManagement( VOID ) noexcept :
-        ProcessManagement { } {
+    TaskLock lock { };
+}
+PUBLIC namespace QuantumNEC::Kernel {
+    Thread::Thread( VOID ) noexcept :
+        Process { } {
     }
-    ThreadManagement::~ThreadManagement( VOID ) noexcept {
+    Thread::~Thread( VOID ) noexcept {
     }
-    auto ThreadManagement::create( IN TaskFunction entry, IN CONST Lib::Types::uintptr_t arg, IN CONST TaskType type, IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN Lib::Types::int64_t flags )->Lib::Types::Ptr< ThreadPCB > {
+    auto Thread::create( IN TaskFunction entry, IN CONST Lib::Types::uintptr_t arg, IN CONST TaskType type, IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN Lib::Types::int64_t flags )->Lib::Types::Ptr< ThreadPCB > {
         lock.acquire( );
         if ( type != TaskType::PF_KERNEL_THREAD && type != TaskType::PF_USER_THREAD ) {
             return NULL;
         }
-        Lib::Types::Ptr< ThreadPCB > task { reinterpret_cast< decltype( task ) >( Memory::PageMemoryManagement::malloc( 1, Memory::PageMemoryManagement::MemoryPageType::PAGE_2M ) ) };
+        Lib::Types::Ptr< ThreadPCB > task { reinterpret_cast< decltype( task ) >( PageMemory::malloc( 1, PageMemory::MemoryPageType::PAGE_2M ) ) };
         if ( !task ) {
             return NULL;
         }
@@ -45,15 +48,15 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
         task->flags = flags;
         task->stack_magic = TASK_STACK_MAGIC;
         task->cpu_frame = reinterpret_cast< Lib::Types::Ptr< ThreadFrame > >( reinterpret_cast< Lib::Types::uint64_t >( task ) + TASK_STACK_SIZE - sizeof( ThreadFrame ) );
-        if ( auto current_fpu { ProcessManagement::get_current< ProcessPCB >( )->fpu_frame }; current_fpu ) {
-            task->fpu_frame = reinterpret_cast< Lib::Types::Ptr< Architecture::ArchitectureManagement< TARGET_ARCH >::FPUFrame > >( reinterpret_cast< Lib::Types::uint64_t >( task->cpu_frame ) - sizeof *current_fpu );
+        if ( auto current_fpu { Process::get_current< ProcessPCB >( )->fpu_frame }; current_fpu ) {
+            task->fpu_frame = reinterpret_cast< Lib::Types::Ptr< Architecture::ArchitectureManager< TARGET_ARCH >::FPUFrame > >( reinterpret_cast< Lib::Types::uint64_t >( task->cpu_frame ) - sizeof *current_fpu );
             Lib::STL::memcpy( task->fpu_frame, current_fpu, sizeof *current_fpu );
         }
-        ThreadManagement::do_fork( task->cpu_frame, entry, arg );
+        Thread::do_fork( task->cpu_frame, entry, arg );
         lock.release( );
         return task;
     }
-    auto ThreadManagement::do_fork( OUT Lib::Types::Ptr< ThreadFrame > frame, IN TaskFunction entry, IN Lib::Types::uintptr_t arg )->VOID {
+    auto Thread::do_fork( OUT Lib::Types::Ptr< ThreadFrame > frame, IN TaskFunction entry, IN Lib::Types::uintptr_t arg )->VOID {
 #if defined( __x86_64__ )
         // 没啥好解释的。。。
         frame->rdi = arg;
@@ -70,18 +73,18 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
 #error There are no instructions available to set the registers
 #endif
     }
-    auto ThreadManagement::block( IN TaskStatus status )->VOID {
-        Architecture::ArchitectureManagement< TARGET_ARCH >::InterruptStatus interrupt_status { Architecture::ArchitectureManagement< TARGET_ARCH >::disable_interrupt( ) };
+    auto Thread::block( IN TaskStatus status )->VOID {
+        Architecture::ArchitectureManager< TARGET_ARCH >::InterruptStatus interrupt_status { Architecture::ArchitectureManager< TARGET_ARCH >::disable_interrupt( ) };
         Lib::Types::Ptr< ThreadPCB > current { reinterpret_cast< decltype( current ) >( get_current< ThreadPCB >( ) ) };
         if ( current == reinterpret_cast< decltype( current ) >( kernel_task ) ) {
             current = reinterpret_cast< decltype( current ) >( main_task );
         }
         current->status = status;
-        ProcessManagement::schedule( );
-        Architecture::ArchitectureManagement< TARGET_ARCH >::set_interrupt( interrupt_status );
+        Process::schedule( );
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_interrupt( interrupt_status );
         return;
     }
-    auto ThreadManagement::unblock( IN Lib::Types::Ptr< VOID > pcb )->VOID {
+    auto Thread::unblock( IN Lib::Types::Ptr< VOID > pcb )->VOID {
         if ( !pcb ) {
             return;
         }
@@ -89,13 +92,13 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
         if ( thread_pcb == reinterpret_cast< decltype( thread_pcb ) >( kernel_task ) ) {
             thread_pcb = reinterpret_cast< decltype( thread_pcb ) >( main_task );
         }
-        Architecture::ArchitectureManagement< TARGET_ARCH >::InterruptStatus interrupt_status { Architecture::ArchitectureManagement< TARGET_ARCH >::disable_interrupt( ) };
+        Architecture::ArchitectureManager< TARGET_ARCH >::InterruptStatus interrupt_status { Architecture::ArchitectureManager< TARGET_ARCH >::disable_interrupt( ) };
         if ( thread_pcb->status != TaskStatus::READY ) {
             // 放到队列的最前面，使其尽快得到调度
             Lib::STL::list_add_to_head( &ready_task_queue, &thread_pcb->general_task_queue );
             thread_pcb->status = TaskStatus::READY;
         };
-        Architecture::ArchitectureManagement< TARGET_ARCH >::set_interrupt( interrupt_status );
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_interrupt( interrupt_status );
         return;
     }
     auto TaskLock::release( VOID )->VOID {
@@ -103,7 +106,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
     }
     auto TaskLock::acquire( VOID )->VOID {
         while ( std::atomic_flag_test_and_set_explicit( this, std::memory_order_acquire ) ) {
-            Architecture::ArchitectureManagement< TARGET_ARCH >::pause( );
+            Architecture::ArchitectureManager< TARGET_ARCH >::pause( );
         }
     }
 }

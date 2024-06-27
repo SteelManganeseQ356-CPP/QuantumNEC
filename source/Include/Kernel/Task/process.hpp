@@ -1,5 +1,5 @@
 #pragma once
-#include "Lib/Types/type_ptr.hpp"
+#include "Lib/Base/bitmap.hpp"
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Arch/Arch.hpp>
@@ -10,12 +10,12 @@
 #include <Lib/STL/list>
 #include <Lib/STL/string>
 #include <Lib/IO/Stream/iostream>
-PUBLIC namespace QuantumNEC::Kernel::Task {
+PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC constexpr CONST auto TASK_STACK_SIZE { 65536 };     // 64KB
     PUBLIC constexpr CONST auto TASK_STACK_MAGIC { 0x1145141919810ULL };
     PUBLIC constexpr CONST auto TASK_NAME_SIZE { 32 };
     PUBLIC constexpr CONST auto PID_COUNT { 1024 };
-    PUBLIC class ProcessManagement
+    PUBLIC class Process
     {
     public:
         using TaskArg = Lib::Types::uint64_t;
@@ -66,12 +66,12 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
             // 记录内存分布
             Lib::Types::Ptr< Lib::Types::uint64_t > page_directory;     // 任务所持有的页表地址
             Lib::Types::Ptr< VOID > stack;                              // 任务所持有的栈起始地址
-            Lib::Base::AllocateManagement allocate_table;               // 虚拟地址表，在page_directory不为空时有效
+            Lib::Base::Allocate allocate_table;                         // 虚拟地址表，在page_directory不为空时有效
             // 记录寄存器状态
-            volatile Lib::Types::Ptr< Frame > cpu_frame;                                                             // 保存的CPU寄存器状态信息
-            volatile Lib::Types::Ptr< Architecture::ArchitectureManagement< TARGET_ARCH >::FPUFrame > fpu_frame;     // 保存的FPU寄存器状态信息
+            volatile Lib::Types::Ptr< Frame > cpu_frame;                                                          // 保存的CPU寄存器状态信息
+            volatile Lib::Types::Ptr< Architecture::ArchitectureManager< TARGET_ARCH >::FPUFrame > fpu_frame;     // 保存的FPU寄存器状态信息
             // 进程间通信需要的
-            MessageManagement message;     // 进程消息体
+            Message message;     // 进程消息体
             // 任务信息
             Lib::Types::int64_t PID;                       // 任务ID
             Lib::Types::char_t name[ TASK_NAME_SIZE ];     // 任务名
@@ -130,7 +130,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
 
     public:
 #if defined( __x86_64__ )
-        using ProcessFrame = Architecture::CPU::InterruptFrame;     // 进程栈
+        using ProcessFrame = Architecture::ArchitectureManager< TARGET_ARCH >::InterruptFrame;     // 进程栈
 #elif defined( __aarch64__ )
 #else
 #error Not any registers
@@ -153,13 +153,13 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
         private:
             inline STATIC Lib::Types::uint64_t pid_head { };
             inline STATIC Lib::Types::byte_t bits[ PID_COUNT ] { };
-            inline STATIC Lib::Base::BitmapManagement bitmap_ { };
+            inline STATIC Lib::Base::Bitmap bitmap_ { };
         };
         inline STATIC PidPool pid_pool { };
 
     public:
-        explicit( TRUE ) ProcessManagement( ) noexcept( TRUE );
-        virtual ~ProcessManagement( VOID ) noexcept( TRUE );
+        explicit Process( VOID ) noexcept;
+        virtual ~Process( VOID ) noexcept;
 
     public:
         /**
@@ -173,7 +173,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
          */
         template < typename PCB >
         STATIC auto get_current( VOID ) -> Lib::Types::Ptr< PCB > {
-            return reinterpret_cast< Lib::Types::Ptr< PCB > >( Architecture::ArchitectureManagement< TARGET_ARCH >::get_rsp( ) & ~( TASK_STACK_SIZE - 1 ) );
+            return reinterpret_cast< Lib::Types::Ptr< PCB > >( Architecture::ArchitectureManager< TARGET_ARCH >::get_rsp( ) & ~( TASK_STACK_SIZE - 1 ) );
         }
         /**
          * @brief 激活进程/线程
@@ -182,9 +182,9 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
          */
         template < typename PCB >
         STATIC auto activate_task( IN Lib::Types::Ptr< PCB > pcb ) -> VOID {
-            Memory::MemoryMapManagement::activate_page_directory_table( pcb->page_directory );
+            MemoryMap::activate_page_directory_table( pcb->page_directory );
             if ( pcb->page_directory ) {
-                Architecture::CPU::GlobalSegmentDescriptorManagement::set_tss_rsp0( 0, pcb, TASK_STACK_SIZE );
+                Architecture::ArchitectureManager< TARGET_ARCH >::set_tss_rsp0( 0, pcb, TASK_STACK_SIZE );
             }
         }
 

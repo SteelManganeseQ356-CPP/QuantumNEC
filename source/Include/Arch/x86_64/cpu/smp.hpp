@@ -3,11 +3,11 @@
 #include <Lib/Base/deflib.hpp>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-PUBLIC namespace QuantumNEC::Architecture::CPU {
-    PUBLIC class SMPManagement
+PUBLIC namespace QuantumNEC::Architecture {
+    PUBLIC class SymmetricMultiprocessing
     {
     public:
-        explicit( TRUE ) SMPManagement( VOID ) noexcept;
-        virtual ~SMPManagement( VOID ) noexcept = default;
+        explicit( TRUE ) SymmetricMultiprocessing( VOID ) noexcept;
+        virtual ~SymmetricMultiprocessing( VOID ) noexcept = default;
     };
 }

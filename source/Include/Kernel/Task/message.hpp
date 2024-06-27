@@ -3,11 +3,11 @@
 #include <Lib/Types/type_bool.hpp>
 #include <Lib/STL/list>
 #include <Arch/Arch.hpp>
-PUBLIC namespace QuantumNEC::Kernel::Task {
+PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC constexpr CONST auto NO_TASK { 0x1919810 };
     PUBLIC constexpr CONST auto ANY { 0x018919 };
     PUBLIC constexpr CONST auto INTERRUPT { 0x114514 };
-    PUBLIC class MessageManagement
+    PUBLIC class Message
     {
     public:
         Lib::Types::uint64_t source; /* 发出这个消息的进程pid */
@@ -48,8 +48,8 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
         Lib::STL::ListTable sender_list;      /* 如果有进程向这个进程发送消息, 但本进程没有要接收消息,那么发送信息的进程将自己的通任务队列加入这个队列 */
 
     public:
-        explicit( TRUE ) MessageManagement( VOID ) noexcept( TRUE ) = default;
-        ~MessageManagement( VOID ) noexcept( TRUE ) = default;
+        explicit Message( VOID ) noexcept = default;
+        virtual ~Message( VOID ) noexcept = default;
 
     public:
         /**
@@ -58,16 +58,16 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
          * @param function 功能(发送，接收或者两个都要)
          * @param source_destination 发送者/接收者
          */
-        auto send_receive( IN Architecture::ArchitectureManagement< TARGET_ARCH >::SyscallManagement::SyscallFunction function, IN Lib::Types::uint64_t source_destination ) -> Architecture::ArchitectureManagement< TARGET_ARCH >::SyscallManagement::SyscallStatus;
+        auto send_receive( IN Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallFunction function, IN Lib::Types::uint64_t source_destination ) -> Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus;
 
     public:
         /**
          * @brief 发送消息
          */
-        auto send( IN Lib::Types::uint64_t destination ) -> Architecture::ArchitectureManagement< TARGET_ARCH >::SyscallManagement::SyscallStatus;
+        auto send( IN Lib::Types::uint64_t destination ) -> Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus;
         /**
          * @brief 接收消息
          */
-        auto receive( IN Lib::Types::uint64_t source ) -> Architecture::ArchitectureManagement< TARGET_ARCH >::SyscallManagement::SyscallStatus;
+        auto receive( IN Lib::Types::uint64_t source ) -> Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus;
     };
 }

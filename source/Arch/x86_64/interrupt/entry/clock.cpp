@@ -1,19 +1,18 @@
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Kernel/task.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
-    PRIVATE auto ASMCALL clock( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame )->Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > {
+PUBLIC namespace QuantumNEC::Architecture {
+    PRIVATE auto ASMCALL clock( IN Lib::Types::Ptr< CONST Architecture::CPUs::InterruptFrame > frame )->Lib::Types::Ptr< CONST Architecture::CPUs::InterruptFrame > {
         using namespace Kernel;
-        using namespace Kernel::Task;
-        Architecture::Interrupt::InterruptManagement::eoi( frame->irq );
+        Architecture::Interrupt::eoi( frame->irq );
 
-        volatile Lib::Types::Ptr< TaskManagement::ProcessPCB > current { TaskManagement::get_current< TaskManagement::ProcessPCB >( ) };
-        Kernel::TaskManagement::save_frame( frame );
+        volatile Lib::Types::Ptr< Task::ProcessPCB > current { Task::get_current< Task::ProcessPCB >( ) };
+        Task::save_frame( frame );
 
         if ( !current->ticks ) {
-            TaskManagement::schedule( );
+            Task::schedule( );
             current->ticks = current->priority;
-            return TaskManagement::ready_task->cpu_frame;
+            return Task::ready_task->cpu_frame;
         }
         else {
             current->ticks--;
@@ -22,6 +21,6 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
         return frame;
     }
     ClockEntry::ClockEntry( VOID ) noexcept {
-        Architecture::CPU::InterruptDescriptorManagement::set_interrupt_handler( 0x20, clock );     // 注册时间中断入口函数
+        Architecture::CPUs::set_interrupt_handler( 0x20, clock );     // 注册时间中断入口函数
     }
 }

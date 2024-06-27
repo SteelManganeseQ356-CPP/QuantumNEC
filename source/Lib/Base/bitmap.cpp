@@ -2,25 +2,25 @@
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    BitmapManagement::BitmapManagement( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) noexcept {
+    Bitmap::Bitmap( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) noexcept {
         bitmap_.length = bit_length;
         bitmap_.bits = bits;
     }
-    BitmapManagement::BitmapManagement( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept {
+    Bitmap::Bitmap( IN Lib::Types::L_Ref< CONST Bitmap > _bitmap ) noexcept {
         this->bitmap_.bits = _bitmap.bitmap_.bits;
         this->bitmap_.length = _bitmap.bitmap_.length;
     }
-    auto BitmapManagement::operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< CONST BitmapManagement > {
+    auto Bitmap::operator=( IN Lib::Types::L_Ref< CONST Bitmap > _bitmap ) noexcept -> Lib::Types::L_Ref< CONST Bitmap > {
         this->bitmap_.bits = _bitmap.bitmap_.bits;
         this->bitmap_.length = _bitmap.bitmap_.length;
         return *this;
     }
-    BitmapManagement::~BitmapManagement( VOID ) noexcept {
+    Bitmap::~Bitmap( VOID ) noexcept {
     }
-    auto BitmapManagement::scan( Lib::Types::size_t bit_idx )->Lib::Types::BOOL {
+    auto Bitmap::scan( Lib::Types::size_t bit_idx )->Lib::Types::BOOL {
         return this->bitmap_.bits[ bit_idx / 8 ] & ( BITMAP_MASK << ( bit_idx % 8 ) );
     }
-    auto BitmapManagement::allocate( Lib::Types::size_t cnt )->Types::int64_t {
+    auto Bitmap::allocate( Lib::Types::size_t cnt )->Types::int64_t {
         Lib::Types::size_t index { };
         /* 寻找第一个空的bit所在位 */
         /* 位图已满,找不到空位 */
@@ -64,7 +64,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         }
         return bit_index_start;
     }
-    auto BitmapManagement::set( Lib::Types::size_t bit_idx, Lib::Types::int8_t value )->VOID {
+    auto Bitmap::set( Lib::Types::size_t bit_idx, Lib::Types::int8_t value )->VOID {
         /* 一般都会用个 0x1 这样的数对字节中的位操作 74 * 将 1
          * 任意移动后再取反，或者先取反再移位，可用来对位置 0 操作。*/
         switch ( value ) {

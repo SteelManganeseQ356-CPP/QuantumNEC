@@ -1,6 +1,6 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Interrupt {
+PUBLIC namespace QuantumNEC::Architecture {
     constexpr CONST auto IA32_APIC_BASE_MSR { 0x1B };
     constexpr CONST auto IA32_APIC_BASE_MSR_BSP { 1UL << 8U };     // 处理器是 BSP
     constexpr CONST auto IA32_APIC_BASE_MSR_ENABLE { 1UL << 11U };
@@ -42,12 +42,12 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     constexpr CONST auto INT_LEVEL { 0x00008000 };         // 电平触发（与边沿-）
     constexpr CONST auto INT_ACTIVELOW { 0x00002000 };     // 低电平有效（与高电平相比）
     constexpr CONST auto INT_LOGICAL { 0x00000800 };       // 目标为 CPU ID（与 APIC ID 相对）
-    PUBLIC class ApicManagement
+    PUBLIC class Apic
     {
     public:
         using irq_t = Lib::Types::uint8_t;
 
-        struct Apic
+        struct ApicInformation
         {
             Lib::Types::uint64_t local_apic_address;
             Lib::Types::uint32_t io_apic_address;
@@ -65,8 +65,8 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         };
 
     public:
-        explicit( TRUE ) ApicManagement( VOID ) noexcept;
-        virtual ~ApicManagement( VOID ) noexcept;
+        explicit Apic( VOID ) noexcept;
+        virtual ~Apic( VOID ) noexcept;
 
     public:
         STATIC auto write_apic( IN Lib::Types::uint16_t index, IN Lib::Types::uint32_t value, IN ApicType type ) -> VOID;
@@ -81,6 +81,6 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         STATIC auto check_apic( VOID ) -> Lib::Types::BOOL;
 
     public:
-        inline STATIC Apic apic;
+        inline STATIC ApicInformation apic;
     };
 }

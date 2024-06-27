@@ -8,7 +8,7 @@
 PUBLIC namespace {
     PUBLIC using namespace QuantumNEC::Lib::IO;
     PUBLIC using namespace QuantumNEC;
-    PUBLIC using namespace QuantumNEC::Kernel::Memory;
+    PUBLIC using namespace QuantumNEC::Kernel;
     PRIVATE inline constexpr Lib::Types::size_t operator""_KB( IN CONST Lib::Types::size_t kib ) {
         return kib * 1024;
     }
@@ -20,13 +20,13 @@ PUBLIC namespace {
     PRIVATE inline constexpr Lib::Types::size_t operator""_GB( IN CONST Lib::Types::size_t gib ) {
         return gib * 1024_MB;
     }
-    STATIC Lib::Types::Ptr< VOID > buffer_4k { };
+    PRIVATE Lib::Types::Ptr< VOID > buffer_4k { };
+    PRIVATE TaskLock lock { };
 }
 
-PUBLIC namespace QuantumNEC::Kernel::Memory {
-    STATIC Task::TaskLock lock { };
-    PageMemoryManagement::PageMemoryManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept {     // 计算可用内存数量
-        Lib::Types::Ptr< Lib::Types::EfiMemoryDescriptor > efi_memory_descriptor { _config->MemoryData.Buffer };      // memory map
+PUBLIC namespace QuantumNEC::Kernel {
+    PageMemory::PageMemory( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept {                        // 计算可用内存数量
+        Lib::Types::Ptr< Lib::Types::EfiMemoryDescriptor > efi_memory_descriptor { _config->MemoryData.Buffer };     // memory map
         bitmap_.set_length( MEMORY_PAGE_DESCRIPTOR );
         bitmap_.set_bits( page_descriptor_entry );
         auto check_memory_type = [ &, this ]( Lib::Types::size_t n ) -> MemoryPageAttribute {
@@ -94,7 +94,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         endl( sout );
         buffer_4k = malloc_2M_page( 20 );
     }
-    auto PageMemoryManagement::malloc( IN Lib::Types::size_t size, IN MemoryPageType type )->Lib::Types::Ptr< VOID > {
+    auto PageMemory::malloc( IN Lib::Types::size_t size, IN MemoryPageType type )->Lib::Types::Ptr< VOID > {
         lock.acquire( );
         switch ( type ) {
         case MemoryPageType::PAGE_4K:
@@ -111,7 +111,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
             return NULL;
         };
     }
-    auto PageMemoryManagement::free( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size, IN MemoryPageType type )->VOID {
+    auto PageMemory::free( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size, IN MemoryPageType type )->VOID {
         lock.acquire( );
         switch ( type ) {
         case MemoryPageType::PAGE_4K:
@@ -128,9 +128,9 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         };
         lock.release( );
     }
-    auto PageMemoryManagement::malloc_2M_page( IN Lib::Types::size_t size )->Lib::Types::Ptr< VOID > {
+    auto PageMemory::malloc_2M_page( IN Lib::Types::size_t size )->Lib::Types::Ptr< VOID > {
         Lib::Types::Ptr< VOID > buffer { };
-        Architecture::ArchitectureManagement< TARGET_ARCH >::InterruptStatus status { Architecture::ArchitectureManagement< TARGET_ARCH >::disable_interrupt( ) };
+        Architecture::ArchitectureManager< TARGET_ARCH >::InterruptStatus status { Architecture::ArchitectureManager< TARGET_ARCH >::disable_interrupt( ) };
         if ( size ) {
             Lib::Types::int64_t index { bitmap_.allocate( size ) };
             if ( index != -1 ) {
@@ -143,20 +143,20 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         else {
             buffer = NULL;
         }
-        Architecture::ArchitectureManagement< TARGET_ARCH >::set_interrupt( status );
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_interrupt( status );
         return buffer;
     }
-    auto PageMemoryManagement::free_2M_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size )->VOID {
+    auto PageMemory::free_2M_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size )->VOID {
         if ( !size || !address ) {
             return;
         }
-        Architecture::ArchitectureManagement< TARGET_ARCH >::InterruptStatus status { Architecture::ArchitectureManagement< TARGET_ARCH >::disable_interrupt( ) };
+        Architecture::ArchitectureManager< TARGET_ARCH >::InterruptStatus status { Architecture::ArchitectureManager< TARGET_ARCH >::disable_interrupt( ) };
         for ( Lib::Types::uint64_t index { reinterpret_cast< decltype( index ) >( address ) / PAGE_SIZE }; index < reinterpret_cast< decltype( index ) >( address ) / PAGE_SIZE + size; ++index ) {
             bitmap_.set( index, 0 );
         }
         // 清空之前废弃的数据
         Lib::STL::memset( address, 0, size * PAGE_SIZE );
-        Architecture::ArchitectureManagement< TARGET_ARCH >::set_interrupt( status );
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_interrupt( status );
     }
     // typedef struct
     // {
@@ -165,7 +165,7 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
     //     Lib::Types::Ptr< VOID > buffer_address;
     // } _packed 4K_PAGE;
     // int count { };
-    auto PageMemoryManagement::malloc_4K_page( IN Lib::Types::size_t size )->Lib::Types::Ptr< VOID > {
+    auto PageMemory::malloc_4K_page( IN Lib::Types::size_t size )->Lib::Types::Ptr< VOID > {
         buffer_4k = reinterpret_cast< decltype( buffer_4k ) >( reinterpret_cast< Lib::Types::uint64_t >( buffer_4k ) + size * 4_KB );
         return buffer_4k;
         // for ( Lib::Types::uint64_t i { }; i < 20_MB / ( 4_KB + sizeof( 4K_PAGE ) ); ++i ) {
@@ -177,12 +177,12 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         // }
         // return NULL;
     }
-    auto PageMemoryManagement::free_4K_page( IN Lib::Types::Ptr< VOID >, IN Lib::Types::size_t size )->VOID {
+    auto PageMemory::free_4K_page( IN Lib::Types::Ptr< VOID >, IN Lib::Types::size_t size )->VOID {
         buffer_4k = reinterpret_cast< decltype( buffer_4k ) >( reinterpret_cast< Lib::Types::uint64_t >( buffer_4k ) - size * 4_KB );
     }
-    auto PageMemoryManagement::malloc_1G_page( IN Lib::Types::size_t )->Lib::Types::Ptr< VOID > {
+    auto PageMemory::malloc_1G_page( IN Lib::Types::size_t )->Lib::Types::Ptr< VOID > {
         return NULL;
     }
-    auto PageMemoryManagement::free_1G_page( IN Lib::Types::Ptr< VOID >, IN Lib::Types::size_t )->VOID {
+    auto PageMemory::free_1G_page( IN Lib::Types::Ptr< VOID >, IN Lib::Types::size_t )->VOID {
     }
 }

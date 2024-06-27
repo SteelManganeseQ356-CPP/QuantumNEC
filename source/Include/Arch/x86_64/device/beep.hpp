@@ -1,7 +1,7 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 
-PUBLIC namespace QuantumNEC::Architecture::Device {
+PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC constexpr CONST auto SPEAKER_REG { 0x61 };
     PUBLIC constexpr CONST auto BEEP_HZ { 440 };     // 声音为440HZ
     // PUBLIC constexpr CONST auto BEEP_COUNTER { Architecture::Device::OSCILLATOR / BEEP_HZ };

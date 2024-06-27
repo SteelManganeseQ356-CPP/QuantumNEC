@@ -10,16 +10,14 @@
 PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC class x86_64Architecture :
         // 架构组织
-        public Device::DeviceManagement,
-        public CPU::CPUManagement,
-        public Interrupt::InterruptManagement,
-        public Platform::SyscallManagement
+        public Device,
+        public CPUs,
+        public Interrupt,
+        public Syscall
     {
     public:
-        explicit( true ) x86_64Architecture( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config );
-
-    public:
-        virtual ~x86_64Architecture( VOID ) noexcept( true ) = default;
+        explicit x86_64Architecture( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
+        virtual ~x86_64Architecture( VOID ) noexcept = default;
 
     public:
         inline STATIC Lib::Types::Ptr< Lib::Types::byte_t > kernel_stack_space;

@@ -1,7 +1,7 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 
-PUBLIC namespace QuantumNEC::Architecture::Platform {
+PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC struct ControlRegisterFrame
     {
         Lib::Types::uint64_t cr0;
@@ -70,7 +70,7 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
      * 0x48 (9 << 3)    空描述符，保留
      * 0x50 (10 << 3)   64位任务状态段低地址
      * 0x58 (11 << 3)   64位任务状态段高地址
-     * 0x60 ~ ...       扩展用的
+     * 0x60 ~ 0x2000    保留，扩展用的
      * ------------------------------------------------------------------------------------ */
 
     PUBLIC constexpr const auto AR_G_4K { 0x8000 };
@@ -142,7 +142,7 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
 
     PUBLIC constexpr const auto INTERRUPT_DESCRIPTOR_COUNT { 256 };
     PUBLIC constexpr const auto GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT { 32 };
-    PUBLIC constexpr const auto SEGMENT_DESCRIPTOR_COUNT { 12 };
+    PUBLIC constexpr const auto SEGMENT_DESCRIPTOR_COUNT { 8192 };
     PUBLIC constexpr const auto TASK_STATE_SEGMENT_DESCRIPTOR_COUNT { GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT };
     PUBLIC constexpr const auto LOCAL_DESCRIPTOR_COUNT { GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT * SEGMENT_DESCRIPTOR_COUNT - TASK_STATE_SEGMENT_DESCRIPTOR_COUNT };
 

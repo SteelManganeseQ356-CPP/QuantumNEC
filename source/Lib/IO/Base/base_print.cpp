@@ -58,7 +58,7 @@ PUBLIC namespace QuantumNEC::Lib::IO {
             }
             if ( *( buffer + count ) == '\a' )     // 判断字符否为\a
             {
-                Architecture::ArchitectureManagement< TARGET_ARCH >::enable_beep( );
+                Architecture::ArchitectureManager< TARGET_ARCH >::enable_beep( );
             }
             if ( *( buffer + count ) == '\n' )     // 判断字符否为\n
             {

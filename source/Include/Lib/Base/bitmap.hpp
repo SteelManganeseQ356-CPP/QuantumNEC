@@ -3,29 +3,28 @@
 #include <Lib/Types/type_bool.hpp>
 #define BITMAP_MASK 1
 PUBLIC namespace QuantumNEC::Lib::Base {
-    PUBLIC class BitmapManagement
+    PUBLIC class Bitmap
     {
     private:
-        typedef struct
+        struct BitMapData
         {
             Lib::Types::uint64_t length;                    // 位图以字节为单位的长度
             Lib::Types::Ptr< Lib::Types::byte_t > bits;     // 位图
-        } BitMapData;
+        };
 
     public:
-        explicit( TRUE ) BitmapManagement( VOID ) noexcept {
-        }
+        explicit Bitmap( VOID ) noexcept = default;
         /**
          * @brief 初始化位图
          * @param bit_length 要初始化的位图长度
          * @param bits       要初始化的位图指针
          */
-        explicit( TRUE ) BitmapManagement( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) noexcept;
-        explicit( TRUE ) BitmapManagement( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept;
-        virtual ~BitmapManagement( VOID ) noexcept;
+        explicit Bitmap( IN Lib::Types::uint64_t bit_length, IN Lib::Types::Ptr< Lib::Types::byte_t > bits ) noexcept;
+        explicit Bitmap( IN Lib::Types::L_Ref< CONST Bitmap > _bitmap ) noexcept;
+        virtual ~Bitmap( VOID ) noexcept;
 
     public:
-        auto operator=( IN Lib::Types::L_Ref< CONST BitmapManagement > _bitmap ) noexcept -> Lib::Types::L_Ref< CONST BitmapManagement >;
+        auto operator=( IN Lib::Types::L_Ref< CONST Bitmap > _bitmap ) noexcept -> Lib::Types::L_Ref< CONST Bitmap >;
 
     public:
         /**

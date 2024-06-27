@@ -10,7 +10,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
     Symbol::~Symbol( VOID ) noexcept {
     }
     auto Symbol::cleck_address_available( IN Lib::Types::uint64_t address )->Lib::Types::BOOL {
-        return address >= Kernel::Memory::KERNEL_BASE_ADDRESS && address <= this->symbolTable_[ this->symbolNumber_ - 1 ].address;
+        return address >= Kernel::KERNEL_BASE_ADDRESS && address <= this->symbolTable_[ this->symbolNumber_ - 1 ].address;
     }
 
     auto Symbol::symbol_to_address( IN Lib::Types::Ptr< CONST Lib::Types::char_t > symbol )->Lib::Types::uint64_t {

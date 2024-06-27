@@ -2,18 +2,18 @@
 #include <Arch/x86_64/cpu/xdt.hpp>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Base/deflib.hpp>
-PUBLIC namespace QuantumNEC::Architecture::CPU {
+PUBLIC namespace QuantumNEC::Architecture {
     /**
      * @brief CPU管理类
      */
-    PUBLIC class CPUManagement :
-        public InterruptDescriptorManagement,
-        public GlobalSegmentDescriptorManagement
+    PUBLIC class CPUs :
+        public InterruptDescriptorManager,
+        public GlobalSegmentDescriptorManager
 
     {
     public:
-        explicit CPUManagement( VOID ) noexcept;
-        virtual ~CPUManagement( VOID ) noexcept = default;
+        explicit CPUs( VOID ) noexcept;
+        virtual ~CPUs( VOID ) noexcept = default;
 
     public:
         /**
@@ -86,8 +86,8 @@ PUBLIC namespace QuantumNEC::Architecture::CPU {
         STATIC auto sfence( VOID ) -> VOID;
 
     private:
-        inline STATIC QuantumNEC::Architecture::CPU::GlobalSegmentDescriptor _used gdt[ Platform::GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT ][ Platform::SEGMENT_DESCRIPTOR_COUNT ] { };
-        inline STATIC QuantumNEC::Architecture::CPU::InterruptDescriptor idt[ QuantumNEC::Architecture::Platform::INTERRUPT_DESCRIPTOR_COUNT ] { };
+        inline STATIC QuantumNEC::Architecture::GlobalSegmentDescriptor _used gdt[ GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT ][ SEGMENT_DESCRIPTOR_COUNT ] { };
+        inline STATIC QuantumNEC::Architecture::InterruptDescriptor idt[ INTERRUPT_DESCRIPTOR_COUNT ] { };
     };
 
     // cpuid

@@ -1,12 +1,12 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 
-PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
+PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC using namespace QuantumNEC::Architecture;
     PUBLIC class SystemcallEntry
     {
     public:
-        explicit( TRUE ) SystemcallEntry( VOID ) noexcept;
+        explicit SystemcallEntry( VOID ) noexcept;
         virtual ~SystemcallEntry( VOID ) noexcept = default;
 
     private:

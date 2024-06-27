@@ -1,7 +1,7 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Interrupt::PIT {
-    PUBLIC class HpetManagement
+PUBLIC namespace QuantumNEC::Architecture {
+    PUBLIC class Hpet
     {
     public:
         struct HpetTimer
@@ -28,8 +28,8 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt::PIT {
         /**
          * @brief 初始化 HEPT
          */
-        explicit( true ) HpetManagement( VOID ) noexcept;
+        explicit Hpet( VOID ) noexcept;
 
-        virtual ~HpetManagement( VOID ) noexcept;
+        virtual ~Hpet( VOID ) noexcept;
     };
 }

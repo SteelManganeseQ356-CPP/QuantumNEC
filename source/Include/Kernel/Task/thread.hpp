@@ -5,8 +5,8 @@
 #include <Kernel/Task/process.hpp>
 #include <Lib/Debug/assert.hpp>
 #include <atomic>
-PUBLIC namespace QuantumNEC::Kernel::Task {
-    PUBLIC class ThreadManagement : public ProcessManagement     // 任务管理
+PUBLIC namespace QuantumNEC::Kernel {
+    PUBLIC class Thread : public Process     // 任务管理
     {
     public:
         typedef struct ThreadFrame     // 栈底
@@ -27,7 +27,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
 #else
 #error Not any registers
 #endif
-            explicit( TRUE ) ThreadFrame( IN Lib::Types::L_Ref< CONST ThreadFrame > object ) noexcept :
+            explicit ThreadFrame( IN Lib::Types::L_Ref< CONST ThreadFrame > object ) noexcept :
 #if defined( __x86_64__ )
                 r15 { object.r15 },
                 r14 { object.r14 },
@@ -46,7 +46,7 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
 #endif
             {
             }
-            auto operator=( IN Lib::Types::L_Ref< CONST ThreadFrame > object ) -> Lib::Types::L_Ref< ThreadFrame > {
+            auto operator=( IN Lib::Types::L_Ref< CONST ThreadFrame > object ) noexcept -> Lib::Types::L_Ref< ThreadFrame > {
 #if defined( __x86_64__ )
                 r15 = object.r15;
                 r14 = object.r14;
@@ -69,8 +69,8 @@ PUBLIC namespace QuantumNEC::Kernel::Task {
         using ThreadPCB = TaskPCB< ThreadFrame >;
 
     public:
-        explicit( TRUE ) ThreadManagement( VOID ) noexcept( TRUE );
-        virtual ~ThreadManagement( VOID ) noexcept( TRUE );
+        explicit Thread( VOID ) noexcept;
+        virtual ~Thread( VOID ) noexcept;
 
     public:
         /**

@@ -5,16 +5,14 @@ PUBLIC namespace {
     Lib::Types::char_t stackMemoryBuffer[ 65535 ] { };
     Lib::Types::Ptr< Lib::Types::char_t > buffer { stackMemoryBuffer };
 }
-PUBLIC namespace QuantumNEC::Kernel::Memory {
-    StackMemoryManagement::StackMemoryManagement( VOID ) {
-    }
-    auto StackMemoryManagement::malloc( IN Lib::Types::size_t _size )->Lib::Types::Ptr< VOID > {
+PUBLIC namespace QuantumNEC::Kernel {
+    auto StackMemory::malloc( IN Lib::Types::size_t _size )->Lib::Types::Ptr< VOID > {
         if ( !_size ) { return NULL; }
         buffer += _size;
         Lib::STL::memset( buffer, 0, _size );
         return buffer - _size;
     }
-    auto StackMemoryManagement::free( IN Lib::Types::Ptr< VOID > address )->VOID {
+    auto StackMemory::free( IN Lib::Types::Ptr< VOID > address )->VOID {
         if ( address ) {
             Lib::Types::size_t size { static_cast< Lib::Types::size_t >( reinterpret_cast< Lib::Types::Ptr< Lib::Types::char_t > >( address ) - buffer ) };
             Lib::STL::memset( address, 0, size );

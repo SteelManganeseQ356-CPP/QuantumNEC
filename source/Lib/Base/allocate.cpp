@@ -1,25 +1,25 @@
 #include <Lib/Base/allocate.hpp>
 PUBLIC namespace QuantumNEC::Lib::Base {
-    AllocateManagement::AllocateManagement( VOID ) noexcept {
+    Allocate::Allocate( VOID ) noexcept {
     }
-    AllocateManagement::AllocateManagement( IN Lib::Types::uint64_t entries_count ) noexcept {
+    Allocate::Allocate( IN Lib::Types::uint64_t entries_count ) noexcept {
         this->entry_ = new AllocateTableEntry[ entries_count ];
         this->table_.entries_count = entries_count;
         this->table_.frees_count = 0;
         this->table_.entries = this->entry_;
     }
-    AllocateManagement::AllocateManagement( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept {
+    Allocate::Allocate( IN Lib::Types::R_Ref< Allocate > _table ) noexcept {
         this->table_.entries_count = _table.table_.entries_count;
         this->table_.frees_count = _table.table_.frees_count;
         this->table_.entries = _table.table_.entries;
     }
-    auto AllocateManagement::operator=( IN Lib::Types::R_Ref< AllocateManagement > _table ) noexcept -> Lib::Types::L_Ref< CONST AllocateManagement > {
+    auto Allocate::operator=( IN Lib::Types::R_Ref< Allocate > _table ) noexcept -> Lib::Types::L_Ref< CONST Allocate > {
         this->table_.entries_count = _table.table_.entries_count;
         this->table_.frees_count = _table.table_.frees_count;
         this->table_.entries = _table.table_.entries;
         return *this;
     }
-    auto AllocateManagement::allocate( IN Types::uint64_t units_count )->Types::int64_t {
+    auto Allocate::allocate( IN Types::uint64_t units_count )->Types::int64_t {
         Lib::Types::uint64_t index { };
         for ( Lib::Types::uint64_t i { }; i < this->table_.entries_count; i++ ) {
             if ( this->table_.entries[ i ].units_count >= units_count ) {
@@ -38,7 +38,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         }
         return -1;
     }
-    auto AllocateManagement::free( IN Types::uint64_t index, IN Types::uint64_t units_count )->VOID {
+    auto Allocate::free( IN Types::uint64_t index, IN Types::uint64_t units_count )->VOID {
         Lib::Types::uint64_t i { }, j { };
         while ( i < this->table_.frees_count ) {
             if ( this->table_.entries[ i ].index > index ) {
@@ -80,7 +80,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
         }
         return;
     }
-    auto AllocateManagement::get_free_total( VOID )->Lib::Types::uint64_t {
+    auto Allocate::get_free_total( VOID )->Lib::Types::uint64_t {
         Lib::Types::uint64_t free_units { };
         for ( Lib::Types::uint64_t i { }; i < this->table_.frees_count; ++i ) {
             free_units += this->table_.entries[ i ].units_count;

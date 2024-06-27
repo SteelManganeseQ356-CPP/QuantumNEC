@@ -1,4 +1,3 @@
-#include "Arch/x86_64/interrupt/apic.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/Debug/panic.hpp>
 #include <Lib/STL/string>
@@ -34,8 +33,8 @@ PUBLIC namespace {
 
     PRIVATE uint8_t global_system_interrupt[ GLOBAL_SYSTEM_INTERRUPT_COUNT ];
 }
-PUBLIC namespace QuantumNEC::Architecture::Device {
-    AcpiManagement::AcpiManagement( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept :
+PUBLIC namespace QuantumNEC::Architecture {
+    Acpi::Acpi( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept :
         rsdp { _config->AcpiData.rsdpTable },
         xsdt { reinterpret_cast< Lib::Types::Ptr< Xsdt > >( this->rsdp->xsdtAddress ) } {
         using namespace Lib::Types;
@@ -87,7 +86,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
                     DisplayColor::BLACK,
                     "Local Apic ================>> | Acpi Processor UID <=> %8u | Apic ID <=> %27u | Flags <=> %41x |\n",
                     local_apic->acpiProcessorUID, local_apic->apicID, local_apic->flags );
-                Architecture::Interrupt::ApicManagement::apic.local_apic_ID[ Architecture::Interrupt::ApicManagement::apic.core_count++ ] = local_apic->apicID;
+                Architecture::Apic::apic.local_apic_ID[ Architecture::Apic::apic.core_count++ ] = local_apic->apicID;
             }
             else if ( ICS->type == ICSAttribute::I_O_APIC ) {
                 Lib::Types::Ptr< IOApic > io_apic { reinterpret_cast< decltype( io_apic ) >( ICS ) };
@@ -97,7 +96,7 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
                     "I/O Apic ==================>> | I/O Apic ID <=> %15u | I/O Apic Address <=> %#18x | Global System Interrupt Base <=> %18x |\n",
                     io_apic->IOApicID, io_apic->IOApicAddress, io_apic->globalSystemInterruptBase );
                 this->io_apic_address = reinterpret_cast< decltype( this->io_apic_address ) >( io_apic->IOApicAddress );
-                Architecture::Interrupt::ApicManagement::apic.io_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->io_apic_address );
+                Architecture::Apic::apic.io_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->io_apic_address );
             }
             else if ( ICS->type == ICSAttribute::INTERRUPT_SOURCE_OVERRIDE ) {
                 Lib::Types::Ptr< InterruptSourceOverride > interrupt_source_override { reinterpret_cast< decltype( interrupt_source_override ) >( ICS ) };
@@ -112,16 +111,16 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
             ICS = reinterpret_cast< decltype( ICS ) >( (char *)( ICS ) + ICS->length );
         }
         this->local_apic_address = reinterpret_cast< decltype( this->local_apic_address ) >( this->madt->localApicAddress );
-        Architecture::Interrupt::ApicManagement::apic.local_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->local_apic_address );
-        Architecture::Interrupt::ApicManagement::apic.io_apic_index_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Interrupt::ApicManagement::apic.io_apic_address );
-        Architecture::Interrupt::ApicManagement::apic.io_apic_data_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Interrupt::ApicManagement::apic.io_apic_address + 0x10UL );
-        Architecture::Interrupt::ApicManagement::apic.io_apic_EOI_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Interrupt::ApicManagement::apic.io_apic_address + 0x40UL );
+        Architecture::Apic::apic.local_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->local_apic_address );
+        Architecture::Apic::apic.io_apic_index_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic.io_apic_address );
+        Architecture::Apic::apic.io_apic_data_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic.io_apic_address + 0x10UL );
+        Architecture::Apic::apic.io_apic_EOI_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic.io_apic_address + 0x40UL );
         this->hpet = reinterpret_cast< decltype( this->hpet ) >( getEntry( HPET_SIGNED ) );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the advanced configuration power interface." << Lib::IO::endl;
     }
 
     template <>
-    auto AcpiManagement::is_valid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL {
+    auto Acpi::is_valid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL {
         if ( Lib::STL::strncmp( this->rsdp->signature, "RSD PTR ", 8 ) || this->rsdp->revision != 2 ) {
             return FALSE;
         }

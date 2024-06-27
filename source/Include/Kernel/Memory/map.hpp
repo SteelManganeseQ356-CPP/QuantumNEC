@@ -2,14 +2,14 @@
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 
-PUBLIC namespace QuantumNEC::Kernel::Memory {
+PUBLIC namespace QuantumNEC::Kernel {
     constexpr CONST auto PML_IDX { 512 };
     constexpr CONST auto PML_SIZE { PML_IDX * 2 };
     constexpr CONST auto PT_SIZE { 0x1000 };
     constexpr CONST auto MEMORY_SIZE_4K { 65536 };
     constexpr CONST auto MEMORY_SIZE_2M { 128 };
     constexpr CONST auto MEMORY_SIZE_1G { 1 };
-    PUBLIC typedef struct
+    PUBLIC struct pml_t
     {
         Lib::Types::Ptr< Lib::Types::uint64_t > pml;
         auto make_mplt( IN Lib::Types::Ptr< Lib::Types::uint64_t > address, IN Lib::Types::uint64_t attribute ) {
@@ -20,8 +20,8 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
             this->pml = mplval;
             return;
         }
-    } pml_t;
-    PUBLIC typedef struct
+    };
+    PUBLIC struct pdpt_t
     {
         Lib::Types::Ptr< Lib::Types::uint64_t > pdpt;
         auto make_pdpt( IN Lib::Types::Ptr< Lib::Types::uint64_t > address, IN Lib::Types::uint64_t attribute ) {
@@ -32,8 +32,8 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
             this->pdpt = pdptval;
             return;
         }
-    } pdpt_t;
-    PUBLIC typedef struct
+    };
+    PUBLIC struct pdt_t
     {
         Lib::Types::Ptr< Lib::Types::uint64_t > pdt;
         auto make_pdt( IN Lib::Types::Ptr< Lib::Types::uint64_t > address, IN Lib::Types::uint64_t attribute ) {
@@ -44,8 +44,8 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
             this->pdt = pdtval;
             return;
         }
-    } pdt_t;
-    PUBLIC typedef struct
+    };
+    PUBLIC struct pt_t
     {
         Lib::Types::Ptr< Lib::Types::uint64_t > pt;
         auto make_pt( IN Lib::Types::Ptr< Lib::Types::uint64_t > address, IN Lib::Types::uint64_t attribute ) {
@@ -56,8 +56,8 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
             this->pt = ptval;
             return;
         }
-    } pt_t;
-    PUBLIC class MemoryMapManagement
+    };
+    PUBLIC class MemoryMap
     {
     private:
         /**
@@ -83,10 +83,10 @@ PUBLIC namespace QuantumNEC::Kernel::Memory {
         };
 
     public:
-        explicit( true ) MemoryMapManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept( true );
+        explicit MemoryMap( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
 
     public:
-        virtual ~MemoryMapManagement( VOID ) noexcept( true ) = default;
+        virtual ~MemoryMap( VOID ) noexcept = default;
 
     public:
         /**

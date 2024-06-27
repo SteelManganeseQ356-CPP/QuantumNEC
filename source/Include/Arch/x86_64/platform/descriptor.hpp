@@ -12,17 +12,17 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
         requires requires( Lib::Types::Ptr< D > test ) {
             { test->set( test ) } -> std::same_as< D & >;
         }
-    class DescriptorManagement
+    class Descriptor
     {
     public:
-        explicit( TRUE ) DescriptorManagement( IN Lib::Types::Ptr< D > _descriptor, IN Lib::Types::uint16_t _descriptorCount ) noexcept :
+        explicit( TRUE ) Descriptor( IN Lib::Types::Ptr< D > _descriptor, IN Lib::Types::uint16_t _descriptorCount ) noexcept :
             xdtr { Lib::Types::uint16_t( sizeof( D ) * _descriptorCount - 1 ), _descriptor } {
         }
-        virtual ~DescriptorManagement( VOID ) noexcept = default;
+        virtual ~Descriptor( VOID ) noexcept = default;
 
     public:
         /**
-         * @brief 装载
+         * @brief 装载描述符
          */
         virtual auto load( VOID ) const -> VOID = 0;
         /**
@@ -33,9 +33,9 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
 
     protected:
         /**
-         * @brief 描述符表属性记录
+         * @brief 描述符表引索
          */
-        struct DescriptorAttribute
+        struct DescriptorRegister
         {
             Lib::Types::uint16_t size { };
             Lib::Types::Ptr< D > descriptor { };

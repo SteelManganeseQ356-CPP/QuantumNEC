@@ -5,17 +5,17 @@
 #include <Kernel/Memory/stack.hpp>
 #include <Lib/Types/Uefi.hpp>
 PUBLIC namespace QuantumNEC::Kernel {
-    PUBLIC class MemoryManagement :
-        Memory::PageMemoryManagement,
-        Memory::HeapMemoryManagement,
-        Memory::MemoryMapManagement,
-        Memory::StackMemoryManagement
+    PUBLIC class Memory :
+        PageMemory,
+        HeapMemory,
+        MemoryMap,
+        StackMemory
     {
     public:
-        explicit( true ) MemoryManagement( Lib::Types::Ptr< Lib::Types::BootConfig > ) noexcept;
+        explicit( true ) Memory( Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
 
     public:
-        virtual ~MemoryManagement( VOID ) noexcept = default;
+        virtual ~Memory( VOID ) noexcept = default;
 
     private:
     };

@@ -1,8 +1,8 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Device {
-    PUBLIC class AcpiManagement
+PUBLIC namespace QuantumNEC::Architecture {
+    PUBLIC class Acpi
     {
     private:
         enum class ICSAttribute : Lib::Types::uint8_t {
@@ -184,10 +184,10 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         } inline STATIC globalSystemInterrupt;
 
     public:
-        explicit( true ) AcpiManagement( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept( true );
+        explicit Acpi( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept( true );
 
     public:
-        virtual ~AcpiManagement( VOID ) noexcept( true ) = default;
+        virtual ~Acpi( VOID ) noexcept( true ) = default;
 
     public:
         template < typename T >
@@ -205,5 +205,5 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         inline STATIC Lib::Types::Ptr< Hpet > hpet { };
     };
     template <>
-    auto AcpiManagement::is_valid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL;
+    auto Acpi::is_valid< Lib::Types::Rsdp >( VOID ) CONST->Lib::Types::BOOL;
 }

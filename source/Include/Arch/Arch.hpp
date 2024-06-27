@@ -13,20 +13,19 @@
 PUBLIC namespace QuantumNEC::Architecture {
     template < typename Arch >
         requires requires { typename Arch; }
-                 && std::derived_from< Arch, typename Architecture::CPU::CPUManagement >
-                 && std::derived_from< Arch, typename Architecture::Device::DeviceManagement >
-                 && std::derived_from< Arch, typename Architecture::Interrupt::InterruptManagement >
-                 && std::derived_from< Arch, typename Architecture::Platform::SyscallManagement >
-    class ArchitectureManagement : public Arch
+                 && std::derived_from< Arch, typename Architecture::CPUs >
+                 && std::derived_from< Arch, typename Architecture::Device >
+                 && std::derived_from< Arch, typename Architecture::Interrupt >
+                 && std::derived_from< Arch, typename Architecture::Syscall >
+    class ArchitectureManager : public Arch
     {
     public:
-        explicit( TRUE ) ArchitectureManagement( Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept( TRUE ) :
+        explicit ArchitectureManager( Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept :
             Arch { _config } {
         }
 
     public:
-        virtual ~ArchitectureManagement( VOID ) noexcept( TRUE ) {
-        }
+        virtual ~ArchitectureManager( VOID ) noexcept = default;
 
     private:
     };

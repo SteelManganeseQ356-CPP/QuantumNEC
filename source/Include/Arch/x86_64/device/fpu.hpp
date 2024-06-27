@@ -2,9 +2,9 @@
 #include <Lib/Base/deflib.hpp>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Device {
+PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC constexpr CONST auto REGISTERS_COUNT { 80 };
-    PUBLIC class FPUDriverManagement
+    PUBLIC class FPU
     {
     private:
         enum class CR0_COMMAND : Lib::Types::int64_t {
@@ -39,8 +39,8 @@ PUBLIC namespace QuantumNEC::Architecture::Device {
         } _packed FPUFrame;
 
     public:
-        explicit( TRUE ) FPUDriverManagement( VOID ) noexcept( TRUE );
-        virtual ~FPUDriverManagement( VOID ) noexcept( TRUE ) = default;
+        explicit FPU( VOID ) noexcept( TRUE );
+        virtual ~FPU( VOID ) noexcept( TRUE ) = default;
 
     public:
         /**

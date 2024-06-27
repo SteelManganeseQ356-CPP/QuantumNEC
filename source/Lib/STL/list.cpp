@@ -26,10 +26,10 @@ PUBLIC namespace QuantumNEC::Lib::STL {
     }
 
     PUBLIC auto list_delete( IN OUT Lib::Types::Ptr< ListNode > entry )->VOID {
-        Architecture::ArchitectureManagement< TARGET_ARCH >::InterruptStatus status { Architecture::ArchitectureManagement< TARGET_ARCH >::disable_interrupt( ) };
+        Architecture::ArchitectureManager< TARGET_ARCH >::InterruptStatus status { Architecture::ArchitectureManager< TARGET_ARCH >::disable_interrupt( ) };
         entry->next->prev = entry->prev;
         entry->prev->next = entry->next;
-        Architecture::ArchitectureManagement< TARGET_ARCH >::set_interrupt( status );
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_interrupt( status );
     }
     PUBLIC auto list_pop( IN OUT Lib::Types::Ptr< ListTable > entry )->Lib::Types::Ptr< ListNode > {
         Lib::Types::Ptr< ListNode > node { entry->head.next };

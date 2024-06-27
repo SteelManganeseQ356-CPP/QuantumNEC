@@ -6,14 +6,14 @@
 #include <Arch/x86_64/interrupt/entry/entry.hpp>
 #include <Arch/x86_64/interrupt/pit/pit.hpp>
 
-PUBLIC namespace QuantumNEC::Architecture::Interrupt {
-    PUBLIC class InterruptManagement :
+PUBLIC namespace QuantumNEC::Architecture {
+    PUBLIC class Interrupt :
 #ifndef APIC
-        public PIC8259AManagement,
+        public PIC8259A,
 #else
-        public ApicManagement,
+        public Apic,
 #endif
-        InterruptEntry::InterruptEntryRegister
+        InterruptEntryRegister
     {
     public:
         enum class InterruptStatus : Lib::Types::BOOL {
@@ -22,10 +22,10 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
         };
 
     public:
-        explicit( TRUE ) InterruptManagement( VOID ) noexcept;
+        explicit Interrupt( VOID ) noexcept;
 
     public:
-        virtual ~InterruptManagement( VOID ) noexcept;
+        virtual ~Interrupt( VOID ) noexcept;
 
     public:
         /**

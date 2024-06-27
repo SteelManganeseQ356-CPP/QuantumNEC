@@ -1,9 +1,9 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Platform {
+PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC constexpr CONST auto NR_SYS_CALL { 20 };
-    PUBLIC class SyscallManagement
+    PUBLIC class Syscall
     {
         /*
          * 这个结构是这样的
@@ -27,10 +27,11 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
             MESSAGE_RECEIVE,
             MESSAGE_SEND_RECEIVE,
         };
-        using SyscallEntry = Lib::Types::FuncPtr< VOID, Lib::Types::Ptr< Architecture::CPU::InterruptFrame > >;
+        using SyscallEntry = Lib::Types::FuncPtr< VOID, Lib::Types::Ptr< Architecture::CPUs::InterruptFrame > >;
 
     public:
-        explicit( TRUE ) SyscallManagement( VOID ) noexcept( TRUE );
+        explicit Syscall( VOID ) noexcept;
+        virtual ~Syscall( VOID ) noexcept = default;
 
     public:
         STATIC auto set_syscall_table( IN Lib::Types::uint64_t index, IN SyscallEntry entry ) -> VOID;
@@ -42,7 +43,7 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
         /**
          * @brief 第一个系统调用：消息发送接收（第二个，第三个也是这个）
          */
-        STATIC auto syscall_send_receive( IN Lib::Types::Ptr< Architecture::CPU::InterruptFrame > frame ) -> VOID;
+        STATIC auto syscall_send_receive( IN Lib::Types::Ptr< Architecture::CPUs::InterruptFrame > frame ) -> VOID;
 
     private:
         inline STATIC SyscallEntry syscall_table[ NR_SYS_CALL ] { };

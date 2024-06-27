@@ -1,19 +1,19 @@
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Kernel/task.hpp>
 #include <Lib/IO/Stream/iostream>
-PUBLIC namespace QuantumNEC::Architecture::Interrupt::InterruptEntry {
-    PRIVATE auto ASMCALL syscall( IN Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > frame )->Lib::Types::Ptr< CONST Architecture::CPU::InterruptFrame > {
-        using Kernel::TaskManagement;
-        Kernel::TaskManagement::save_frame( frame );
-        Architecture::Platform::SyscallManagement::get_syscall_table( )[ frame->regs.rbx ]( const_cast< Lib::Types::Ptr< Architecture::CPU::InterruptFrame > >( frame ) );
+PUBLIC namespace QuantumNEC::Architecture {
+    PRIVATE auto ASMCALL syscall( IN Lib::Types::Ptr< CONST CPUs::InterruptFrame > frame )->Lib::Types::Ptr< CONST CPUs::InterruptFrame > {
+        using Kernel::Task;
+        Task::save_frame( frame );
+        Syscall::get_syscall_table( )[ frame->regs.rbx ]( const_cast< Lib::Types::Ptr< CPUs::InterruptFrame > >( frame ) );
 
-        Lib::IO::sout << TaskManagement::ready_task->cpu_frame->rip << " " << TaskManagement::ready_task->name << "\n";
+        Lib::IO::sout << Task::ready_task->cpu_frame->rip << " " << Task::ready_task->name << "\n";
         Lib::IO::sout << frame->rip << "\n";
 
-        return TaskManagement::ready_task->cpu_frame;
+        return Task::ready_task->cpu_frame;
     }
 
     SystemcallEntry::SystemcallEntry( VOID ) noexcept {
-        Architecture::CPU::InterruptDescriptorManagement::set_interrupt_handler( Architecture::Platform::SYSTEM_CALL_INTERRUPTS_INDEX, syscall );     // 注册系统调用中断入口函数
+        Architecture::CPUs::set_interrupt_handler( SYSTEM_CALL_INTERRUPTS_INDEX, syscall );     // 注册系统调用中断入口函数
     }
 }

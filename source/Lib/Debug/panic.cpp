@@ -8,7 +8,7 @@ PUBLIC namespace QuantumNEC::Lib::Debug {
         sout[ ostream::HeadLevel::ERROR ] << "!!! ================== \t" << message << "\t ================== !!!" << endl;
         sout[ ostream::HeadLevel::DEBUG ] << "!!! ================== \tPanic Spin\t ================== !!!" << endl;
         while ( TRUE ) {
-            Architecture::ArchitectureManagement< TARGET_ARCH >::hlt( );
+            Architecture::ArchitectureManager< TARGET_ARCH >::hlt( );
         }
     }
 }

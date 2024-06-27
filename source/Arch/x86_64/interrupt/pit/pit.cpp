@@ -1,12 +1,14 @@
 #include <Arch/x86_64/platform/platform.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Interrupt::PIT {
-    PITManagement::PITManagement( VOID ) noexcept :
+PUBLIC namespace QuantumNEC::Architecture {
+    PIT::PIT( VOID ) noexcept :
 #ifndef APIC
-        P8254Management { },
+        P8254 {
+    }
 #else
-        HpetManagement { } {
+        Hpet { }
 #endif
-}
-PITManagement::~PITManagement( VOID ) noexcept {
-}
+    {
+    }
+    PIT::~PIT( VOID ) noexcept {
+    }
 }

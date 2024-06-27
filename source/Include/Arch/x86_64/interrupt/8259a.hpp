@@ -1,6 +1,6 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Interrupt {
+PUBLIC namespace QuantumNEC::Architecture {
     constexpr CONST auto PIC_M_CTRL { 0x20 }; /* 主 PIC 的 IO 基址 */
     constexpr CONST auto PIC_S_CTRL { 0xA0 }; /* 从 PIC 的 IO 基址 */
     constexpr CONST auto PIC_M_COMMAND { PIC_M_CTRL };
@@ -21,16 +21,16 @@ PUBLIC namespace QuantumNEC::Architecture::Interrupt {
     constexpr CONST auto ICW4_SFNM { 0x10 };                /* 特殊完全嵌套（非） */
     constexpr CONST auto PIC_READ_IRR { 0x0a };             /* OCW3 irq准备好下一次CMD读取 */
     constexpr CONST auto PIC_READ_ISR { 0x0b };             /* OCW3 irq服务下一次CMD读取 */
-    PUBLIC class PIC8259AManagement
+    PUBLIC class PIC8259A
     {
     private:
         using irq_t = Lib::Types::uint8_t;
 
     public:
-        explicit( true ) PIC8259AManagement( VOID ) noexcept;
+        explicit PIC8259A( VOID ) noexcept;
 
     public:
-        virtual ~PIC8259AManagement( VOID ) noexcept;
+        virtual ~PIC8259A( VOID ) noexcept;
 
     public:
         STATIC auto eoi( IN CONST irq_t irq ) -> VOID;

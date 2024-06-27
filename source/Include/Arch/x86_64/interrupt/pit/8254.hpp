@@ -8,15 +8,15 @@ PUBLIC constexpr CONST auto COUNTER0_NO { 0 };
 PUBLIC constexpr CONST auto COUNTER_MODE { 2 };
 PUBLIC constexpr CONST auto READ_WRITE_LATCH { 3 };
 PUBLIC constexpr CONST auto PIT_CONTROL_PORT { 0x43 };
-PUBLIC namespace QuantumNEC::Architecture::Interrupt::PIT {
-    PUBLIC class P8254Management
+PUBLIC namespace QuantumNEC::Architecture {
+    PUBLIC class P8254
     {
     public:
         /**
          * @brief 初始化 8254 pit
          */
-        explicit( true ) P8254Management( VOID ) noexcept;
+        explicit P8254( VOID ) noexcept;
 
-        virtual ~P8254Management( VOID ) noexcept;
+        virtual ~P8254( VOID ) noexcept;
     };
 }

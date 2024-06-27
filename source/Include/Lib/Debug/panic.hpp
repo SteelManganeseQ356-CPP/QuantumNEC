@@ -15,7 +15,7 @@ PUBLIC namespace QuantumNEC::Lib::Debug {
         endl( sout );
         sout[ ostream::HeadLevel::DEBUG ] << "!!! ================== \tPanic Spin\t ================== !!!" << endl;
         while ( TRUE )
-            Architecture::ArchitectureManagement< TARGET_ARCH >::hlt( );
+            Architecture::ArchitectureManager< TARGET_ARCH >::hlt( );
     }
 }
 #define Panic( ... ) QuantumNEC::Lib::Debug::panic( __FILE__, __LINE__, __func__, #__VA_ARGS__ )

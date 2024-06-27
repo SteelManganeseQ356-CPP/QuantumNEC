@@ -1,10 +1,10 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
-PUBLIC namespace QuantumNEC::Architecture::Device {
-    PUBLIC class AudioManagement
+PUBLIC namespace QuantumNEC::Architecture {
+    PUBLIC class Audio
     {
     public:
-        explicit AudioManagement( VOID ) noexcept;
-        virtual ~AudioManagement( VOID ) noexcept;
+        explicit Audio( VOID ) noexcept;
+        virtual ~Audio( VOID ) noexcept;
     };
 }

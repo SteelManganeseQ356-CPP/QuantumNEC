@@ -3,24 +3,22 @@
 #include <Kernel/Task/process.hpp>
 #include <Kernel/Task/thread.hpp>
 PUBLIC namespace QuantumNEC::Kernel {
-    PUBLIC class TaskManagement :
-        public Task::ThreadManagement
+    PUBLIC class Task :
+        public Thread
     {
     public:
-        explicit( true ) TaskManagement( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
-        virtual ~TaskManagement( VOID ) noexcept( true );
+        explicit Task( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
+        virtual ~Task( VOID ) noexcept;
 
     public:
         STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN CONST TaskType type, IN IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN CONST Lib::Types::int64_t flags ) -> Lib::Types::Ptr< VOID > {
             if ( type == TaskType::PF_KERNEL_PROCESS || type == TaskType::PF_USER_PROCESS ) {
-                return ProcessManagement::create( entry, arg, type, name, priority, flags );
+                return Process::create( entry, arg, type, name, priority, flags );
             }
             else if ( type == TaskType::PF_KERNEL_THREAD || type == TaskType::PF_USER_THREAD ) {
-                return ThreadManagement::create( entry, arg, type, name, priority, flags );
+                return Thread::create( entry, arg, type, name, priority, flags );
             }
             return NULL;
         }
-
-    private:
     };
 }

@@ -77,7 +77,7 @@ return_from_isr:
     POP R15
     ADD RSP, 16
     STI
-    IRET
+    IRETQ
 
 HANDLE_ENTRY 0x00            /*	#DE	除以0 */
 HANDLE_ENTRY 0x01            /*	#DB	调试 */
