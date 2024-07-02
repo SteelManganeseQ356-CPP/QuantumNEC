@@ -1,5 +1,3 @@
-
-#include "Arch/x86_64/interrupt/8259a.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Kernel/memory.hpp>
 #include <Lib/IO/Stream/iostream>
@@ -15,12 +13,12 @@ PUBLIC namespace QuantumNEC::Architecture {
             // LOCAL APIC
 
             // 启用本地 APIC;设置杂散中断向量。
-            this->write_apic( LOCAL_APIC_SVR, LOCAL_APIC_ENABLE | LOCAL_APIC_SPURIOUS_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
+            this->write_apic( LOCAL_APIC_SVR, LOCAL_APIC_ENABLE | IRQ_LOCAL_APIC_SPURIOUS, ApicType::LOCAL_APIC );
             // 计时器在总线频率下反复倒计时
             // from lapic[TICR]，然后发出中断。
             // TODO：使用外部时间校准 TICR
             this->write_apic( LOCAL_APIC_TDCR, LOCAL_APIC_X1, ApicType::LOCAL_APIC );
-            this->write_apic( LOCAL_APIC_TIMER, LOCAL_APIC_PERIODIC | CLOCK_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
+            this->write_apic( LOCAL_APIC_TIMER, LOCAL_APIC_PERIODIC | IRQ_CLOCK, ApicType::LOCAL_APIC );
             this->write_apic( LOCAL_APIC_TICR, 10000000, ApicType::LOCAL_APIC );
             // Disable logical interrupt lines.
             this->write_apic( LOCAL_APIC_LINT0, LOCAL_APIC_MASKED, ApicType::LOCAL_APIC );
@@ -30,7 +28,7 @@ PUBLIC namespace QuantumNEC::Architecture {
             if ( ( ( lapic[ LOCAL_APIC_VER ] >> 16 ) & 0xFF ) >= 4 )
                 this->write_apic( LOCAL_APIC_PCINT, LOCAL_APIC_MASKED, ApicType::LOCAL_APIC );
             // 将错误中断映射到IRQ_ERROR。
-            this->write_apic( LOCAL_APIC_ERROR, LOCAL_APIC_ERROR_INTERRUPTS_INDEX, ApicType::LOCAL_APIC );
+            this->write_apic( LOCAL_APIC_ERROR, IRQ_LOCAL_APIC_ERROR, ApicType::LOCAL_APIC );
             // 清除错误状态寄存器（需要背靠背写入）。
             this->write_apic( LOCAL_APIC_ESR, 0, ApicType::LOCAL_APIC );
             this->write_apic( LOCAL_APIC_ESR, 0, ApicType::LOCAL_APIC );
@@ -109,4 +107,18 @@ PUBLIC namespace QuantumNEC::Architecture {
         value = value & ~0x100ff;
         write_apic( pin * 2 + 0x10, value | vector, ApicType::IO_APIC );
     }
+    // auto Apic::irq_set_mask auto Apic::irq_clear_mask
+    auto Apic::irq_set_mask( IN irq_t irq )->VOID {
+        write_apic( IOAPIC_REG_TABLE + 2 * irq, INT_DISABLED | IRQ_LOCAL_APIC_SPURIOUS, ApicType::IO_APIC );
+        write_apic( IOAPIC_REG_TABLE + 2 * irq + 1, 0, ApicType::IO_APIC );
+    }
+    auto Apic::irq_clear_mask( IN irq_t irq, IN Lib::Types::uint8_t vector, IN Lib::Types::uint8_t apicID )->VOID {
+        write_apic( IOAPIC_REG_TABLE + 2 * irq, vector, ApicType::IO_APIC );
+        write_apic( IOAPIC_REG_TABLE + 2 * irq + 1, static_cast< Lib::Types::uint32_t >( apicID ) << 24, ApicType::IO_APIC );
+    }
+    /*
+     * 标记中断边缘触发，高电平有效，
+     * 启用并路由到给定的cpunum，
+     * 恰好是该cpu的APIC ID
+     */
 }

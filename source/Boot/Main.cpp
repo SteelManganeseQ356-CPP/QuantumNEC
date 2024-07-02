@@ -8,14 +8,6 @@ extern "C" EFI_STATUS EFIAPI UefiMain( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_
     BootServiceMain bootService { &bootConfig };
     LoggerConfig logIni { };
     BootServiceLogger logger { &logIni };
-    // 读取Config
-    Status = bootService.iniLoad( CONFIG_PATH );
-    if ( EFI_ERROR( Status ) ) {
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to load Config.ini." );
-        logger.LogError( Status );
-        logger.Close( );
-        return Status;
-    }
     // 读取Logo并显示
     Status = bootService.getBmpConfig( &bootConfig.BmpData ).displayLogo( L"\\EFI\\Boot\\Logo.BMP" );
     if ( EFI_ERROR( Status ) ) {
@@ -44,14 +36,6 @@ extern "C" EFI_STATUS EFIAPI UefiMain( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_
     Status = bootService.loadKernel( L"\\QuantumNEC\\microKernel.elf" );
     if ( EFI_ERROR( Status ) ) {
         logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to load kernel." );
-        logger.LogError( Status );
-        logger.Close( );
-        return Status;
-    }
-    // 设置内核页表
-    Status = bootService.setPageTable( );
-    if ( EFI_ERROR( Status ) ) {
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to set pages table." );
         logger.LogError( Status );
         logger.Close( );
         return Status;

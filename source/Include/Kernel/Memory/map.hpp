@@ -1,14 +1,17 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-
+#include <Lib/IO/Stream/iostream>
 PUBLIC namespace QuantumNEC::Kernel {
-    constexpr CONST auto PML_IDX { 512 };
-    constexpr CONST auto PML_SIZE { PML_IDX * 2 };
-    constexpr CONST auto PT_SIZE { 0x1000 };
-    constexpr CONST auto MEMORY_SIZE_4K { 65536 };
-    constexpr CONST auto MEMORY_SIZE_2M { 128 };
-    constexpr CONST auto MEMORY_SIZE_1G { 1 };
+    PUBLIC constexpr CONST auto PML_IDX { 512 };
+    PUBLIC constexpr CONST auto PML_SIZE { PML_IDX * 2 };
+    PUBLIC constexpr CONST auto PT_SIZE { 0x1000 };
+
+    PUBLIC enum class MemoryPageType : Lib::Types::uint64_t {
+        PAGE_4K = 65536,
+        PAGE_2M = 128,
+        PAGE_1G = 1,
+    };
     PUBLIC struct pml_t
     {
         Lib::Types::Ptr< Lib::Types::uint64_t > pml;
@@ -57,6 +60,163 @@ PUBLIC namespace QuantumNEC::Kernel {
             return;
         }
     };
+
+    PUBLIC class Table
+    {
+    private:
+        Lib::Types::uint64_t present : 1;
+        Lib::Types::uint64_t read_write : 1;
+        Lib::Types::uint64_t user_supervisor : 1;
+        Lib::Types::uint64_t write_through : 1;
+        Lib::Types::uint64_t cache_disable : 1;
+        Lib::Types::uint64_t accessed : 1;
+        Lib::Types::uint64_t dirty : 1;
+        Lib::Types::uint64_t page_attribute_table_page_size : 1;
+        Lib::Types::uint64_t global : 1;
+        Lib::Types::uint64_t available : 3;
+        Lib::Types::uint64_t address : 40;
+        Lib::Types::uint64_t reserved : 7;
+        Lib::Types::uint64_t protection_key : 4;
+        Lib::Types::uint64_t execute_disable : 1;
+        // Lib::Types::uint64_t table;
+
+    public:
+        constexpr auto flags_p( VOID ) {
+            return 1ull << 0;
+        }
+        constexpr auto flags_rw( VOID ) {
+            return 1ull << 1;
+        }
+        constexpr auto flags_us( VOID ) {
+            return 1ull << 2;
+        }
+        constexpr auto flags_pwt( VOID ) {
+            return 1ull << 3;
+        }
+        constexpr auto flags_pcd( VOID ) {
+            return 1ull << 4;
+        }
+        constexpr auto flags_a( VOID ) {
+            return 1ull << 5;
+        }
+        constexpr auto flags_d( VOID ) {
+            return 1ull << 6;
+        }
+        constexpr auto flags_pat_ps( VOID ) {
+            return 1ull << 7;
+        }
+        constexpr auto flags_g( VOID ) {
+            return 1ull << 9;
+        }
+        constexpr auto flags_avl( VOID ) {
+            return 1ull << 8;
+        }
+        constexpr auto flags_xd( VOID ) {
+            return 1ull << 63;
+        }
+        constexpr auto set_p( IN Lib::Types::uint64_t bit ) {
+            this->present = bit;
+        }
+        constexpr auto set_rw( IN Lib::Types::uint64_t bit ) {
+            this->read_write = bit;
+        }
+        constexpr auto set_us( IN Lib::Types::uint64_t bit ) {
+            this->user_supervisor = bit;
+        }
+        constexpr auto set_pwt( IN Lib::Types::uint64_t bit ) {
+            this->write_through = bit;
+        }
+        constexpr auto set_pcd( IN Lib::Types::uint64_t bit ) {
+            this->cache_disable = bit;
+        }
+        constexpr auto set_a( IN Lib::Types::uint64_t bit ) {
+            this->accessed = bit;
+        }
+        constexpr auto set_d( IN Lib::Types::uint64_t bit ) {
+            this->dirty = bit;
+        }
+        constexpr auto set_ps_pat( IN Lib::Types::uint64_t bit ) {
+            this->page_attribute_table_page_size = bit;
+        }
+
+        constexpr auto set_g( IN Lib::Types::uint64_t bit ) {
+            this->global = bit;
+        }
+        constexpr auto set_avl( IN Lib::Types::uint64_t bit ) {
+            this->available = bit;
+        }
+
+        constexpr auto set_pk( IN Lib::Types::uint64_t bit ) {
+            this->protection_key = bit;
+        }
+        constexpr auto set_xd( IN Lib::Types::uint64_t bit ) {
+            this->execute_disable = bit;
+        }
+        auto set_address( IN Lib::Types::uint64_t bit ) {
+            *reinterpret_cast< Lib::Types::uint64_t * >( this ) |= bit;
+        }
+
+    public:
+        constexpr auto set_table( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::uint64_t flags ) -> VOID;
+    };
+
+    PUBLIC class PageDirectoryTable     // 4096*513
+    {
+    public:
+        explicit PageDirectoryTable( VOID ) noexcept = default;
+
+    public:
+        /**
+         * @brief 设置512个页表到512个pd
+         * @param flags 设置位
+         * @param type 内存页内存
+         */
+        auto make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID;
+
+    private:
+        Table page_directory_table[ 512 ];     // 4096
+    };
+    PUBLIC class PageDirectoryPointerTable     // 4096*513
+    {
+    public:
+        explicit PageDirectoryPointerTable( VOID ) noexcept = default;
+
+    public:
+        /**
+         * @brief 设置512个pd到512个pdp
+         * @param flags 设置位
+         * @param type 内存页内存
+         */
+        auto make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID;
+        auto set_count( IN Lib::Types::uint64_t count ) {
+            this->pdp_entry_count = count;
+        }
+
+    private:
+        Table page_directory_pointer_table[ 512 ];          // 4K
+        PageDirectoryTable page_dircetory_table[ 512 ];     // 4096*512
+        Lib::Types::uint64_t pdp_entry_count;
+    };
+
+    PUBLIC class PageMapLevel4Table     // 4096*513*513
+    {
+    public:
+        explicit PageMapLevel4Table( VOID ) noexcept;
+
+    public:
+        auto make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID;
+
+    public:
+        constexpr auto size( VOID ) {
+            return ( sizeof *this ) * pml4e_entry_count;
+        }
+
+    private:
+        Table page_map_level4_table[ 512 ];
+        PageDirectoryPointerTable page_directory_pointer_table[ 512 ];     // 4096*513 *513
+        Lib::Types::uint64_t pdp_entry_count, pml4e_entry_count;
+    };
+
     PUBLIC class MemoryMap
     {
     private:
@@ -103,7 +263,7 @@ PUBLIC namespace QuantumNEC::Kernel {
          * @param virtual_address 将取消映射的指定虚拟地址
          * @param size 要取消映射的内存页大小
          */
-        STATIC auto remap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml = page_memory_table.pml ) -> VOID;
+        STATIC auto unmap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml = page_memory_table.pml ) -> VOID;
 
     private:
         /**

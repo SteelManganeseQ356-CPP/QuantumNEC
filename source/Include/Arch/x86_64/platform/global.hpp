@@ -149,12 +149,12 @@ PUBLIC namespace QuantumNEC::Architecture {
     /** @brief -------------最大CORE数量 **/
     PUBLIC constexpr const auto CORE_COUNT { GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT };
 
-    PUBLIC constexpr const auto IDT_ENTRY_IRQ_0 { 32 };
+    PUBLIC constexpr const auto IDT_ENTRY_IRQ_0 { 0x20 };
     PUBLIC constexpr const auto SYSTEM_CALL_INTERRUPTS_INDEX { 0x80 };
-    PUBLIC constexpr const auto CLOCK_INTERRUPTS_INDEX { 0x20 };
-    PUBLIC constexpr const auto KEYBOARD_INTERRUPTS_INDEX { 0x21 };
-    PUBLIC constexpr const auto RTC_INTERRUPTS_INDEX { 0x28 };
-    PUBLIC constexpr const auto LOCAL_APIC_SPURIOUS_INTERRUPTS_INDEX { 0x82 };
-    PUBLIC constexpr const auto LOCAL_APIC_ERROR_INTERRUPTS_INDEX { 0x81 };
+    PUBLIC constexpr const auto IRQ_CLOCK { IDT_ENTRY_IRQ_0 };
+    PUBLIC constexpr const auto IRQ_KEYBOARD { IDT_ENTRY_IRQ_0 + 0x01 };
+    PUBLIC constexpr const auto IRQ_CMOS_RTC { IDT_ENTRY_IRQ_0 + 0x08 };
+    PUBLIC constexpr const auto IRQ_LOCAL_APIC_SPURIOUS { IDT_ENTRY_IRQ_0 + 0x1F };
+    PUBLIC constexpr const auto IRQ_LOCAL_APIC_ERROR { IDT_ENTRY_IRQ_0 + 0x13 };
 
 }     // namespace QuantumNEC::Architecture::Platform

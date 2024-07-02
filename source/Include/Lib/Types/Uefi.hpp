@@ -71,12 +71,7 @@ typedef struct
     UINT64 PixelStart;
     UINT64 BitsPerPx;
 } BmpConfig;
-typedef struct
-{
-    Lib::Types::Ptr< VOID > data_;
-    UINT64 pageNumber_;
-    Lib::Types::Ptr< UINT8 > ptr_;
-} ArgsStackConfig;
+
 // Root System Description Pointer
 typedef struct
 {
@@ -154,7 +149,6 @@ typedef struct BootConfig
 {
     GraphicsConfig GraphicsData;
     MemoryConfig MemoryData;
-    ArgsStackConfig ArgsData;
     AcpiConfig AcpiData;
     UnicodeTTF FontData;
     BmpConfig BmpData;

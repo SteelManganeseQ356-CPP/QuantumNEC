@@ -1,5 +1,5 @@
-#include <Kernel/Memory/paging.hpp>
 #include <Kernel/Memory/map.hpp>
+#include <Kernel/Memory/paging.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
 #include <Lib/Base/deflib.hpp>
@@ -9,17 +9,7 @@ PUBLIC namespace {
     PUBLIC using namespace QuantumNEC::Lib::IO;
     PUBLIC using namespace QuantumNEC;
     PUBLIC using namespace QuantumNEC::Kernel;
-    PRIVATE inline constexpr Lib::Types::size_t operator""_KB( IN CONST Lib::Types::size_t kib ) {
-        return kib * 1024;
-    }
 
-    PRIVATE inline constexpr Lib::Types::size_t operator""_MB( IN CONST Lib::Types::size_t mib ) {
-        return mib * 1024_KB;
-    }
-
-    PRIVATE inline constexpr Lib::Types::size_t operator""_GB( IN CONST Lib::Types::size_t gib ) {
-        return gib * 1024_MB;
-    }
     PRIVATE Lib::Types::Ptr< VOID > buffer_4k { };
     PRIVATE TaskLock lock { };
 }
@@ -72,9 +62,9 @@ PUBLIC namespace QuantumNEC::Kernel {
                 // 计算内存页边界
                 start = start / PAGE_SIZE;
                 end = Lib::Base::DIV_ROUND_UP( end, PAGE_SIZE );
-                // 将这部分内存添加至bit map
-                for ( Lib::Types::uint64_t boundary { start }; boundary < end; ++boundary ) {
-                    this->bitmap_.set( boundary, 1 );
+                // 将这部分内存添加至bitmap
+                for ( Lib::Types::uint64_t j { start }; j < end; ++j ) {
+                    this->bitmap_.set( j, 1 );
                 }
             }
         }
@@ -82,10 +72,7 @@ PUBLIC namespace QuantumNEC::Kernel {
         if ( ( this->general_memory_total / PAGE_SIZE ) < MEMORY_PAGE_DESCRIPTOR ) {
             this->bitmap_.set_length( this->general_memory_total / PAGE_SIZE );
         }
-        // 剔除被占用的内存(0 - 10M)
-        for ( Lib::Types::size_t index { }; index < 10_MB / PAGE_SIZE; ++index ) {
-            this->bitmap_.set( index, 1 );
-        }
+
         sout[ ostream::HeadLevel::SYSTEM ] << "OS Can Use Memory : " << this->memory_total / 1_MB << " MB";
         // 显示可用内存数
         if ( auto GB_memory_total { ( this->memory_total + 28_MB ) / 1_MB / 1_KB }; GB_memory_total ) {

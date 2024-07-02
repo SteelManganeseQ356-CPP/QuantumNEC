@@ -1,4 +1,5 @@
 #include "Kernel/Memory/heap.hpp"
+#include "Kernel/Memory/paging.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Kernel/memory.hpp>
 #include <Lib/Types/Uefi.hpp>

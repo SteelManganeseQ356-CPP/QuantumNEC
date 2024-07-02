@@ -84,6 +84,7 @@ PUBLIC namespace QuantumNEC::Architecture {
         STATIC auto mfence( VOID ) -> VOID;
         STATIC auto lfence( VOID ) -> VOID;
         STATIC auto sfence( VOID ) -> VOID;
+        STATIC auto set_page_table( IN Lib::Types::Ptr< Lib::Types::uint64_t > mmap ) -> VOID;
 
     private:
         inline STATIC QuantumNEC::Architecture::GlobalSegmentDescriptor _used gdt[ GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT ][ SEGMENT_DESCRIPTOR_COUNT ] { };

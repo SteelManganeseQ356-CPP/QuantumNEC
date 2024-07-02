@@ -88,6 +88,10 @@ PUBLIC namespace QuantumNEC::Kernel {
         receiver->message.receive_from = source;
         // 从任意进程接收消息
         if ( source == ANY || source == INTERRUPT ) {
+            // 没有消息，阻塞
+            if ( Lib::STL::list_is_empty( &receiver->message.sender_list ) ) {
+                Thread::block( Process::TaskStatus::RECEIVING );
+            }
             if ( receiver->message.has_int_message ) {
                 // 消息来自中断
                 this->source = INTERRUPT;
@@ -95,12 +99,7 @@ PUBLIC namespace QuantumNEC::Kernel {
                 receiver->message.has_int_message = 0;
                 return Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus::SUCCESS;
             }
-            // 没有消息，阻塞
-            if ( Lib::STL::list_is_empty( &receiver->message.sender_list ) ) {
-                Thread::block( Process::TaskStatus::RECEIVING );
-            }
             // 切换到下一任务
-            return Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus::SUCCESS;
         }
         else {
             auto find_pcb { Process::find< Process::ProcessPCB >( source ) };
@@ -110,8 +109,9 @@ PUBLIC namespace QuantumNEC::Kernel {
                 return Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus::NO_SOURCE;
             }
             // 如果对方之前给这个任务发送消息，那么这个任务阻塞
-            // while ( !Lib::STL::list_find( &receiver->message.sender_list, &find_pcb->general_task_queue ) ) {
-            // }
+            while ( !Lib::STL::list_find( &receiver->message.sender_list, &find_pcb->general_task_queue ) ) {
+                Thread::block( Process::TaskStatus::RECEIVING );
+            }
             // task_source = find_pcb;
         }
         // else {

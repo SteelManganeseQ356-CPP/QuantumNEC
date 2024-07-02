@@ -7,12 +7,12 @@
 PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC class Memory :
         PageMemory,
-        HeapMemory,
         MemoryMap,
+        HeapMemory,
         StackMemory
     {
     public:
-        explicit( true ) Memory( Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
+        explicit Memory( Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
 
     public:
         virtual ~Memory( VOID ) noexcept = default;

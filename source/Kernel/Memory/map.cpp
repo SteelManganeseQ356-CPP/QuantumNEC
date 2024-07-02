@@ -5,17 +5,12 @@
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
 #include <Kernel/task.hpp>
+#include <cstring>
+using namespace QuantumNEC::Lib::Types;
+using namespace QuantumNEC::Lib;
+using namespace QuantumNEC;
+using namespace QuantumNEC::Kernel;
 PUBLIC namespace {
-    using namespace QuantumNEC::Lib::Types;
-    using namespace QuantumNEC::Lib;
-    using namespace QuantumNEC;
-    using namespace QuantumNEC::Kernel;
-    /**
-     *  @brief 页内偏移
-     */
-    /**
-     *  @brief 通过虚拟地址查找条目或其他条目
-     */
     PRIVATE constexpr auto PMLE_IDX( auto address ) {
         return ( (Lib::Types::uint64_t)address >> 39 ) & 0x1FF;
     }
@@ -31,8 +26,137 @@ PUBLIC namespace {
     PRIVATE constexpr auto FONT_FILE_OCCUPIES_PAGE { 16 };
 
     PRIVATE TaskLock lock { };
+    PRIVATE Lib::Types::uint64_t *address { };
 }
 PUBLIC namespace QuantumNEC::Kernel {
+    PUBLIC Lib::Types::size_t KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS { };
+    PUBLIC Lib::Types::size_t KERNEL_FREE_MEMORY_VIRTUAL_ADDRESS { };
+    PUBLIC Lib::Types::size_t KERNEL_I_O_APIC_PHYSICAL_ADDRESS { };
+    PUBLIC Lib::Types::size_t KERNEL_LOCAL_APIC_PHYSICAL_ADDRESS { };
+    PUBLIC Lib::Types::size_t KERNEL_VRAM_PHYSICAL_ADDRESS { };
+    constexpr auto Table::set_table( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::uint64_t flags )->VOID {
+        if ( flags & this->flags_p( ) ) {
+            this->set_p( 1 );     // 该页存在
+        }
+        else {
+            this->set_p( 0 );     // 该不页存在
+        }
+        if ( flags & this->flags_rw( ) ) {
+            this->set_rw( 1 );     // 可读也可以写
+        }
+        else {
+            this->set_rw( 0 );     // 只读
+        }
+        if ( flags & this->flags_us( ) ) {
+            this->set_us( 1 );     // 超级管理者和用户都可以用
+        }
+        else {
+            this->set_us( 0 );     // 超级管理者才能用
+        }
+        if ( flags & this->flags_pwt( ) ) {
+            this->set_pwt( 1 );     // 页级直通写
+        }
+        else {
+            this->set_pwt( 0 );     // 页线回写
+        }
+        if ( flags & this->flags_pcd( ) ) {
+            this->set_pcd( 1 );     // 开启页级
+        }
+        else {
+            this->set_pcd( 0 );     // 不开启页级
+        }
+        if ( flags & this->flags_a( ) ) {
+            this->set_a( 1 );     // 访问由MMU控制
+        }
+        else {
+            this->set_a( 0 );     // 访问与MMU无关
+        }
+        if ( flags & this->flags_d( ) ) {
+            this->set_d( 1 );     // 该内存页被占用
+        }
+        else {
+            this->set_d( 0 );     // 该内存页未被占用
+        }
+        if ( flags & this->flags_pat_ps( ) ) {     // 页属性或者页大小
+            this->set_ps_pat( 1 );
+        }
+        else {
+            this->set_ps_pat( 0 );
+        }
+        if ( flags & this->flags_g( ) ) {     // 全局标志
+            this->set_g( 1 );
+        }
+        else {
+            this->set_g( 0 );
+        }
+        if ( flags & this->flags_avl( ) ) {
+            this->set_avl( 1 );
+        }
+        else {
+            this->set_avl( 0 );
+        }
+        if ( flags & this->flags_xd( ) ) {
+            this->set_xd( 1 );     // 屏蔽
+        }
+        else {
+            this->set_xd( 0 );     // 不屏蔽
+        }
+        this->set_address( reinterpret_cast< Lib::Types::uint64_t >( address ) );     // 把地址丢进去
+    }
+    auto PageDirectoryTable::make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID {
+        auto page_size { 0ull };     // 决定address_要加上多少
+        switch ( type ) {
+        case MemoryPageType::PAGE_4K:
+            page_size = PAGE_4K_SIZE;
+            break;
+        case MemoryPageType::PAGE_2M:
+            page_size = PAGE_2M_SIZE;
+            break;
+        case MemoryPageType::PAGE_1G:
+            page_size = PAGE_1G_SIZE;
+            break;
+        }
+        for ( auto i { 0ull }; i < 512; ++i ) {
+            this->page_directory_table[ i ].set_table( address, flags | ( 1 << 7 ) );
+            address += page_size / sizeof *address;
+        }
+    }
+    auto PageDirectoryPointerTable::make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID {
+        for ( auto i { 0ull }; i < this->pdp_entry_count; ++i ) {
+            this->page_dircetory_table[ i ].make( flags, type );
+            this->page_directory_pointer_table[ i ].set_table( &this->page_dircetory_table[ i ], flags );
+        }
+    }
+    auto PageMapLevel4Table::make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID {
+        for ( auto i { 0ull }; i < this->pml4e_entry_count; ++i ) {
+            this->page_directory_pointer_table[ i ].set_count( this->pdp_entry_count );
+            this->page_directory_pointer_table[ i ].make( flags, type );
+            this->page_map_level4_table[ i ].set_table( &this->page_directory_pointer_table[ i ], flags );
+        }
+    }
+
+    PageMapLevel4Table::PageMapLevel4Table( VOID ) noexcept {
+        Lib::Types::uint8_t physical_address_bits { };
+        auto tmp { 0u }, ecx { 0u }, eax { 0u };
+        Architecture::ArchitectureManager< TARGET_ARCH >::cpuid( 7, 0, &tmp, &tmp, &ecx, &tmp );
+        Architecture::ArchitectureManager< TARGET_ARCH >::cpuid( 0x80000000, 0, &eax, &tmp, &tmp, &tmp );
+        if ( eax >= 0x80000008 ) {
+            Architecture::ArchitectureManager< TARGET_ARCH >::cpuid( 0x80000008, 0, &eax, &tmp, &tmp, &tmp );
+            physical_address_bits = eax;
+        }
+        else {
+            physical_address_bits = 36;
+        }
+        if ( physical_address_bits > 48 ) {
+            physical_address_bits = 48;
+        }
+        if ( physical_address_bits > 39 ) {
+            this->pml4e_entry_count = 1 << ( physical_address_bits - 39 );
+            physical_address_bits = 39;
+        }
+        this->pdp_entry_count = 1 << ( physical_address_bits - 30 );
+    }
+
     auto MemoryMap::get_table_entry( IN Lib::Types::Ptr< VOID > address, IN MapLevel level )
         ->Lib::Types::Ptr< Lib::Types::uint64_t > {
         auto get_pmlt_entry = [ &, this ] {
@@ -69,57 +193,72 @@ PUBLIC namespace QuantumNEC::Kernel {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Start mapping the page table." << Lib::IO::endl;
         // 消除页保护
         this->page_table_protect( FALSE );
-        // 获取在启动时服务设置的页表
-        this->page_memory_table.pml = this->get_current_page_tabel( );
-        Lib::IO::sout[ Lib::IO::ostream::HeadLevel::INFO ] << "Get a pages table from cr3, address of page table -> " << (VOID *)( this->page_memory_table.pml ) << "." << Lib::IO::endl;
+
+        this->page_memory_table.pml = reinterpret_cast< Lib::Types::uint64_t * >( KERNEL_PAGE_TABLE_PHYSICAL_ADDRESS );
+
+        PageMapLevel4Table *page_table = new ( this->page_memory_table.pml ) PageMapLevel4Table { };
+        page_table->make( PAGE_US_U | PAGE_RW_W | PAGE_PRESENT, MemoryPageType::PAGE_2M );
+
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_page_table( new ( page_table ) Lib::Types::uint64_t );
+
         // 映射
         /*
-          系统内存分配:
-          · 0x0000000 -> 0x01fffff = [2MB]  --> 内核
-          · 0x0200000 -> 0x020ffff = [64KB] --> 内核PCB
-          · 0x0210000 -> 0x0210fff = [4KB]  --> I-O APIC 所占用
-          · 0x0211000 -> 0x0211fff = [4KB]  --> Local APIC 所占用
-          · 0x0212000 -> 0x05fffff = [4MB]  --> 内核保留
-          · 0x0600000 -> 0x07fffff = [2MB]  --> 内核页表
-          · 0x0800000 -> 0x09fffff = [2MB]  --> 显存
-          · 0x0a00000 -> 0x29fffff = [32MB] --> 字体文件
-          · 0x2a00000 -> .........          --> 空闲
-          4GB 以下显存按照这样分配
-          0x0000000000000000 - 0x00000000ffffffff ==> 0x0000000000000000 - 0x00000000ffffffff （也就是不映射）
-          4GB 以上显存按这样分配（映射，从线性地址0xffff800000000000开始）
-          0x0000000000000000 - 0x00000000ffffffff ==> 0xffff800000000000 - 0xffff8000ffffffff
-        */
+         * 系统内存分配:
+         * · 0x0000000  ->  0x00fffff = [1MB]            --> 内核起始点
+         * · 0x0100000  ->  0x01fffff = [1MB]            --> 内核
+         * · 0x0200000  ->  0x020ffff = [64KB]           --> 内核PCB
+         * · 0x0210000  ->  0x03fffff = [2MB]            --> 内核保留
+         * · 0x0400000  ->  0x23fffff = [32MB]           --> 字体文件
+         * · 0x2400000  ->  0x2400fff = [4 KB]           --> 保留
+         * · 0x2401000  ->  0x2401fff = [4 KB]           --> 保留
+         * · 0x2412000  ->  0x24fffff = [1MB]            --> 保留
+         * · 0x2500000  ->  ......... = [X MB]           --> 内核页表
+         * · 内核页表结尾 ->  .........   [32MB + X MB之后] --> 空闲
+         * 0x0000000000000000 - 0x00000000ffffffff ==> 0xffff800000000000 - 0xffff8000ffffffff
+         * 0xffff800000000000 -> 0xffff8000000fffff      = [1MB]            --> 内核起始点
+         * 0xffff800000100000 -> 0xffff8000001fffff      = [1MB]            --> 内核
+         * 0xffff800000200000 -> 0xffff80000020ffff      = [4KB]            --> 内核PCB
+         * 0xffff800000210000 -> 0xffff8000003fffff      = [2MB]            --> 显存
+         * 0xffff800000400000 -> 0xffff8000023fffff      = [32MB]           --> 字体
+         * 0xffff800002400000 -> 0xffff800002410fff      = [4KB]            --> I-O APIC 所占用
+         * 0xffff800002411000 -> 0xffff800002411fff      = [4KB]            --> Local APIC 所占用
+         * 0xffff800002412000 -> 0xffff8000024fffff      = [1MB]            --> 保留
+         * 0xffff800002500000 -> ..................      = [X MB]           --> 内核页表
+         * 内核页表结尾         -> ..................      = [32MB + X MB之后] --> 空闲
+         */
 
+        KERNEL_VRAM_PHYSICAL_ADDRESS = _config->GraphicsData.FrameBufferBase;
+        KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS = 0x2500000 + page_table->size( );
+        KERNEL_FREE_MEMORY_VIRTUAL_ADDRESS = 0xffff800002500000;
+        KERNEL_I_O_APIC_PHYSICAL_ADDRESS = reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManager< TARGET_ARCH >::io_apic_address );
+        KERNEL_LOCAL_APIC_PHYSICAL_ADDRESS = reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManager< TARGET_ARCH >::local_apic_address );
         // 映射内核起始地址
-        this->map( 0, KERNEL_BASE_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_2M );
+        this->map( 0, KERNEL_BASE_ADDRESS, 1, PAGE_PRESENT | PAGE_RW_R | PAGE_US_S | PAGE_DIRTY, MapMode::MEMORY_MAP_2M );
+        // 映射内核
+        this->map( KERNEL_PHYSICAL_ADDRESS, KERNEL_VIRTUAL_ADDRESS, 1, PAGE_PRESENT | PAGE_RW_R | PAGE_US_S | PAGE_DIRTY, MapMode::MEMORY_MAP_2M );
         // 映射内核PCB
-        this->map( KERNEL_TASK_PCB_PHYSICAL_ADDRESS, KERNEL_TASK_PCB_VIRTUAL_ADDRESS, 21, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_4K );
+        this->map( KERNEL_TASK_PCB_PHYSICAL_ADDRESS, KERNEL_TASK_PCB_VIRTUAL_ADDRESS, 21, PAGE_PRESENT | PAGE_RW_R | PAGE_US_S | PAGE_DIRTY, MapMode::MEMORY_MAP_4K );
         // 映射内核IO apic与Local apic所占用内存
-        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManager< TARGET_ARCH >::io_apic_address ), KERNEL_I_O_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
-        this->map( reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManager< TARGET_ARCH >::local_apic_address ), KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_DIR, MapMode::MEMORY_MAP_4K );
-        // 映射内核根目录
-        this->map( reinterpret_cast< Lib::Types::uint64_t >( this->page_memory_table.pml ), KERNEL_PAGE_DIRECTORY_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_2M );
+        this->map( KERNEL_I_O_APIC_PHYSICAL_ADDRESS, KERNEL_I_O_APIC_VIRTUAL_ADDRESS, 1, PAGE_PRESENT | PAGE_RW_R | PAGE_US_S | PAGE_DIRTY, MapMode::MEMORY_MAP_4K );
+        this->map( KERNEL_LOCAL_APIC_PHYSICAL_ADDRESS, KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS, 1, PAGE_PRESENT | PAGE_RW_R | PAGE_US_S | PAGE_DIRTY, MapMode::MEMORY_MAP_4K );
         // 映射显存
-        this->map( _config->GraphicsData.FrameBufferBase, KERNEL_VRAM_VIRTUAL_ADDRESS, 1, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_2M );
-        // 字体文件映射到的内存缓存池
-        Lib::Types::uint64_t font_table_buffer { reinterpret_cast< Lib::Types::uint64_t >( PageMemory::malloc( FONT_FILE_OCCUPIES_PAGE, PageMemory::MemoryPageType::PAGE_2M ) ) };
+        this->map( KERNEL_VRAM_PHYSICAL_ADDRESS, KERNEL_VRAM_VIRTUAL_ADDRESS, 1, PAGE_PRESENT | PAGE_RW_W | PAGE_US_U, MapMode::MEMORY_MAP_2M );
         // 映射字体
-        this->map( font_table_buffer, KERNEL_FONT_MEMORY_VIRTUAL_ADDRESS, FONT_FILE_OCCUPIES_PAGE, PAGE_KERNEL_PAGE, MapMode::MEMORY_MAP_2M );
+        this->map( KERNEL_FONT_MEMORY_PHYSICAL_ADDRESS, KERNEL_FONT_MEMORY_VIRTUAL_ADDRESS, FONT_FILE_OCCUPIES_PAGE, PAGE_US_U | PAGE_RW_W | PAGE_PRESENT, MapMode::MEMORY_MAP_2M );
         // 映射空闲内存
-        for ( Lib::Types::size_t page_address { KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS }; page_address < PageMemory::memory_total; page_address += PAGE_SIZE ) {
+        for ( auto page_address { KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS }; page_address < PageMemory::memory_total; page_address += PAGE_SIZE ) {
             // 从空闲内存起始地址开始映射
-            this->map( page_address, KERNEL_BASE_ADDRESS + page_address, 1, PAGE_USER_PAGE, MapMode::MEMORY_MAP_2M );
+            this->map( page_address, KERNEL_BASE_ADDRESS + page_address, 1, PAGE_US_U | PAGE_RW_W | PAGE_PRESENT, MapMode::MEMORY_MAP_2M );
         }
-
+        // 剔除被占用的内存(0 -> 40MB + pagetable size MB)
+        for ( auto index { 0ull }; index < KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS / PAGE_SIZE; ++index ) {
+            PageMemory::bitmap_.set( index, 1 );
+        }
         Architecture::ArchitectureManager< TARGET_ARCH >::flush_tlb( );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Mapping the pages table is OK." << Lib::IO::endl;
     }
-    auto MemoryMap::map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode mode, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
+    auto MemoryMap::map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
         lock.acquire( );
-        STATIC Lib::Types::uint64_t pd_reserved_memory { KERNEL_PAGE_TABLE_RESERVED_PHYSICAL_ADDRESS };
-        auto checkMode = [ & ] -> Lib::Types::uint32_t {     // 解析格式
-            return mode == MapMode::MEMORY_MAP_2M ? MEMORY_SIZE_2M : ( mode == MapMode::MEMORY_MAP_1G ? MEMORY_SIZE_1G : MEMORY_SIZE_4K );
-        };
         physics_address = physics_address & ~( PAGE_SIZE * size - 1 );
         virtual_address = virtual_address & ~( PAGE_SIZE * size - 1 );
         pml_t virtual_pml { }, virtual_pmle { };
@@ -128,8 +267,8 @@ PUBLIC namespace QuantumNEC::Kernel {
         virtual_pml.set_mplt( pml );
         virtual_pmle.set_mplt( virtual_pml.pml + PMLE_IDX( virtual_address ) );
         if ( !( *virtual_pmle.pml & PAGE_PRESENT ) ) {
-            physical_pdpt.set_pdpt( reinterpret_cast< decltype( physical_pdpt.pdpt ) >( pd_reserved_memory += PT_SIZE ) );
-
+            physical_pdpt.set_pdpt( reinterpret_cast< decltype( physical_pdpt.pdpt ) >( KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS ) );
+            KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS += PT_SIZE;
             virtual_pdpt.set_pdpt( reinterpret_cast< decltype( virtual_pdpt.pdpt ) >( ( physical_pdpt.pdpt ) ) );
             Lib::STL::memset( virtual_pdpt.pdpt, 0, PT_SIZE );
             virtual_pmle.make_mplt( physical_pdpt.pdpt, flags );
@@ -138,7 +277,8 @@ PUBLIC namespace QuantumNEC::Kernel {
         physical_pdpte.set_pdpt( physical_pdpt.pdpt + PDPTE_IDX( virtual_address ) );
         virtual_pdpte.set_pdpt( reinterpret_cast< decltype( virtual_pdpte.pdpt ) >( ( physical_pdpte.pdpt ) ) );
         if ( !( *virtual_pdpte.pdpt & PAGE_PRESENT ) ) {
-            physical_pdt.set_pdt( reinterpret_cast< decltype( physical_pdt.pdt ) >( pd_reserved_memory += PT_SIZE ) );
+            physical_pdt.set_pdt( reinterpret_cast< decltype( physical_pdt.pdt ) >( KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS ) );
+            KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS += PT_SIZE;
             virtual_pdt.set_pdt( reinterpret_cast< decltype( virtual_pdt.pdt ) >( ( physical_pdt.pdt ) ) );
             Lib::STL::memset( virtual_pdt.pdt, 0, PT_SIZE );
             virtual_pdpte.make_pdpt( physical_pdt.pdt, flags );
@@ -146,11 +286,11 @@ PUBLIC namespace QuantumNEC::Kernel {
         physical_pdt.set_pdt( reinterpret_cast< decltype( physical_pdt.pdt ) >( *virtual_pdpte.pdpt & ( ~0xfff ) ) );
         physical_pde.set_pdt( physical_pdt.pdt + PDE_IDX( virtual_address ) );
         virtual_pde.set_pdt( reinterpret_cast< decltype( physical_pdt.pdt ) >( ( physical_pde.pdt ) ) );
-        virtual_pde.make_pdt( reinterpret_cast< decltype( virtual_pde.pdt ) >( physics_address ), flags | checkMode( ) );
+        virtual_pde.make_pdt( reinterpret_cast< decltype( virtual_pde.pdt ) >( physics_address ), flags | ( 1 << 7 ) );
         Architecture::ArchitectureManager< TARGET_ARCH >::invlpg( reinterpret_cast< Lib::Types::Ptr< VOID > >( virtual_address ) );
         lock.release( );
     }
-    auto MemoryMap::remap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
+    auto MemoryMap::unmap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml )->VOID {
         /*
          * 内容大致与map一至，除了取消映射的地方和判断
          */

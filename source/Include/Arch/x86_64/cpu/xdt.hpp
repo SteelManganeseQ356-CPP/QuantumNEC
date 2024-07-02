@@ -45,7 +45,7 @@ PUBLIC namespace QuantumNEC::Architecture {
         PUBLIC struct InterruptFrame
         {
             RegisterFrame regs;
-            Lib::Types::uint64_t irq;
+            Lib::Types::uint64_t vector;
             Lib::Types::uint64_t error_code;
             Lib::Types::Ptr< VOID > rip;
             Lib::Types::uint64_t cs;

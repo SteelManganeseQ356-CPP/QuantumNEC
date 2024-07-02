@@ -1,14 +1,12 @@
 #include <Boot/Boot.hpp>
 #include <Boot/Include.hpp>
 #include <Boot/Graphics.hpp>
+#include <Boot/Utils.hpp>
 namespace QuantumNEC::Boot {
 BootServiceMain::BootServiceMain( IN BootConfig *bootConfig ) :
     BootServiceGraphics { &bootConfig->GraphicsData },
-    BootServiceInfo { &kernelConfig },
     BootServiceELF { },
     BootServiceMemory { &bootConfig->MemoryData },
-    BootServicePage { &this->memoryPage },
-    BootServiceArgs { &bootConfig->ArgsData, 0 },
     BootServiceAcpi { &bootConfig->AcpiData },
     BootServiceFont { &bootConfig->FontData } {
     // 为空指针赋值（一块地址）
@@ -44,7 +42,6 @@ auto BootServiceMain::jumpToKernel( IN BootConfig *config ) -> EFI_STATUS {
     // 全部装载到config
     config->GraphicsData = this->BootServiceGraphics::put( );
     config->MemoryData = this->BootServiceMemory::put( );
-    config->ArgsData = this->BootServiceArgs::put( );
     config->AcpiData = this->BootServiceAcpi::put( );
     config->FontData = this->BootServiceFont::put( );
     logger.LogTip( BootServiceLogger::LoggerLevel::INFO, "Exit the boot service." );

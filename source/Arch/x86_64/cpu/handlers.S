@@ -1,4 +1,5 @@
 .intel_syntax noprefix // 使用intel格式汇编语言
+.section .text
 .macro HANDLE_ENTRY n                
 .GLOBAL InterruptHandler\n
 .section .text
@@ -131,7 +132,7 @@ HANDLE_ENTRY 0x2f      /* 辅ATA硬盘 */
 HANDLE_ENTRY 0x30 
 HANDLE_ENTRY 0x31 
 HANDLE_ENTRY 0x32 
-HANDLE_ENTRY 0x33 
+HANDLE_ENTRY 0x33      /* APIC ERROR */
 HANDLE_ENTRY 0x34 
 HANDLE_ENTRY 0x35 
 HANDLE_ENTRY 0x36 
@@ -143,7 +144,7 @@ HANDLE_ENTRY 0x3b
 HANDLE_ENTRY 0x3c 
 HANDLE_ENTRY 0x3d 
 HANDLE_ENTRY 0x3e 
-HANDLE_ENTRY 0x3f 
+HANDLE_ENTRY 0x3f     /* APIC SPURIOUS */
 HANDLE_ENTRY 0x40 
 HANDLE_ENTRY 0x41 
 HANDLE_ENTRY 0x42 
@@ -336,13 +337,5 @@ HANDLE_ENTRY 0xfc
 HANDLE_ENTRY 0xfd 
 HANDLE_ENTRY 0xfe 
 HANDLE_ENTRY 0xff
-
-.section .data
-.GLOBAL stack_space
-.GLOBAL stack_top
-
-stack_space:   // 64kb栈空间
-    .fill 0x10000, 8, 0
-stack_top:
 
 

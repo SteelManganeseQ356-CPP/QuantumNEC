@@ -34,10 +34,10 @@ VOID operator delete( VOID *, size_t ) noexcept;
 VOID operator delete( VOID *address ) noexcept;
 VOID operator delete[]( VOID *address ) noexcept;
 #if defined( __x86_64__ )
-#define _cpuid( __func, __eax, __ebx, __ecx, __edx )                                   \
-    __asm__ __volatile__( "xchgq %%rbx,%q1\n"                                          \
-                          "cpuid\n"                                                    \
-                          "xchgq %%rbx,%q1"                                            \
-                          : "=a"( __eax ), "=r"( __ebx ), "=c"( __ecx ), "=d"( __edx ) \
-                          : "0"( __func ) : )
+#define _cpuid( __func, __eax, __ebx, __ecx, __edx )                 \
+    __asm__ __volatile__(                                            \
+        "cpuid\n"                                                    \
+        : "=a"( __eax ), "=r"( __ebx ), "=c"( __ecx ), "=d"( __edx ) \
+        : "0"( __func ) : )
+
 #endif

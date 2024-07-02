@@ -1,3 +1,4 @@
+#include "Lib/Types/type_ptr.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/Base/deflib.hpp>
 #include <Lib/IO/Stream/iostream>
@@ -256,5 +257,8 @@ PUBLIC namespace QuantumNEC::Architecture {
     }
     auto CPUs::sfence( VOID )->VOID {
         ASM( "sfence" ::: "memory" );
+    }
+    auto CPUs::set_page_table( IN Lib::Types::Ptr< Lib::Types::uint64_t > mmap )->VOID {
+        ASM( "MOVQ %0, %%CR3\n\t" ::"r"( mmap ) );
     }
 }

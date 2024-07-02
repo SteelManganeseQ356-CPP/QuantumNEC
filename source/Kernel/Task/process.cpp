@@ -1,5 +1,3 @@
-#include "Kernel/Memory/map.hpp"
-#include "Kernel/Memory/paging.hpp"
 #include <Kernel/Task/process.hpp>
 #include <Kernel/Task/thread.hpp>
 #include <Lib/STL/string>
@@ -24,11 +22,11 @@ PUBLIC namespace {
         return 0;
     }
 }
-
 PUBLIC namespace QuantumNEC::Kernel {
     Process::Process( VOID ) noexcept {
         Lib::STL::list_init( &this->all_task_queue );
         Lib::STL::list_init( &this->ready_task_queue );
+
         // 准备内核进程PCB, IDLE PCB
         this->kernel_task = get_current< ProcessPCB >( );
         this->main_task = reinterpret_cast< decltype( this->main_task ) >( Architecture::ArchitectureManager< TARGET_ARCH >::kernel_stack_space );

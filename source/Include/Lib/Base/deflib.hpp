@@ -41,6 +41,7 @@ PUBLIC namespace QuantumNEC::Lib::Base {
     PUBLIC constexpr inline auto DIV_ROUND_UP( const auto &X, const auto &STEP ) {
         return ( ( ( X ) + ( STEP - 1 ) ) / STEP );
     }
+
     PUBLIC constexpr inline auto OFFSET( const auto &address ) {
         return (unsigned long long)( address ) & 0x1FFFFF;
     }

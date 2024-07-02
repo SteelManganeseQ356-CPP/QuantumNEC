@@ -3,6 +3,7 @@
 #include <Kernel/task.hpp>
 _C_LINK {
     EXTERN QuantumNEC::Lib::Types::byte_t stack_space[];
+    EXTERN QuantumNEC::Lib::Types::byte_t *stack_top;
 }
 PUBLIC namespace QuantumNEC::Architecture {
     x86_64Architecture::x86_64Architecture( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept :

@@ -79,6 +79,8 @@ PUBLIC namespace QuantumNEC::Architecture {
          * @return 如果CPU支持APIC并且本地APIC未在MSR中禁用，则返回 TRUE 值
          */
         STATIC auto check_apic( VOID ) -> Lib::Types::BOOL;
+        STATIC auto irq_set_mask( IN irq_t irq ) -> VOID;
+        STATIC auto irq_clear_mask( IN irq_t irq, IN Lib::Types::uint8_t vector, IN Lib::Types::uint8_t apicID ) -> VOID;
 
     public:
         inline STATIC ApicInformation apic;

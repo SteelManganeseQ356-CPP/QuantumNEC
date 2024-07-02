@@ -1,28 +1,39 @@
 #pragma once
+#include "Lib/Types/type_base.hpp"
+#include <Kernel/Memory/map.hpp>
 #include <Lib/Base/bitmap.hpp>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 PUBLIC namespace QuantumNEC::Kernel {
+    PUBLIC inline constexpr Lib::Types::size_t operator""_KB( IN CONST Lib::Types::size_t kib ) {
+        return kib * 1024;
+    }
+
+    PUBLIC inline constexpr Lib::Types::size_t operator""_MB( IN CONST Lib::Types::size_t mib ) {
+        return mib * 1024_KB;
+    }
+
+    PUBLIC inline constexpr Lib::Types::size_t operator""_GB( IN CONST Lib::Types::size_t gib ) {
+        return gib * 1024_MB;
+    }
     PUBLIC constexpr CONST auto PAGE_SIZE { 0x200000 };
     PUBLIC constexpr CONST auto KERNEL_BASE_ADDRESS { 0xffff800000000000ULL };
     PUBLIC constexpr CONST auto KERNEL_PHYSICAL_ADDRESS { 0x100000ULL };
-    PUBLIC constexpr CONST auto KERNEL_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_PHYSICAL_ADDRESS };
-    PUBLIC constexpr CONST auto KERNEL_VRAM_PHYSICAL_ADDRESS { 0x800000 };
-    PUBLIC constexpr CONST auto KERNEL_VRAM_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_VRAM_PHYSICAL_ADDRESS };
-    PUBLIC constexpr CONST auto KERNEL_FONT_MEMORY_PHYSICAL_ADDRESS { 0x0a00000 };
-    PUBLIC constexpr CONST auto KERNEL_FONT_MEMORY_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_FONT_MEMORY_PHYSICAL_ADDRESS };
-    PUBLIC constexpr CONST auto KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS { 0x2a00000 };
-    PUBLIC constexpr CONST auto KERNEL_FREE_MEMORY_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS };
+    PUBLIC constexpr CONST auto KERNEL_VIRTUAL_ADDRESS { 0xffff800000100000 };
+    EXTERN Lib::Types::size_t KERNEL_VRAM_PHYSICAL_ADDRESS;
+    PUBLIC constexpr CONST auto KERNEL_VRAM_VIRTUAL_ADDRESS { 0xffff800000600000 };
+    PUBLIC constexpr CONST auto KERNEL_FONT_MEMORY_PHYSICAL_ADDRESS { 0x0400000 };
+    PUBLIC constexpr CONST auto KERNEL_FONT_MEMORY_VIRTUAL_ADDRESS { 0xffff800000400000 };
+    EXTERN Lib::Types::size_t KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS;
+    EXTERN Lib::Types::size_t KERNEL_FREE_MEMORY_VIRTUAL_ADDRESS;
     PUBLIC constexpr CONST auto KERNEL_TASK_PCB_PHYSICAL_ADDRESS { 0x0200000 };
-    PUBLIC constexpr CONST auto KERNEL_TASK_PCB_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_TASK_PCB_PHYSICAL_ADDRESS };
-    PUBLIC constexpr CONST auto KERNEL_PAGE_DIRECTORY_PHYSICAL_ADDRESS { 0x0600000 };
-    PUBLIC constexpr CONST auto KERNEL_PAGE_DIRECTORY_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_PAGE_DIRECTORY_PHYSICAL_ADDRESS };
-    PUBLIC constexpr CONST auto KERNEL_I_O_APIC_PHYSICAL_ADDRESS { 0x0210000 };
-    PUBLIC constexpr CONST auto KERNEL_I_O_APIC_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_I_O_APIC_PHYSICAL_ADDRESS };
-    PUBLIC constexpr CONST auto KERNEL_LOCAL_APIC_PHYSICAL_ADDRESS { 0x0211000 };
-    PUBLIC constexpr CONST auto KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_LOCAL_APIC_PHYSICAL_ADDRESS };
-    PUBLIC constexpr CONST auto KERNEL_PAGE_TABLE_RESERVED_PHYSICAL_ADDRESS { 0x0212000 };
-    PUBLIC constexpr CONST auto KERNEL_PAGE_TABLE_RESERVED_VIRTUAL_ADDRESS { KERNEL_BASE_ADDRESS + KERNEL_PAGE_TABLE_RESERVED_PHYSICAL_ADDRESS };
+    PUBLIC constexpr CONST auto KERNEL_TASK_PCB_VIRTUAL_ADDRESS { 0xffff800000200000 };
+    PUBLIC constexpr CONST auto KERNEL_PAGE_TABLE_PHYSICAL_ADDRESS { 0x2500000 };
+    PUBLIC constexpr CONST auto KERNEL_PAGE_TABLE_VIRTUAL_ADDRESS { 0xffff800002500000 };
+    EXTERN Lib::Types::size_t KERNEL_I_O_APIC_PHYSICAL_ADDRESS;
+    PUBLIC constexpr CONST auto KERNEL_I_O_APIC_VIRTUAL_ADDRESS { 0xffff800002410000 };
+    EXTERN Lib::Types::size_t KERNEL_LOCAL_APIC_PHYSICAL_ADDRESS;
+    PUBLIC constexpr CONST auto KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS { 0xffff800002411000 };
     /*
      * 内核层 ： 00000000 00000000 -> FFFFFFFF FFFFFFFF
      * 应用层 ： 00000000 02A00000 -> 00007FFF FFFFFFFF
@@ -38,8 +49,10 @@ PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC constexpr CONST auto PAGE_4K_SHIFT { 12 };
     PUBLIC constexpr CONST auto PAGE_2M_SIZE { ( 1UL << PAGE_2M_SHIFT ) };
     PUBLIC constexpr CONST auto PAGE_4K_SIZE { ( 1UL << PAGE_4K_SHIFT ) };
+    PUBLIC constexpr CONST auto PAGE_1G_SIZE { ( 1UL << PAGE_1G_SHIFT ) };
     PUBLIC constexpr CONST auto PAGE_2M_MASK { ( ~( PAGE_2M_SIZE - 1 ) ) };
     PUBLIC constexpr CONST auto PAGE_4K_MASK { ( ~( PAGE_4K_SIZE - 1 ) ) };
+    PUBLIC constexpr CONST auto PAGE_1G_MASK { ( ~( PAGE_1G_SIZE - 1 ) ) };
     PUBLIC inline constexpr auto Page2MAligned( auto addr ) {
         return ( ( (unsigned long)( addr ) + PAGE_2M_SIZE - 1 ) & PAGE_2M_MASK );
     };
@@ -60,12 +73,6 @@ PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC constexpr CONST auto PAGE_US_S { 1UL << 0 };
     PUBLIC constexpr CONST auto PAGE_US_U { 1 << 2 };
     PUBLIC constexpr CONST auto PAGE_RW_R { 1UL << 0 };
-    PUBLIC constexpr CONST auto PAGE_KERNEL_GDT { PAGE_RW_W | PAGE_PRESENT };
-    PUBLIC constexpr CONST auto PAGE_KERNEL_DIR { PAGE_RW_W | PAGE_PRESENT };
-    PUBLIC constexpr CONST auto PAGE_KERNEL_PAGE { PAGE_PS | PAGE_RW_R | PAGE_PRESENT };
-    PUBLIC constexpr CONST auto PAGE_USER_GDT { PAGE_US_U | PAGE_RW_W | PAGE_PRESENT };
-    PUBLIC constexpr CONST auto PAGE_USER_DIR { PAGE_US_U | PAGE_RW_W | PAGE_PRESENT };
-    PUBLIC constexpr CONST auto PAGE_USER_PAGE { PAGE_PS | PAGE_US_U | PAGE_RW_W | PAGE_PRESENT };
     PUBLIC constexpr CONST auto PDPT_PAGE_1G { 1 << 7 };
     PUBLIC constexpr CONST auto PD_PAGE_2M { 1 << 7 };
     PUBLIC constexpr CONST auto PT_PAGE_PAT { 1 << 7 };
@@ -96,6 +103,8 @@ PUBLIC namespace QuantumNEC::Kernel {
 
     PUBLIC class PageMemory
     {
+        friend MemoryMap;
+
     private:
         enum class MemoryPageAttribute {
             FREE_MEMORY = 1,          // 可用内存

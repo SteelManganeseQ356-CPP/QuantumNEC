@@ -1,5 +1,3 @@
-
-#include "Arch/x86_64/cpu/xdt.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/cstring>
@@ -16,12 +14,12 @@ PUBLIC Lib::Types::Ptr< CONST Lib::Types::char_t > interrupt_name[ INTERRUPT_DES
 
 _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Architecture::CPUs::InterruptFrame > frame ) -> Lib::Types::Ptr< CONST Architecture::CPUs::InterruptFrame > {
 #ifndef APIC
-    if ( frame->irq == 0x27 || frame->irq == 0x2f )     // 0x2f是从片8259A上的最后一个irq引脚，保留
-        return frame;                                   // IRQ7和IRQ15会产生伪中断(spurious interrupt),无须处理。
+    if ( frame->vector == 0x27 || frame->vector == 0x2f )     // 0x2f是从片8259A上的最后一个irq引脚，保留
+        return frame;                                         // IRQ7和IRQ15会产生伪中断(spurious interrupt),无须处理。
 #endif
-    if ( interrupt_entry_table[ frame->irq ] == general_interrupt_handler ) {
+    if ( interrupt_entry_table[ frame->vector ] == general_interrupt_handler ) {
         // 显示中断名
-        sout[ ostream::HeadLevel::ERROR ] << "IRQ_" << frame->irq << ":" << ::interrupt_name[ frame->irq ] << endl;
+        sout[ ostream::HeadLevel::ERROR ] << "IRQ_" << frame->vector << ":" << ::interrupt_name[ frame->vector ] << endl;
         // 显示各个寄存器值
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "Rflags -> %#018lx\n\r", frame->rflags );
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "RIP -> %#018lx\tRSP -> %#018lx\tSS  -> %#018lx\tCS  -> %#018lx\n\r", frame->rip, frame->rsp, frame->ss, frame->cs );
@@ -30,7 +28,7 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
             sout[ ostream::HeadLevel::INFO ] << "Error Code -> " << frame->error_code << endl;
         }
         /* #TS #NP #SS #GP特殊处理*/
-        if ( frame->irq == 0x0a || frame->irq == 0x0b || frame->irq == 0x0c || frame->irq == 0x0d ) {
+        if ( frame->vector == 0x0a || frame->vector == 0x0b || frame->vector == 0x0c || frame->vector == 0x0d ) {
             if ( frame->error_code & 0x01 ) {
                 sout[ ostream::HeadLevel::INFO ] << "The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception." << endl;
             }
@@ -51,7 +49,7 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
             sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "Segment Selector Index : %#010x\n", frame->error_code & 0xfff8 );
         }
 
-        if ( frame->irq == 0x0e ) /* #PF的特殊处理 */
+        if ( frame->vector == 0x0e ) /* #PF的特殊处理 */
         {
             sout[ ostream::HeadLevel::INFO ];
             if ( !( frame->error_code & 0x01 ) ) {
@@ -81,7 +79,7 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
             Architecture::CPUs::hlt( );
     }
     else {
-        return interrupt_entry_table[ frame->irq ]( frame );
+        return interrupt_entry_table[ frame->vector ]( frame );
     }
 }
 /**

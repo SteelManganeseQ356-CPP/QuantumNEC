@@ -1,3 +1,4 @@
+#include "Kernel/Memory/paging.hpp"
 #include <Arch/Arch.hpp>
 #include <Kernel/kernel.hpp>
 #include <Kernel/memory.hpp>
@@ -38,6 +39,7 @@ Lib::Types::int64_t ThreadC( Lib::Types::uint64_t code ) {
 
     return 0;
 }
+
 Lib::Types::int64_t ProcC( Lib::Types::uint64_t ) {
     // int i { };
     // while ( true ) {
@@ -107,7 +109,17 @@ Lib::Types::int64_t ProcF( Lib::Types::uint64_t code ) {
 }
 //////////////////////////////////////分割线///////////////////////////////////////////////
 
+auto func1( void ) {
+    ASM(
+        "popq  %rbx\n\t"
+        "leaq  stack_top(%rip), %rax\n\t"
+        "movq  %rax, %rbp\n\t"
+        "movq  %rax, %rsp\n\t"
+        "pushq %rbx\n\t"
+        "ret\n\t" );
+}
 _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
+    // func1( );
     SystemStatus Status { SYSTEM_SUCCESS };
     Architecture::ArchitectureManager< TARGET_ARCH > architecture { config };     // 系统架构初始化
     Kernel::Memory memory { config };                                             // 内存管理初始化
@@ -150,6 +162,7 @@ _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
     //  Kernel::Task::create( ProcF, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process F", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
     //    // Kernel::Task::create( ThreadC, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread C", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
     //    // Utils::sti( );
+
     task.block( Kernel::Task::TaskStatus::BLOCKED );
     ASM( "sti\n\t" );
 

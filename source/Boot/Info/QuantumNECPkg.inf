@@ -15,8 +15,6 @@
     ../Graphics.cpp
     ../Memory.cpp
     ../Utils.cpp
-    ../Args.cpp
-    ../Info.cpp
     ../Acpi.cpp
     ../Font.cpp
 [Packages]
