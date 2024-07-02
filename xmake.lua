@@ -27,7 +27,7 @@ add_cxxflags(" -I source/Include/ \
 
 set_optimize("none")
 set_languages("c17", "c++23")
-target("QuantumNEC")
+target("build")
     set_kind("binary")
     add_files( 
         "source/Kernel/*.cpp", "source/Kernel/*/*.cpp",
@@ -69,11 +69,10 @@ target("QuantumNEC")
             os.exec("cp edk2/Build/DEBUG_GCC5/X64/BootX64.efi vm/EFI/Boot/ -r")
         end
         os.mkdir(run_dir)
-        -- --allow-multiple-definition --no-warn-rwx-segments -z muldefs -flto
         os.exec("ld -m elf_x86_64 --allow-multiple-definition --no-warn-rwx-segments -z muldefs -flto -s "..object_string.." -o "..run_dir.."/microKernel.elf  -T source/Arch/x86_64/System.lds")
         os.exec("cp "..run_dir.."/microKernel.elf vm/QuantumNEC/ -r")
     end)
-    after_build(function(target)
+    before_build(function (target) 
         print("运行Qemu")
         os.exec(
             "qemu-system-x86_64 \
@@ -88,9 +87,6 @@ target("QuantumNEC")
             -device qxl-vga,vgamem_mb=128 \
             -device ich9-intel-hda \
             -device virtio-serial-pci \
-            -audiodev pipewire,id=hda \
-            -machine pcspk-audiodev=hda \
-            -device hda-output,audiodev=hda \
             -nic user,model=virtio-net-pci \
             -device virtio-mouse-pci \
             -device virtio-keyboard-pci \
@@ -100,11 +96,17 @@ target("QuantumNEC")
             -rtc base=localtime \
             "
         )
-        -- os.exec("rm -rf vm")
-        -- os.exec("rm -rf build.sh")
-        -- os.exec("rm -rf build")
-    end) 
- 
+    end)
+
+target("clean")
+    before_build(function (target) 
+        print("开始清除不必要的文件")
+        os.exec("rm -rf vm")
+        os.exec("rm -rf build.sh")
+        os.exec("rm -rf build")
+        os.exec("rm -rf edk2/Build")
+        os.exec("rm -rf edk2/QuantumNECPkg")
+     end)
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
 --
