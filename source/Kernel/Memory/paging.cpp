@@ -125,6 +125,7 @@ PUBLIC namespace QuantumNEC::Kernel {
                     bitmap_.set( j, 1 );
                 }
                 buffer = reinterpret_cast< decltype( buffer ) >( 0ULL + index * PAGE_SIZE );
+                Lib::STL::memset( buffer, 0, size * PAGE_SIZE );
             }
         }
         else {

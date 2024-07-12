@@ -1,7 +1,6 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 #include <Arch/x86_64/device/fpu.hpp>
-#include <Arch/x86_64/device/time.hpp>
 #include <Arch/x86_64/device/graphics.hpp>
 #include <Arch/x86_64/device/acpi.hpp>
 #include <Arch/x86_64/device/audio.hpp>

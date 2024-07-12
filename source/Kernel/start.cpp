@@ -1,4 +1,4 @@
-#include "Kernel/Memory/paging.hpp"
+#include "Arch/x86_64/platform/syscall.hpp"
 #include <Arch/Arch.hpp>
 #include <Kernel/kernel.hpp>
 #include <Kernel/memory.hpp>
@@ -40,41 +40,26 @@ Lib::Types::int64_t ThreadC( Lib::Types::uint64_t code ) {
     return 0;
 }
 
-Lib::Types::int64_t ProcC( Lib::Types::uint64_t ) {
-    // int i { };
+Lib::Types::int64_t ProcC( Lib::Types::uint64_t code ) {
+    // Kernel::Message message { };
     // while ( true ) {
-    //     Lib::IO::sout << "                          C:             " << ++i << '\n';
+    //     message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_RECEIVE, Kernel::ANY );
+    //     Lib::IO::sout << "C:" << 3 << "\n";
+    //     message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 3 );
     // }
-    // Lib::IO::sout << "Process C: " << code << "\n";
+    Lib::IO::sout << "Process C: " << code << '\n';
 
-    // Lib::IO::sout << Kernel::TaskManagement::get_current< Kernel::TaskManagement::ThreadPCB >( )->PID << '\n';
-
-    // //  message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_RECEIVE, 3 );
-    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND_RECEIVE, 3 );
-    // Lib::IO::sout << "C2:\n";
-    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND_RECEIVE, 3 );
-
-    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 2 );
-    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND_RECEIVE, 2 );
-    // Lib::IO::sout << "Process C: " << code << "\n"
-    //               << Kernel::TaskManagement::get_current< Kernel::TaskManagement::ProcessPCB >( )->PID << "\n";
-
-    Kernel::Message message { };
-    while ( true ) {
-        message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_RECEIVE, Kernel::ANY );
-        Lib::IO::sout << "C:" << 3 << "\n";
-        message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 3 );
-    }
     while ( true )
         ;
     return 0;
 }
 Lib::Types::int64_t ProcD( Lib::Types::uint64_t code ) {
     Lib::IO::sout << "Process D: " << code << "\n";
-    Kernel::Message message { };
-    message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 2 );
-    Lib::IO::sout << "D\n";
-    message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 2 );
+
+    // Kernel::Message message { };
+    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 2 );
+    // Lib::IO::sout << "D\n";
+    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 2 );
 
     while ( true )
         ;
@@ -109,62 +94,62 @@ Lib::Types::int64_t ProcF( Lib::Types::uint64_t code ) {
 }
 //////////////////////////////////////分割线///////////////////////////////////////////////
 
-auto func1( void ) {
-    ASM(
-        "popq  %rbx\n\t"
-        "leaq  stack_top(%rip), %rax\n\t"
-        "movq  %rax, %rbp\n\t"
-        "movq  %rax, %rsp\n\t"
-        "pushq %rbx\n\t"
-        "ret\n\t" );
-}
 _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
-    // func1( );
     SystemStatus Status { SYSTEM_SUCCESS };
     Architecture::ArchitectureManager< TARGET_ARCH > architecture { config };     // 系统架构初始化
     Kernel::Memory memory { config };                                             // 内存管理初始化
     Kernel::Task task { config };                                                 // 进程管理初始化
     Lib::IO::sout << "Test 1 : Memory allocate-------------------------------\n";
-    char buf[] {
-        "hello world\0"
-    };
+    char buf[] { "hello world\0" };
     auto w { new char[ 12 ] };
     Lib::STL::strcpy( w, buf );
     Lib::IO::sout << w << " " << (void *)w << "\n";
     delete[] w;
+
     auto a = new char[ 12 ];
     Lib::STL::strcpy( a, buf );
     Lib::IO::sout << a << " " << (void *)a << "\n";
-    auto b = new char[ 0x200004 ];
+
+    auto b = new char[ 12 ];
+
     Lib::STL::strcpy( b, buf );
     Lib::IO::sout << b << " " << (void *)b << "\n";
+
     delete[] b;
+
     auto c = new char[ 0x12 ];
     Lib::STL::strcpy( c, buf );
     Lib::IO::sout << c << " " << (void *)c << "\n";
+
     auto d = new char[ 0x123 ];
     Lib::STL::strcpy( d, buf );
     Lib::IO::sout << d << " " << (void *)d << "\n";
     delete[] c;
-    auto f = new char[ 0x200004 ];
+
+    auto f = new char[ 1 ];
     Lib::STL::strcpy( f, buf );
     Lib::IO::sout << f << " " << (void *)f << "\n";
     delete[] f;
+
+    auto g = new char[ 0x200000 ];
+    Lib::STL::strcpy( g, buf );
+    Lib::IO::sout << g << ' ' << (void *)g << '\n';
+
     Lib::IO::sout << "Test 2 : Make 2 processes-------------------------------\n";
     /* 开启中断 */
     //__asm__ __volatile__( "int $0x80\n\t" );
 
-    task.create( ProcC, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process C", 31, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
-    task.create( ProcD, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process D", 31, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
+    task.create( ProcC, 100, Kernel::Task::TaskType::PF_USER_PROCESS, "Process C", 100, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
+    task.create( ProcD, 20, Kernel::Task::TaskType::PF_USER_PROCESS, "Process D", 31, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
+    task.create( ProcE, 20, Kernel::Task::TaskType::PF_USER_PROCESS, "Process E", 31, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
     // Kernel::Task::create( ProcE, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process E", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
-    //   Kernel::Task::create( ThreadA, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread A", 1000, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
-    //   Kernel::Task::create( ThreadB, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread B", 31, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
-    //  Kernel::Task::create( ProcF, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process F", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
-    //    // Kernel::Task::create( ThreadC, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread C", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
-    //    // Utils::sti( );
+    // Kernel::Task::create( ThreadA, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread A", 1000, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
+    // Kernel::Task::create( ThreadB, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread B", 31, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
+    // Kernel::Task::create( ProcF, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process F", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
+    // Kernel::Task::create( ThreadC, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread C", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
 
     task.block( Kernel::Task::TaskStatus::BLOCKED );
-    ASM( "sti\n\t" );
+    Architecture::ArchitectureManager< TARGET_ARCH >::enable_interrupt( );
 
     while ( true )
         ;

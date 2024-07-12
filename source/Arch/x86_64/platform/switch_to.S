@@ -1,4 +1,5 @@
 .intel_syntax noprefix // 使用intel格式汇编语言
+.section .text
 .GLOBAL _asm_thread_switch_to
 _asm_thread_switch_to:
     CLI
@@ -30,13 +31,6 @@ _asm_thread_switch_to:
 .section .data
 .GLOBAL stack_space
 .GLOBAL stack_top
+stack_space = 0x0200000     
+stack_top = stack_space + 0x10000
  
-stack_space:
-    .fill 0x2000,8,0 // 64kb栈空间  
-stack_top:
-
-// .section .data
-// .GLOBAL stack_space
-// .GLOBAL stack_top
-// stack_space = 0x0200000     
-// stack_top = stack_space + 0x10000

@@ -39,8 +39,8 @@ PUBLIC namespace QuantumNEC::Architecture {
         } _packed FPUFrame;
 
     public:
-        explicit FPU( VOID ) noexcept( TRUE );
-        virtual ~FPU( VOID ) noexcept( TRUE ) = default;
+        explicit FPU( VOID ) noexcept;
+        virtual ~FPU( VOID ) noexcept = default;
 
     public:
         /**

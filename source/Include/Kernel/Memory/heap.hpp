@@ -3,8 +3,6 @@
 #include <Lib/Types/type_bool.hpp>
 #include <Lib/STL/list>
 PUBLIC namespace QuantumNEC::Kernel {
-    // 内存块类型
-    PUBLIC constexpr CONST auto MEMORY_BLOCK_KIND { 15 };
     // 内存块魔术字节
     PUBLIC constexpr CONST auto MEMORY_BLOCK_MAGIC_NUMBER { 0x1145141919810ull };
     PUBLIC class HeapMemory

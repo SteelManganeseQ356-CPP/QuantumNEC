@@ -21,12 +21,12 @@ auto BootServiceLogger::LogTip( IN LoggerLevel level, IN CONST CHAR8 *Message ) 
     CONST CHAR8 *StrLevel { GetLevel[ (UINT32)level ]( level ) };
     UINTN MsgLen { };
     EFI_STATUS Status { EFI_SUCCESS };
-// #ifdef PRINT_LOGGER
-//     AsciiPrint( "[" __DATE__ "<=>" __TIME__ "]" );
-//     AsciiPrint( StrLevel );
-//     AsciiPrint( Message );
-//     AsciiPrint( "\n\r" );     // 打印日志 ：[ 日期 <=> 时间 ] [Header] 消息
-// #endif
+    // #ifdef PRINT_LOGGER
+    //     AsciiPrint( "[" __DATE__ "<=>" __TIME__ "]" );
+    //     AsciiPrint( StrLevel );
+    //     AsciiPrint( Message );
+    //     AsciiPrint( "\n\r" );     // 打印日志 ：[ 日期 <=> 时间 ] [Header] 消息
+    // #endif
     MsgLen = AsciiStrLen( Message );
     Status = this->put( ).LogFile->Write( this->put( ).LogFile, &MsgLen,
                                           (VOID *)Message );     // 写入文件
@@ -57,9 +57,8 @@ auto BootServiceLogger::Close( VOID ) -> EFI_STATUS {
 }
 BootServiceLogger::BootServiceLogger( IN LoggerConfig *config ) :
     BootServiceDataManager< LoggerConfig > {
-    config
-}
-{
+        config
+    } {
     /* 初始化日志 */
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *FileSystem { NULL };
     UINTN HandleCount { };

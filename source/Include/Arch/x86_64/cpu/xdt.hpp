@@ -109,7 +109,7 @@ PUBLIC namespace QuantumNEC::Architecture {
          * @param nr 中断号
          * @param handle 要注册的入口函数指针
          */
-        STATIC auto set_exception_handler( IN CONST Lib::Types::uint8_t irq, IN InterruptEntry handle ) -> VOID;
+        STATIC auto set_exception_handler( IN CONST Lib::Types::uint8_t vector, IN InterruptEntry handle ) -> VOID;
     };
     /**
      * @brief 全局描述符

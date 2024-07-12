@@ -1,88 +1,50 @@
-#include <Boot/Graphics.hpp>
-#include <Boot/Include.hpp>
-#include <Boot/Logger.hpp>
+#include <Boot/graphics.hpp>
 namespace QuantumNEC::Boot {
-constexpr CONST auto GAP { 1 };
-STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL Grey { 166, 166, 166, 0 };
-STATIC EFI_GRAPHICS_OUTPUT_PROTOCOL *GlobalGop { };
-auto displayStep( VOID ) -> EFI_STATUS {
-    STATIC UINT8 Step { 1 };
-    // 把分辨率除以16
-    UINTN BlockWidth { GlobalGop->Mode->Info->HorizontalResolution >> 6 };
-    UINTN BlockHeight { GlobalGop->Mode->Info->VerticalResolution >> 6 };
-    UINTN StartX { ( GlobalGop->Mode->Info->HorizontalResolution - ( BlockWidth + GAP ) * 10 - GAP ) / 2 };
-    UINTN StartY { ( GlobalGop->Mode->Info->VerticalResolution * 3 ) >> 2 };
-    UINTN X { StartX + ( BlockWidth + GAP ) * Step++ };
-    // 画矩形
-    return GlobalGop->Blt( GlobalGop, &Grey, EfiBltVideoFill, 0, 0, X, StartY, BlockWidth, BlockHeight, 0 );
-}
-auto BootServiceGraphics::SetVideoMode( VOID ) -> decltype( auto ) {
-    EFI_STATUS Status { EFI_SUCCESS };
-    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *ModeInfo { };
-    UINTN ModeInfoSize { sizeof( EFI_GRAPHICS_OUTPUT_MODE_INFORMATION ) };
-    UINTN H { };
-    UINTN V { };
-    UINTN ModeIndex { };
-    for ( UINTN i { }; i < this->Gop->Mode->MaxMode; ++i ) {
-        Status = this->Gop->QueryMode( this->Gop, i, &ModeInfoSize, &ModeInfo );
-        if ( EFI_ERROR( Status ) ) {
-            return Status;
+auto GraphicsService::display_logo( IN CHAR16 *path ) noexcept -> VOID {
+    auto hor { this->Gop->Mode->Info->HorizontalResolution };
+    auto ver { this->Gop->Mode->Info->VerticalResolution };
+    auto logo = FileService::get_handle( path );
+    auto logo_address = FileService::read( logo );
+    auto bmpTranslate = [] {
+        EFI_STATUS Status { EFI_SUCCESS };
+    auto conversion { [ & ]( UINTN Offset, UINTN Size ) -> UINTN {
+        UINTN Result = 0;
+        for ( UINTN i = 0; i < Size; ++i ) {
+            Result += *( reinterpret_cast< UINT8 * >( BmpBase ) + Offset + i ) << i * 8;
         }
-        H = ModeInfo->HorizontalResolution;
-        V = ModeInfo->VerticalResolution;
-        if ( ( ( H == 1024 ) && ( V == 768 ) )     // 计算机所支持的分辨率
-             || ( ( H == 1440 ) && ( V == 900 ) )
-             || ( ( H == 1920 ) && ( V == 1080 ) ) ) {
-            ModeIndex = i;
+        return Result;
+    } };
+    this->put( ).Size = conversion( 2, 4 );
+    this->put( ).PageSize = ( this->put( ).Size >> 12 ) + 1;
+    this->put( ).Offset = conversion( 10, 4 );
+    this->put( ).Width = conversion( 18, 4 );
+    this->put( ).Height = conversion( 22, 4 );
+    EFI_PHYSICAL_ADDRESS PixelStart;
+    Status = gBS->AllocatePages( AllocateAnyPages, EfiLoaderData,
+                                 this->put( ).PageSize, &PixelStart );
+    EFI_GRAPHICS_OUTPUT_BLT_PIXEL *PixelFromFile = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *)( BmpBase + this->put( ).Offset + this->put( ).Width * this->put( ).Height * 4 );
+    EFI_GRAPHICS_OUTPUT_BLT_PIXEL *PixelToBuffer = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *)PixelStart;
+    for ( UINTN i { }; i < this->put( ).Height; i++ ) {
+        PixelFromFile -= this->put( ).Width;
+        for ( UINTN j { }; j < this->put( ).Width; j++ ) {
+            *PixelToBuffer = *PixelFromFile;
+            PixelToBuffer++;
+            PixelFromFile++;
         }
+        PixelFromFile -= this->put( ).Width;
     }
-    Status = this->Gop->SetMode( this->Gop, ModeIndex );
-    return Status;
+
+    this->put( ).PixelStart = PixelStart;
+    return Status; }
+
+    status = this->bmpTranslate( LogoAddress );
+    auto X = ( hor - this->put( ).Width ) / 2;
+    auto Y = ( ver - this->put( ).Height ) / 2;
+
+    status = status = this->Gop->Blt(
+        this->Gop, (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *)this->put( ).PixelStart,
+        EfiBltBufferToVideo, 0, 0, X, Y, this->put( ).Width, this->put( ).Height,
+        0 );
 }
-BootServiceGraphics::BootServiceGraphics( IN GraphicsConfig *config ) :
-    BootServiceDataManager< GraphicsConfig > {
-        config
-    } {
-    // 初始化图形界面
-    UINTN HandleCount { };
-    EFI_HANDLE *HandleBuffer { };
-    LoggerConfig logIni { };
-    BootServiceLogger logger { &logIni };
-    EFI_STATUS Status { EFI_SUCCESS };
-    Status = gBS->LocateHandleBuffer( ByProtocol, &gEfiGraphicsOutputProtocolGuid, NULL,
-                                      &HandleCount, &HandleBuffer );
-    if ( EFI_ERROR( Status ) ) {
-        logger.LogError( Status );
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to locate handle buffer for graphics." );
-        logger.Close( );
-    }
-    Status = gBS->OpenProtocol( HandleBuffer[ 0 ], &gEfiGraphicsOutputProtocolGuid,     // 打开图形服务
-                                reinterpret_cast< VOID ** >( &Gop ), this->putHandle( ),
-                                NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL );
-    if ( EFI_ERROR( Status ) ) {
-        logger.LogError( Status );
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to open graphics protocol." );
-        logger.Close( );
-    }
-    Status = this->SetVideoMode( );     // 设置显示模式
-    if ( EFI_ERROR( Status ) ) {
-        logger.LogError( Status );
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to set video mode." );
-        logger.Close( );
-    }
-    this->put( ).FrameBufferBase = Gop->Mode->FrameBufferBase;
-    this->put( ).FrameBufferSize = Gop->Mode->FrameBufferSize;
-    this->put( ).HorizontalResolution = Gop->Mode->Info->HorizontalResolution;
-    this->put( ).VerticalResolution = Gop->Mode->Info->VerticalResolution;
-    this->put( ).PixelsPerScanLine = Gop->Mode->Info->PixelsPerScanLine;
-    GlobalGop = Gop;
-    Status = displayStep( );
-    if ( EFI_ERROR( Status ) ) {
-        logger.LogError( Status );
-        logger.LogTip( BootServiceLogger::LoggerLevel::ERROR, "Failed to display step." );
-        logger.Close( );
-    }
-    logger.LogTip( BootServiceLogger::LoggerLevel::SUCCESS, "Initialize the graphics service management." );
-    logger.Close( );
-}
+
 }     // namespace QuantumNEC::Boot

@@ -55,6 +55,33 @@ PUBLIC namespace QuantumNEC::Architecture {
         GeneralRegisterFrame
     {
     } _packed;
+
+    PUBLIC constexpr CONST auto IA32_APIC_BASE_MSR { 0x1B };
+    PUBLIC constexpr CONST auto IA32_APIC_BASE_MSR_BSP { 1UL << 8U };     // 处理器是 BSP
+    PUBLIC constexpr CONST auto IA32_APIC_BASE_MSR_ENABLE { 1UL << 11U };
+    PUBLIC constexpr CONST auto IA32_APIC_BASE_MSR_BASE_ADDR_MSK { ~0xFFFUL };
+    PUBLIC constexpr CONST auto IA32_EFER { 0xc0000080 };
+    PUBLIC constexpr CONST auto IA32_STAR { 0xc0000081 };
+    PUBLIC constexpr CONST auto IA32_LSTAR { 0xc0000082 };
+    PUBLIC constexpr CONST auto IA32_FMASK { 0xc0000084 };
+    PUBLIC constexpr CONST auto IA32_EFER_SCE { 1 };
+
+    // TIME
+
+    PUBLIC constexpr CONST auto HZ { 100 };
+    PUBLIC constexpr CONST auto OSCILLATOR { 1193182 };
+    PUBLIC constexpr CONST auto CLOCK_COUNTER { OSCILLATOR / HZ };
+    PUBLIC constexpr CONST auto JIFFY { 1000 / HZ };
+
+    // 蜂鸣器
+
+    PUBLIC constexpr CONST auto SPEAKER_REG { 0x61 };
+    PUBLIC constexpr CONST auto BEEP_HZ { 440 };     // 声音为440HZ
+
+    // 下面是 CMOS 信息的寄存器索引
+
+    PUBLIC constexpr CONST auto CMOS_ADDRESS { 0x70 };     // CMOS 地址寄存器
+    PUBLIC constexpr CONST auto CMOS_DATA { 0x71 };        // CMOS 数据寄存器
     /* ------------------------------------------------------------------------------------ *
      * GDT内部：
      * n << 3 意味着 n * 2 ^ 3 = n * 8
@@ -107,32 +134,49 @@ PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC constexpr const auto RPL3 { 0x3 };
     PUBLIC constexpr const auto TI_GDT { 0x0 };
     PUBLIC constexpr const auto TILDT { 0x4 };
-    PUBLIC constexpr const auto SELECTOR_CODE64_KERNEL { ( 1 << 3 ) | TI_GDT | RPL0 }; /* 64位内核代码段 */
-    PUBLIC constexpr const auto SELECTOR_DATA64_KERNEL { ( 2 << 3 ) | TI_GDT | RPL0 }; /* 64位内核数据段 */
-    PUBLIC constexpr const auto SELECTOR_CODE64_USER { ( 3 << 3 ) | TI_GDT | RPL3 };   /* 64位用户代码段 */
-    PUBLIC constexpr const auto SELECTOR_DATA64_USER { ( 4 << 3 ) | TI_GDT | RPL3 };   /* 64位用户数据段 */
-    PUBLIC constexpr const auto SELECTOR_TSS { ( 10 << 3 ) | TI_GDT | RPL0 };          /* TSS段 */
+    PUBLIC constexpr const auto SELECTOR_CODE64_KERNEL { ( 1ull << 3 ) | TI_GDT | RPL0 }; /* 64位内核代码段 */
+    PUBLIC constexpr const auto SELECTOR_DATA64_KERNEL { ( 2ull << 3 ) | TI_GDT | RPL0 }; /* 64位内核数据段 */
+    PUBLIC constexpr const auto SELECTOR_CODE64_USER { ( 5ull << 3 ) | TI_GDT | RPL3 };   /* 64位用户代码段 */
+    PUBLIC constexpr const auto SELECTOR_DATA64_USER { ( 6ull << 3 ) | TI_GDT | RPL3 };   /* 64位用户数据段 */
+    PUBLIC constexpr const auto SELECTOR_TSS { ( 10ull << 3 ) | TI_GDT | RPL0 };          /* TSS段 */
 
     /* RFLAGS */
-
-    PUBLIC constexpr const auto RFLAGS_MBS { 1 << 1 };
-    PUBLIC constexpr const auto RFLAGS_IF_1 { 1 << 9 };
-    PUBLIC constexpr const auto RFLAGS_IF_0 { 0 << 9 };
-    PUBLIC constexpr const auto RFLAGS_IOPL_0 { 0 << 12 };
-    PUBLIC constexpr const auto RFLAGS_IOPL_3 { 3 << 12 };
+    PUBLIC constexpr const auto RFLAGS_IF { ( 1ull << 9 ) };
+    PUBLIC constexpr const auto RFLAGS_MBS { 1ull << 1 };
+    PUBLIC constexpr const auto RFLAGS_IF_1 { 1ull << 9 };
+    PUBLIC constexpr const auto RFLAGS_IF_0 { 0ull << 9 };
+    PUBLIC constexpr const auto RFLAGS_IOPL_0 { 0ull << 12 };
+    PUBLIC constexpr const auto RFLAGS_IOPL_3 { 3ull << 12 };
 
     /* ------------------------------------------------------------------------------------
      * IDT内部：
      * 0 ~ 20   异常入口
-        - 2 - NMI中断
-        - 9 - 协处理器错误
-        - 15 - intel保留
-        - 以上皆为无用处异常，不可能产生
      * 21 ~ 26  保留
      * 27 ~ 29  异常入口
      * 30 ~ 256 中断入口
+        - 30 ~ 31 无用处
+        - 32 时间中断
+        - 33 键盘中断
+        - 34 级联(两个芯片内部使用。不会发起)/HPET timer 0/8254 counter 0
+        - 35 串口COM2&4对应的入口
+        - 36 串口COM1&3对应的入口
+        - 37 并口LPT2对应的入口
+        - 38 软盘对应的入口
+        - 39 并口LPT1对应的入口 [通常是“伪”中断（不可靠）]
+        - 40 CMOS实时时钟/HPET timer 1
+        - 41 自由外设/legacy SCSI/网卡
+        - 42 自由外设/SCSI/网卡
+        - 43 HPET timer 2/自由外设/SCSI/网卡
+        - 44 HPET timer 3/PS2鼠标接口
+        - 45 FPU/协处理器/间处理器
+        - 46 主ATA硬盘
+        - 47 从ATA硬盘
+        - 51 APIC ERROR
+        - 63 APIC SPURIOUS
+        - 128 系统调用
      * ------------------------------------------------------------------------------------ */
 
+    // -
     PUBLIC constexpr const auto IDT_DESC_P { 1 };
     PUBLIC constexpr const auto IDT_DESC_DPL0 { 0 };
     PUBLIC constexpr const auto IDT_DESC_DPL3 { 3 };
@@ -150,11 +194,85 @@ PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC constexpr const auto CORE_COUNT { GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT };
 
     PUBLIC constexpr const auto IDT_ENTRY_IRQ_0 { 0x20 };
-    PUBLIC constexpr const auto SYSTEM_CALL_INTERRUPTS_INDEX { 0x80 };
     PUBLIC constexpr const auto IRQ_CLOCK { IDT_ENTRY_IRQ_0 };
     PUBLIC constexpr const auto IRQ_KEYBOARD { IDT_ENTRY_IRQ_0 + 0x01 };
+    PUBLIC constexpr const auto IRQ_CASCADE { IDT_ENTRY_IRQ_0 + 0x02 };
     PUBLIC constexpr const auto IRQ_CMOS_RTC { IDT_ENTRY_IRQ_0 + 0x08 };
     PUBLIC constexpr const auto IRQ_LOCAL_APIC_SPURIOUS { IDT_ENTRY_IRQ_0 + 0x1F };
     PUBLIC constexpr const auto IRQ_LOCAL_APIC_ERROR { IDT_ENTRY_IRQ_0 + 0x13 };
+    PUBLIC constexpr const auto IRQ_SYSTEM_CALL { IDT_ENTRY_IRQ_0 + 0x60 };
 
+    // APIC
+    //
+    PUBLIC constexpr CONST auto LOCAL_APIC_ID { 0x0020 / 4 };          // 编号
+    PUBLIC constexpr CONST auto LOCAL_APIC_VER { 0x0030 / 4 };         // 版本
+    PUBLIC constexpr CONST auto LOCAL_APIC_TPR { 0x0080 / 4 };         // 任务优先级
+    PUBLIC constexpr CONST auto LOCAL_APIC_EOI { 0x00B0 / 4 };         // 意向书
+    PUBLIC constexpr CONST auto LOCAL_APIC_SVR { 0x00F0 / 4 };         // 杂散中断向量
+    PUBLIC constexpr CONST auto LOCAL_APIC_ENABLE { 0x00000100 };      // 单位使能
+    PUBLIC constexpr CONST auto LOCAL_APIC_ESR { 0x0280 / 4 };         // 错误状态
+    PUBLIC constexpr CONST auto LOCAL_APIC_ICRLO { 0x0300 / 4 };       // 中断命令
+    PUBLIC constexpr CONST auto LOCAL_APIC_INIT { 0x00000500 };        // 初始化/重置
+    PUBLIC constexpr CONST auto LOCAL_APIC_STARTUP { 0x00000600 };     // 启动 IPI
+    PUBLIC constexpr CONST auto LOCAL_APIC_DELIVS { 0x00001000 };      // 交货状态
+    PUBLIC constexpr CONST auto LOCAL_APIC_ASSERT { 0x00004000 };      // 断言中断 （vs deassert）
+    PUBLIC constexpr CONST auto LOCAL_APIC_DEASSERT { 0x00000000 };
+    PUBLIC constexpr CONST auto LOCAL_APIC_LEVEL { 0x00008000 };     // 级别触发
+    PUBLIC constexpr CONST auto LOCAL_APIC_BCAST { 0x00080000 };     // 发送给所有 APIC，包括自己。
+    PUBLIC constexpr CONST auto LOCAL_APIC_BUSY { 0x00001000 };
+    PUBLIC constexpr CONST auto LOCAL_APIC_FIXED { 0x00000000 };
+    PUBLIC constexpr CONST auto LOCAL_APIC_ICRHI { 0x0310 / 4 };        // 中断命令 [63：32]
+    PUBLIC constexpr CONST auto LOCAL_APIC_TIMER { 0x0320 / 4 };        // 局部向量表 0 （TIMER）
+    PUBLIC constexpr CONST auto LOCAL_APIC_X1 { 0x0000000B };           // 将计数除以 1
+    PUBLIC constexpr CONST auto LOCAL_APIC_PERIODIC { 0x00020000 };     // 周期的
+    PUBLIC constexpr CONST auto LOCAL_APIC_PCINT { 0x0340 / 4 };        // 性能计数器 LVT
+    PUBLIC constexpr CONST auto LOCAL_APIC_LINT0 { 0x0350 / 4 };        // 本地向量表 1 （LINT0）
+    PUBLIC constexpr CONST auto LOCAL_APIC_LINT1 { 0x0360 / 4 };        // 本地向量表 2 （LINT1）
+    PUBLIC constexpr CONST auto LOCAL_APIC_ERROR { 0x0370 / 4 };        // 本地向量表 3 （ERROR）
+    PUBLIC constexpr CONST auto LOCAL_APIC_MASKED { 0x00010000 };       // 中断屏蔽
+    PUBLIC constexpr CONST auto LOCAL_APIC_TICR { 0x0380 / 4 };         // 计时器初始计数
+    PUBLIC constexpr CONST auto LOCAL_APIC_TCCR { 0x0390 / 4 };         // 定时器电流计数
+    PUBLIC constexpr CONST auto LOCAL_APIC_TDCR { 0x03E0 / 4 };         // 定时器分频配置
+    PUBLIC constexpr CONST auto IOAPIC_REG_ID { 0x00 };
+    PUBLIC constexpr CONST auto IOAPIC_REG_VER { 0x01 };
+    PUBLIC constexpr CONST auto IOAPIC_REG_TABLE { 0x10 };
+    /* 重定向表从 REG_TABLE 开始，使用两个寄存器来配置每个中断。一对中的第一个（低电平）寄存器包含配置位。 第二个（高）寄存器包含一个位掩码，告诉哪个CPU 可以提供该中断。 */
+
+    PUBLIC constexpr CONST auto INT_DISABLED { 0x00010000 };      // 中断已禁用
+    PUBLIC constexpr CONST auto INT_LEVEL { 0x00008000 };         // 电平触发（与边沿-）
+    PUBLIC constexpr CONST auto INT_ACTIVELOW { 0x00002000 };     // 低电平有效（与高电平相比）
+    PUBLIC constexpr CONST auto INT_LOGICAL { 0x00000800 };       // 目标为 CPU ID（与 APIC ID 相对）
+    // 8259A
+
+    PUBLIC constexpr CONST auto PIC_M_CTRL { 0x20 }; /* 主 PIC 的 IO 基址 */
+    PUBLIC constexpr CONST auto PIC_S_CTRL { 0xA0 }; /* 从 PIC 的 IO 基址 */
+    PUBLIC constexpr CONST auto PIC_M_COMMAND { PIC_M_CTRL };
+    PUBLIC constexpr CONST auto PIC_M_DATA { ( PIC_M_CTRL + 1 ) }; /* 主数据 */
+    PUBLIC constexpr CONST auto PIC_S_COMMAND { PIC_S_CTRL };
+    PUBLIC constexpr CONST auto PIC_S_DATA { ( PIC_S_CTRL + 1 ) }; /* 从数据 */
+    PUBLIC constexpr CONST auto PIC_EOI { 0x20 };                  /* 中断结束 */
+    PUBLIC constexpr CONST auto ICW1 { 0x11 };                     /* 中断控制命令字PIC用于初始化 */
+    PUBLIC constexpr CONST auto ICW1_ICW4 { 0x01 };                /* 表示ICW4将出现 */
+    PUBLIC constexpr CONST auto ICW1_SINGLE { 0x02 };              /* 单（级联）模式 */
+    PUBLIC constexpr CONST auto ICW1_INTERVAL4 { 0x04 };           /* 呼叫地址间隔4（8） */
+    PUBLIC constexpr CONST auto ICW1_LEVEL { 0x08 };               /* 电平触发（边缘）模式 */
+    PUBLIC constexpr CONST auto ICW1_INIT { 0x10 };                /* 初始化-必需！*/
+    PUBLIC constexpr CONST auto ICW4_8086 { 0x01 };                /* 8086/88（MCS-80/85）模式 */
+    PUBLIC constexpr CONST auto ICW4_AUTO { 0x02 };                /* 自动（正常）EOI */
+    PUBLIC constexpr CONST auto ICW4_BUF_SLAVE { 0x08 };           /* 缓冲模式/从片 */
+    PUBLIC constexpr CONST auto ICW4_BUF_MASTER { 0x0C };          /* 缓冲模式/主片 */
+    PUBLIC constexpr CONST auto ICW4_SFNM { 0x10 };                /* 特殊完全嵌套（非） */
+    PUBLIC constexpr CONST auto PIC_READ_IRR { 0x0a };             /* OCW3 irq准备好下一次CMD读取 */
+    PUBLIC constexpr CONST auto PIC_READ_ISR { 0x0b };             /* OCW3 irq服务下一次CMD读取 */
+
+    // 8254 PIT
+
+    PUBLIC constexpr CONST auto IRQ0_FREQUENCY { 100 };
+    PUBLIC constexpr CONST auto INPUT_FREQUENCY { 1193180 };
+    PUBLIC constexpr CONST auto COUNTER0_VALUE { INPUT_FREQUENCY / IRQ0_FREQUENCY };
+    PUBLIC constexpr CONST auto CONTRER0_PORT { 0x40 };
+    PUBLIC constexpr CONST auto COUNTER0_NO { 0 };
+    PUBLIC constexpr CONST auto COUNTER_MODE { 2 };
+    PUBLIC constexpr CONST auto READ_WRITE_LATCH { 3 };
+    PUBLIC constexpr CONST auto PIT_CONTROL_PORT { 0x43 };
 }     // namespace QuantumNEC::Architecture::Platform

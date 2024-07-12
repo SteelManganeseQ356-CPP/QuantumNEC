@@ -52,15 +52,7 @@ PUBLIC namespace QuantumNEC::Kernel {
         virtual ~Message( VOID ) noexcept = default;
 
     public:
-        /**
-         * @brief 消息发送-接收函数
-         * 用处是发送或者接收函数，可视作一个系统调用
-         * @param function 功能(发送，接收或者两个都要)
-         * @param source_destination 发送者/接收者
-         */
-        auto send_receive( IN Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallFunction function, IN Lib::Types::uint64_t source_destination ) -> Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus;
-
-    public:
+        auto send_receive( IN Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction function, IN Lib::Types::uint64_t source_destination ) -> Architecture::ArchitectureManager< TARGET_ARCH >::SyscallStatus;
         /**
          * @brief 发送消息
          */

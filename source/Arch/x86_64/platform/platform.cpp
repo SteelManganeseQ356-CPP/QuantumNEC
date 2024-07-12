@@ -21,4 +21,10 @@ PUBLIC namespace QuantumNEC::Architecture {
     }
     ControlRegisterFrame::~ControlRegisterFrame( VOID ) noexcept {
     }
+    _C_LINK auto save_current_frame( IN CONST Kernel::Task::ProcessFrame * frame )->VOID {
+        *Kernel::Task::get_current< Kernel::Task::ProcessPCB >( )->cpu_frame = *frame;
+    }
+    _C_LINK auto get_rsp( VOID )->IN Lib::Types::uint64_t {
+        return CPUs::get_rsp( );
+    }
 }

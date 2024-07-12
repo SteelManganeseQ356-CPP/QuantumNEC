@@ -6,7 +6,30 @@ PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC constexpr CONST auto PML_IDX { 512 };
     PUBLIC constexpr CONST auto PML_SIZE { PML_IDX * 2 };
     PUBLIC constexpr CONST auto PT_SIZE { 0x1000 };
-
+    PUBLIC constexpr CONST auto KERNEL_PHYSICAL_ADDRESS { 0x100000ULL };
+    PUBLIC constexpr CONST auto KERNEL_VIRTUAL_ADDRESS { 0xffff800000100000 };
+    PUBLIC inline Lib::Types::size_t KERNEL_VRAM_PHYSICAL_ADDRESS;
+    PUBLIC constexpr CONST auto KERNEL_VRAM_VIRTUAL_ADDRESS { 0xffff800000600000 };
+    PUBLIC constexpr CONST auto KERNEL_FONT_MEMORY_PHYSICAL_ADDRESS { 0x0400000 };
+    PUBLIC constexpr CONST auto KERNEL_FONT_MEMORY_VIRTUAL_ADDRESS { 0xffff800000400000 };
+    PUBLIC inline Lib::Types::size_t KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS;
+    PUBLIC inline Lib::Types::size_t KERNEL_FREE_MEMORY_VIRTUAL_ADDRESS;
+    PUBLIC constexpr CONST auto KERNEL_TASK_PCB_PHYSICAL_ADDRESS { 0x0200000ull };
+    PUBLIC constexpr CONST auto KERNEL_TASK_PCB_VIRTUAL_ADDRESS { 0xffff800000200000 };
+    PUBLIC constexpr CONST auto KERNEL_PAGE_TABLE_PHYSICAL_ADDRESS { 0x2500000ull };
+    PUBLIC constexpr CONST auto KERNEL_PAGE_TABLE_VIRTUAL_ADDRESS { 0xffff800002500000 };
+    PUBLIC inline Lib::Types::size_t KERNEL_I_O_APIC_PHYSICAL_ADDRESS;
+    PUBLIC constexpr CONST auto KERNEL_I_O_APIC_VIRTUAL_ADDRESS { 0xffff800002410000 };
+    PUBLIC inline Lib::Types::size_t KERNEL_LOCAL_APIC_PHYSICAL_ADDRESS;
+    PUBLIC constexpr CONST auto KERNEL_LOCAL_APIC_VIRTUAL_ADDRESS { 0xffff800002411000 };
+    /*
+     * 内核层 ： 00000000 00000000 -> FFFFFFFF FFFFFFFF
+     * 应用层 ： 00000000 02A00000 -> 00007FFF FFFFFFFF
+     */
+    PUBLIC constexpr CONST auto KERNEL_STACK_VIRTUAL_START_ADDRESS { 0x0000000000000000ULL };
+    PUBLIC constexpr CONST auto KERNEL_STACK_VIRTUAL_END_ADDRESS { 0xffffffffffffffffULL };
+    PUBLIC constexpr CONST auto USER_STACK_VIRTUAL_START_ADDRESS { 0x0000000002A00000ULL };
+    PUBLIC constexpr CONST auto USER_STACK_VIRTUAL_END_ADDRESS { 0x00007FFFFFFFFFFFULL };
     PUBLIC enum class MemoryPageType : Lib::Types::uint64_t {
         PAGE_4K = 65536,
         PAGE_2M = 128,
@@ -78,7 +101,6 @@ PUBLIC namespace QuantumNEC::Kernel {
         Lib::Types::uint64_t reserved : 7;
         Lib::Types::uint64_t protection_key : 4;
         Lib::Types::uint64_t execute_disable : 1;
-        // Lib::Types::uint64_t table;
 
     public:
         constexpr auto flags_p( VOID ) {
@@ -157,10 +179,10 @@ PUBLIC namespace QuantumNEC::Kernel {
         }
 
     public:
-        constexpr auto set_table( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::uint64_t flags ) -> VOID;
+        auto set_table( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::uint64_t flags ) -> VOID;
     };
 
-    PUBLIC class PageDirectoryTable     // 4096*513
+    PUBLIC class PageDirectoryTable
     {
     public:
         explicit PageDirectoryTable( VOID ) noexcept = default;
@@ -174,9 +196,9 @@ PUBLIC namespace QuantumNEC::Kernel {
         auto make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID;
 
     private:
-        Table page_directory_table[ 512 ];     // 4096
+        Table page_directory_table[ 512 ];
     };
-    PUBLIC class PageDirectoryPointerTable     // 4096*513
+    PUBLIC class PageDirectoryPointerTable
     {
     public:
         explicit PageDirectoryPointerTable( VOID ) noexcept = default;
@@ -188,49 +210,58 @@ PUBLIC namespace QuantumNEC::Kernel {
          * @param type 内存页内存
          */
         auto make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID;
-        auto set_count( IN Lib::Types::uint64_t count ) {
-            this->pdp_entry_count = count;
-        }
 
     private:
-        Table page_directory_pointer_table[ 512 ];          // 4K
-        PageDirectoryTable page_dircetory_table[ 512 ];     // 4096*512
-        Lib::Types::uint64_t pdp_entry_count;
+        Table page_directory_pointer_table[ 512 ];
+        PageDirectoryTable page_dircetory_table[ 512 ];
     };
-
-    PUBLIC class PageMapLevel4Table     // 4096*513*513
+    /**
+     * @brief 映射类型
+     */
+    enum class MapLevel {
+        PML = 4,
+        PDPT = 3,
+        PD = 2,
+        PT = 1,
+        PG = 0,
+    };
+    PUBLIC class PageMapLevel4Table
     {
     public:
         explicit PageMapLevel4Table( VOID ) noexcept;
+        explicit PageMapLevel4Table( IN PageMapLevel4Table *pml4_t ) noexcept;
 
     public:
         auto make( IN Lib::Types::uint64_t flags, IN MemoryPageType type ) noexcept -> VOID;
 
     public:
+        /**
+         * @brief 获取整个页表大小
+         */
         constexpr auto size( VOID ) {
-            return ( sizeof *this ) * pml4e_entry_count;
+            return ( ( 4096 * 512 ) + 4096 ) * 512 + 4096;
         }
+        /**
+         * @brief 获取入口
+         * @param level 获取的东西类型
+         * @retval 入口地址
+         */
+        auto get_table_entry( IN Lib::Types::Ptr< VOID > address, IN MapLevel level ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
+        /**
+         * @brief 检查虚拟地址是否为规范格式vrt地址，如果无效，请进行调整
+         * @param virtual_address 要检查的地址
+         * @retval BOOL 状态
+         */
+        auto check( IN Lib::Types::Ptr< Lib::Types::uint64_t > virtual_address ) -> Lib::Types::BOOL;
 
     private:
         Table page_map_level4_table[ 512 ];
-        PageDirectoryPointerTable page_directory_pointer_table[ 512 ];     // 4096*513 *513
-        Lib::Types::uint64_t pdp_entry_count, pml4e_entry_count;
+        PageDirectoryPointerTable page_directory_pointer_table[ 512 ];
     };
 
     PUBLIC class MemoryMap
     {
     private:
-        /**
-         * @brief 映射类型
-         */
-        enum class MapLevel {
-            PML = 4,
-            PDPT = 3,
-            PD = 2,
-            PT = 1,
-            PG = 0,
-        };
-
     public:
         /**
          * @brief 内存页模式
@@ -257,27 +288,13 @@ PUBLIC namespace QuantumNEC::Kernel {
          * @param flags 映射标志
          * @param mode 映射页的模式 (4K/2M/1G)
          */
-        STATIC auto map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode mode, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml = page_memory_table.pml ) -> VOID;
+        STATIC auto map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode mode, IN Lib::Types::Ptr< PageMapLevel4Table > pml = kernel_page_table ) -> VOID;
         /**
          * @brief 取消映射页
          * @param virtual_address 将取消映射的指定虚拟地址
          * @param size 要取消映射的内存页大小
          */
-        STATIC auto unmap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< Lib::Types::uint64_t > pml = page_memory_table.pml ) -> VOID;
-
-    private:
-        /**
-         * @brief 获取入口
-         * @param level 获取的东西类型
-         * @return 入口地址
-         */
-        auto get_table_entry( IN Lib::Types::Ptr< VOID > address, IN MapLevel level ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
-        /**
-         * @brief 检查虚拟地址是否为规范格式vrt地址，如果无效，请进行调整
-         * @param virtual_address 要检查的地址
-         * @retval BOOL 状态
-         */
-        auto check( IN Lib::Types::Ptr< Lib::Types::uint64_t > virtual_address ) -> Lib::Types::BOOL;
+        STATIC auto unmap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< PageMapLevel4Table > pml = kernel_page_table ) -> VOID;
 
     public:
         /**
@@ -286,30 +303,24 @@ PUBLIC namespace QuantumNEC::Kernel {
          */
         STATIC auto page_table_protect( IN Lib::Types::BOOL flags ) -> VOID;
         /**
-         * @brief 制作页根目录并给到页表中
+         * @brief 制作页表
          * @return 制作的页目录地址
          */
-        STATIC auto make_page_directory_table( VOID ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
+        STATIC auto make_page_table( VOID ) -> Lib::Types::Ptr< PageMapLevel4Table >;
         /**
          * @brief 激活页表
-         * @param page_directory 页根目录地址
+         * @param page_directory 页表地址
          */
-        STATIC auto activate_page_directory_table( IN Lib::Types::Ptr< VOID > page_directory_table_address ) -> VOID;
+        STATIC auto activate_page_table( IN Lib::Types::Ptr< VOID > page_directory_table_address ) -> VOID;
         /**
          * @brief 获取当前页表
          */
         STATIC auto get_current_page_tabel( VOID ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
         /**
-         * @brief 获取当前页表根目录
-         * @param index 当前页表根目录序号
-         */
-        STATIC auto get_page_directory( IN pml_t pml, IN Lib::Types::uint32_t index ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
-        /**
          * @brief 获取规范地址掩码
          */
         STATIC auto get_canonical_address_mask( VOID ) -> Lib::Types::uint64_t;
 
-    private:
-        STATIC inline pml_t page_memory_table { };
+        inline STATIC PageMapLevel4Table *kernel_page_table { };
     };
 }

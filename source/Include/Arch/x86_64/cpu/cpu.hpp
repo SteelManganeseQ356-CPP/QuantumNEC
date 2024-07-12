@@ -12,24 +12,22 @@ PUBLIC namespace QuantumNEC::Architecture {
 
     {
     public:
+        struct CpuidStatus
+        {
+            Lib::Types::uint64_t mop;
+            Lib::Types::uint64_t sop;
+            Lib::Types::uint64_t rax;
+            Lib::Types::uint64_t rbx;
+            Lib::Types::uint64_t rcx;
+            Lib::Types::uint64_t rdx;
+        };
+
+    public:
         explicit CPUs( VOID ) noexcept;
         virtual ~CPUs( VOID ) noexcept = default;
 
     public:
-        /**
-         * @brief 查询处理器硬件设施信息
-         */
-        STATIC auto cpuid( IN Lib::Types::uint32_t mop, IN Lib::Types::uint32_t sop, IN Lib::Types::Ptr< Lib::Types::uint32_t > eax, IN Lib::Types::Ptr< Lib::Types::uint32_t > ebx, IN Lib::Types::Ptr< Lib::Types::uint32_t > ecx, IN Lib::Types::Ptr< Lib::Types::uint32_t > edx ) -> VOID;
-        STATIC auto flush_tlb( VOID ) -> VOID {
-            Lib::Types::uint64_t tmp { };
-            ASM(
-                "MOVQ %%CR3, %0\n\t"
-                "MOVQ %0, %%CR3\n\t"
-                : "=r"( tmp )
-                :
-                : "memory" );
-        }
-
+        STATIC auto cpuid( IN CpuidStatus &status ) -> CpuidStatus &;
         STATIC auto switch_to( IN OUT Lib::Types::Ptr< VOID > current, IN Lib::Types::Ptr< VOID > next ) -> VOID;
         STATIC auto port_insw( IN Lib::Types::uint64_t port, IN Lib::Types::Ptr< VOID > buffer, IN Lib::Types::uint64_t nr ) -> VOID;
         STATIC auto port_outsw( IN Lib::Types::uint64_t port, IN Lib::Types::Ptr< VOID > buffer, IN Lib::Types::uint64_t nr ) -> VOID;
@@ -85,6 +83,7 @@ PUBLIC namespace QuantumNEC::Architecture {
         STATIC auto lfence( VOID ) -> VOID;
         STATIC auto sfence( VOID ) -> VOID;
         STATIC auto set_page_table( IN Lib::Types::Ptr< Lib::Types::uint64_t > mmap ) -> VOID;
+        STATIC auto flush_tlb( VOID ) -> VOID;
 
     private:
         inline STATIC QuantumNEC::Architecture::GlobalSegmentDescriptor _used gdt[ GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT ][ SEGMENT_DESCRIPTOR_COUNT ] { };

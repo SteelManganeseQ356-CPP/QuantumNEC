@@ -1,9 +1,6 @@
 #pragma once
 #include <Lib/Types/Uefi.hpp>
 PUBLIC namespace QuantumNEC::Architecture {
-    // 下面是 CMOS 信息的寄存器索引
-    PUBLIC constexpr CONST auto CMOS_ADDRESS { 0x70 };     // CMOS 地址寄存器
-    PUBLIC constexpr CONST auto CMOS_DATA { 0x71 };        // CMOS 数据寄存器
     PUBLIC class CMOS
     {
     private:

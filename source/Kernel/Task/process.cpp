@@ -67,8 +67,8 @@ PUBLIC namespace QuantumNEC::Kernel {
         Lib::STL::list_add_to_end( &ready_task_queue, &task->general_task_queue );
         Lib::STL::list_add_to_end( &all_task_queue, &task->all_task_queue );
         // 制作页表
-        task->page_directory = reinterpret_cast< decltype( task->page_directory ) >( MemoryMap::make_page_directory_table( ) );
-        if ( !task->page_directory ) {
+        task->page_directory = ( type == TaskType::PF_KERNEL_PROCESS ? NULL : reinterpret_cast< decltype( task->page_directory ) >( MemoryMap::make_page_table( ) ) );
+        if ( !task->page_directory && type == TaskType::PF_USER_PROCESS ) {
             Lib::STL::memset( task, 0, TASK_STACK_SIZE );
             PageMemory::free( task, 1, PageMemory::MemoryPageType::PAGE_2M );
             return NULL;

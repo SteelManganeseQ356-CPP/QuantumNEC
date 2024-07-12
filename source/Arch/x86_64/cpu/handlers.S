@@ -45,9 +45,9 @@ save_all_registers:
     PUSH RAX
     MOV  RAX, DS
     PUSH RAX
-    MOV  DX, SS
-    MOV  DS, DX
-    MOV  ES, DX
+    MOV  RAX, SS
+    MOV  DS, RAX
+    MOV  ES, RAX
     MOV  RDI, RSP
     CALL general_interrupt_handler
 .GLOBAL return_from_isr
@@ -113,24 +113,24 @@ HANDLE_ENTRY 0x1d
 HANDLE_ENTRY 0x1e 
 HANDLE_ENTRY 0x1f 
 /*0x00-0x1f	保护模式异常(Intel保留)*/
-HANDLE_ENTRY 0x20      /* 时钟中断对应的入口 */
-HANDLE_ENTRY 0x21      /* 键盘中断对应的入口 */
-HANDLE_ENTRY 0x22      /* 级联 (两个芯片内部使用。不会发起) */
-HANDLE_ENTRY 0x23      /* 串口COM2对应的入口 (如果开启) */
-HANDLE_ENTRY 0x24      /* 串口COM1对应的入口 (如果启用) */
-HANDLE_ENTRY 0x25      /* 并口LPT2对应的入口（如果启用） */
-HANDLE_ENTRY 0x26      /* 软盘对应的入口 */
-HANDLE_ENTRY 0x27      /* 并口LPT1对应的入口 / 通常是“伪”中断（不可靠） */
-HANDLE_ENTRY 0x28      /* CMOS实时时钟(如果开启) */
-HANDLE_ENTRY 0x29      /* 自由外设/legacy SCSI/网卡 */
-HANDLE_ENTRY 0x2a      /* 自由外设/SCSI/网卡 */
-HANDLE_ENTRY 0x2b      /* 自由外设/SCSI/网卡 */
-HANDLE_ENTRY 0x2c      /* PS2鼠标 */
-HANDLE_ENTRY 0x2d      /* FPU/协处理器/Inter-processor */
-HANDLE_ENTRY 0x2e      /* 主ATA硬盘 */
-HANDLE_ENTRY 0x2f      /* 辅ATA硬盘 */
-HANDLE_ENTRY 0x30 
-HANDLE_ENTRY 0x31 
+HANDLE_ENTRY 0x20       /* 时间中断 */
+HANDLE_ENTRY 0x21       /* 键盘中断 */
+HANDLE_ENTRY 0x22       /* 级联(两个芯片内部使用。不会发起)/HPET timer 0/8254 counter 0 */
+HANDLE_ENTRY 0x23       /* 串口COM2&4对应的入口 */
+HANDLE_ENTRY 0x24       /* 串口COM1&3对应的入口*/
+HANDLE_ENTRY 0x25       /* 并口LPT2对应的入口 */
+HANDLE_ENTRY 0x26       /* 软盘对应的入口 */
+HANDLE_ENTRY 0x27       /* 并口LPT1对应的入口 [通常是“伪”中断（不可靠）] */
+HANDLE_ENTRY 0x28       /* CMOS实时时钟/HPET timer 1 */
+HANDLE_ENTRY 0x29       /* 自由外设/legacy SCSI/网卡 */
+HANDLE_ENTRY 0x2a       /* 自由外设/SCSI/网卡 */
+HANDLE_ENTRY 0x2b       /* HPET timer 2/自由外设/SCSI/网卡  */
+HANDLE_ENTRY 0x2c       /* HPET timer 3/PS2鼠标接口 */
+HANDLE_ENTRY 0x2d       /* FPU/协处理器/间处理器 */
+HANDLE_ENTRY 0x2e       /* 主ATA硬盘 */
+HANDLE_ENTRY 0x2f       /* 从ATA硬盘 */
+HANDLE_ENTRY 0x30       
+HANDLE_ENTRY 0x31       
 HANDLE_ENTRY 0x32 
 HANDLE_ENTRY 0x33      /* APIC ERROR */
 HANDLE_ENTRY 0x34 
@@ -209,7 +209,7 @@ HANDLE_ENTRY 0x7c
 HANDLE_ENTRY 0x7d 
 HANDLE_ENTRY 0x7e 
 HANDLE_ENTRY 0x7f 
-HANDLE_ENTRY 0x80      // 系统调用
+HANDLE_ENTRY 0x80      /* 系统调用 */
 HANDLE_ENTRY 0x81 
 HANDLE_ENTRY 0x82 
 HANDLE_ENTRY 0x83 
@@ -337,5 +337,3 @@ HANDLE_ENTRY 0xfc
 HANDLE_ENTRY 0xfd 
 HANDLE_ENTRY 0xfe 
 HANDLE_ENTRY 0xff
-
-

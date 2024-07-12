@@ -81,40 +81,40 @@ PUBLIC namespace QuantumNEC::Architecture {
         while ( length > 0 ) {
             if ( ICS->type == ICSAttribute::LOCAL_APIC ) {
                 Lib::Types::Ptr< LocalApic > local_apic { reinterpret_cast< decltype( local_apic ) >( ICS ) };
-                Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
-                    DisplayColor::WHITE,
-                    DisplayColor::BLACK,
-                    "Local Apic ================>> | Acpi Processor UID <=> %8u | Apic ID <=> %27u | Flags <=> %41x |\n",
-                    local_apic->acpiProcessorUID, local_apic->apicID, local_apic->flags );
-                Architecture::Apic::apic.local_apic_ID[ Architecture::Apic::apic.core_count++ ] = local_apic->apicID;
+                // Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
+                //     DisplayColor::WHITE,
+                //     DisplayColor::BLACK,
+                //     "Local Apic ================>> | Acpi Processor UID <=> %8u | Apic ID <=> %27u | Flags <=> %41x |\n",
+                //     local_apic->acpiProcessorUID, local_apic->apicID, local_apic->flags );
+                Architecture::Apic::apic_map.local_apic_ID[ Architecture::Apic::apic_map.core_count++ ] = local_apic->apicID;
             }
             else if ( ICS->type == ICSAttribute::I_O_APIC ) {
                 Lib::Types::Ptr< IOApic > io_apic { reinterpret_cast< decltype( io_apic ) >( ICS ) };
-                Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
-                    DisplayColor::WHITE,
-                    DisplayColor::BLACK,
-                    "I/O Apic ==================>> | I/O Apic ID <=> %15u | I/O Apic Address <=> %#18x | Global System Interrupt Base <=> %18x |\n",
-                    io_apic->IOApicID, io_apic->IOApicAddress, io_apic->globalSystemInterruptBase );
+                //   Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
+                //       DisplayColor::WHITE,
+                //       DisplayColor::BLACK,
+                //       "I/O Apic ==================>> | I/O Apic ID <=> %15u | I/O Apic Address <=> %#18x | Global System Interrupt Base <=> %18x |\n",
+                //       io_apic->IOApicID, io_apic->IOApicAddress, io_apic->globalSystemInterruptBase );
                 this->io_apic_address = reinterpret_cast< decltype( this->io_apic_address ) >( io_apic->IOApicAddress );
-                Architecture::Apic::apic.io_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->io_apic_address );
+                Architecture::Apic::apic_map.io_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->io_apic_address );
             }
             else if ( ICS->type == ICSAttribute::INTERRUPT_SOURCE_OVERRIDE ) {
                 Lib::Types::Ptr< InterruptSourceOverride > interrupt_source_override { reinterpret_cast< decltype( interrupt_source_override ) >( ICS ) };
-                Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
-                    DisplayColor::WHITE,
-                    DisplayColor::BLACK,
-                    "Interrupt Source Override =>> | Bus <=> %23u | Source <=> %28u | Flags <=> %41x | Global System Interrupt <=> %8u |\n",
-                    interrupt_source_override->bus, interrupt_source_override->source, interrupt_source_override->flags, interrupt_source_override->globalSystemInterrupt );
+                //  Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ].printk(
+                //      DisplayColor::WHITE,
+                //      DisplayColor::BLACK,
+                //      "Interrupt Source Override =>> | Bus <=> %23u | Source <=> %28u | Flags <=> %41x | Global System Interrupt <=> %8u |\n",
+                //      interrupt_source_override->bus, interrupt_source_override->source, interrupt_source_override->flags, interrupt_source_override->globalSystemInterrupt );
                 this->globalSystemInterrupt[ interrupt_source_override->source ] = interrupt_source_override->globalSystemInterrupt;
             }
             length -= ICS->length;
             ICS = reinterpret_cast< decltype( ICS ) >( (char *)( ICS ) + ICS->length );
         }
         this->local_apic_address = reinterpret_cast< decltype( this->local_apic_address ) >( this->madt->localApicAddress );
-        Architecture::Apic::apic.local_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->local_apic_address );
-        Architecture::Apic::apic.io_apic_index_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic.io_apic_address );
-        Architecture::Apic::apic.io_apic_data_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic.io_apic_address + 0x10UL );
-        Architecture::Apic::apic.io_apic_EOI_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic.io_apic_address + 0x40UL );
+        Architecture::Apic::apic_map.local_apic_address = reinterpret_cast< Lib::Types::uint64_t >( this->local_apic_address );
+        Architecture::Apic::apic_map.io_apic_index_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic_map.io_apic_address );
+        Architecture::Apic::apic_map.io_apic_data_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic_map.io_apic_address + 0x10UL );
+        Architecture::Apic::apic_map.io_apic_EOI_address = reinterpret_cast< Lib::Types::Ptr< VOID > >( Architecture::Apic::apic_map.io_apic_address + 0x40UL );
         this->hpet = reinterpret_cast< decltype( this->hpet ) >( getEntry( HPET_SIGNED ) );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the advanced configuration power interface." << Lib::IO::endl;
     }

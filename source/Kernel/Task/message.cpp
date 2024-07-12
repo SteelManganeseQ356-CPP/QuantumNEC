@@ -1,22 +1,24 @@
+#include "Arch/Arch.hpp"
 #include <Kernel/Task/message.hpp>
 #include <Kernel/Task/process.hpp>
 #include <Kernel/Task/thread.hpp>
 #include <Lib/IO/Stream/iostream>
 PUBLIC namespace QuantumNEC::Kernel {
-    auto Message::send_receive( IN Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallFunction function, IN Lib::Types::uint64_t source_destination )->Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus {
-        Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus status { };
-        using enum Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallFunction;
-        using enum Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus;
+    auto Message::send_receive( IN Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction function, IN Lib::Types::uint64_t source_destination )->Architecture::ArchitectureManager< TARGET_ARCH >::SyscallStatus {
+        using namespace Architecture;
+        ArchitectureManager< TARGET_ARCH >::SyscallStatus status { };
+        using enum ArchitectureManager< TARGET_ARCH >::SyscallFunction;
+        using enum ArchitectureManager< TARGET_ARCH >::SyscallStatus;
         switch ( function ) {
         case MESSAGE_SEND:
         case MESSAGE_RECEIVE:
-            // RBX放系统调用的功能号，RVX放源进程或者要被服务进程，RDX就是message，并用RAX接收返回值
-            ASM( "INT $0x80\n\t" : "=a"( status ) : "b"( function ), "c"( source_destination ), "d"( this ) );
+            // RAX放系统调用的功能号，RDI放源进程或者要被服务进程，RSI就是message，并用RAX接收返回值
+            status = Architecture::__syscall( function, source_destination, this, 0, 0, 0, 0 );
             break;
         case MESSAGE_SEND_RECEIVE:
-            ASM( "INT $0x80\n\t" : "=a"( status ) : "b"( MESSAGE_SEND ), "c"( source_destination ), "d"( this ) );
+            status = Architecture::__syscall( MESSAGE_SEND, source_destination, this, 0, 0, 0, 0 );
             if ( status == SUCCESS ) {
-                ASM( "INT $0x80\n\t" : "=a"( status ) : "b"( MESSAGE_RECEIVE ), "c"( source_destination ), "d"( this ) );
+                status = Architecture::__syscall( MESSAGE_RECEIVE, source_destination, this, 0, 0, 0, 0 );
             }
             break;
         default:
@@ -24,7 +26,6 @@ PUBLIC namespace QuantumNEC::Kernel {
         }
         return status;
     }
-
     auto Message::send( IN Lib::Types::uint64_t destination )->Architecture::ArchitectureManager< TARGET_ARCH >::Syscall::SyscallStatus {
         Lib::Types::Ptr< Process::ProcessPCB > sender { Process::get_current< Process::ProcessPCB >( ) }, task_destination { };
         sender->message.send_to = destination;

@@ -1,41 +1,19 @@
 #pragma once
-#include <Boot/Data.hpp>
-#include <Boot/Logger.hpp>
+#include <Boot/base.hpp>
 namespace QuantumNEC::Boot {
-
-// RSDP
-typedef struct
-{
-    CHAR8 Signature[ 8 ];
-    UINT8 Checksum;
-    CHAR8 OEMID[ 6 ];
-    UINT8 Revision;
-    UINT32 RsdtAddress;
-    UINT32 Length;
-    UINT64 XsdtAddress;
-    UINT8 ExtendedChecksum;
-    CHAR8 Reserved[ 3 ];
-} _packed Rsdp;
-typedef struct
-{
-    Rsdp *rsdpTable;
-    auto set( VOID ) -> VOID {
-    }
-    auto put( VOID ) -> VOID {
-    }
-} AcpiConfig;
-
-/**
- * @brief 引导时服务——Acpi
- */
-class BootServiceAcpi :
-    protected BootServiceDataManager< AcpiConfig >
+class AcpiService
 {
 public:
-    explicit BootServiceAcpi( IN AcpiConfig *config ) noexcept( true );
-    virtual ~BootServiceAcpi( VOID ) noexcept( true ) = default;
+    explicit AcpiService( VOID ) noexcept;
+    virtual ~AcpiService( VOID ) noexcept;
 
 public:
-    auto getApicTable( VOID ) -> EFI_STATUS;
+    auto get_acpi_table( VOID ) noexcept {
+        return this->acpi_table;
+    }
+
+private:
+    VOID *acpi_table;
 };
+
 }     // namespace QuantumNEC::Boot

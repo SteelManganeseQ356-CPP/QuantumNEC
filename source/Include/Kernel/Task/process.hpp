@@ -1,5 +1,5 @@
 #pragma once
-#include "Lib/Base/bitmap.hpp"
+#include "Lib/Types/type_base.hpp"
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Arch/Arch.hpp>
@@ -182,7 +182,7 @@ PUBLIC namespace QuantumNEC::Kernel {
          */
         template < typename PCB >
         STATIC auto activate_task( IN Lib::Types::Ptr< PCB > pcb ) -> VOID {
-            MemoryMap::activate_page_directory_table( pcb->page_directory );
+            MemoryMap::activate_page_table( pcb->page_directory );
             if ( pcb->page_directory ) {
                 Architecture::ArchitectureManager< TARGET_ARCH >::set_tss_rsp0( 0, pcb, TASK_STACK_SIZE );
             }
@@ -231,24 +231,5 @@ PUBLIC namespace QuantumNEC::Kernel {
     public:
         inline STATIC Lib::Types::Ptr< ProcessPCB > ready_task;
         inline STATIC Lib::Types::Ptr< ProcessPCB > kernel_task;
-
-    public:
-        /**
-         * @brief 检查当前任务是否为内核进程，并对其进行save frame
-         * @param 要保存的frame
-         */
-        STATIC auto save_frame( IN Lib::Types::Ptr< CONST ProcessFrame > frame ) -> VOID {
-            if ( get_current< ProcessPCB >( ) == kernel_task ) {     // 内核进程不可能损坏
-                *main_task->cpu_frame = *frame;
-            }
-            else {
-                if ( get_current< ProcessPCB >( )->stack_magic != TASK_STACK_MAGIC ) {
-                    Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "Task stack error! PCB :" << (VOID *)get_current< ProcessPCB >( ) << Lib::IO::endl;
-                    while ( TRUE )
-                        ;
-                }
-                *get_current< ProcessPCB >( )->cpu_frame = *frame;
-            }
-        }
     };
 }
