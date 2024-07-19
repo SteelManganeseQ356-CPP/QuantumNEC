@@ -5,27 +5,15 @@ PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC struct ControlRegisterFrame
     {
         Lib::Types::uint64_t cr0;
-        Lib::Types::uint64_t cr1;
         Lib::Types::uint64_t cr2;
         Lib::Types::uint64_t cr3;
         Lib::Types::uint64_t cr4;
-        Lib::Types::uint64_t cr5;
-        Lib::Types::uint64_t cr6;
-        Lib::Types::uint64_t cr7;
         Lib::Types::uint64_t cr8;
-        Lib::Types::uint64_t cr9;
-        Lib::Types::uint64_t cr10;
-        Lib::Types::uint64_t cr11;
-        Lib::Types::uint64_t cr12;
-        Lib::Types::uint64_t cr13;
-        Lib::Types::uint64_t cr14;
-        Lib::Types::uint64_t cr15;
         explicit ControlRegisterFrame( VOID ) noexcept;
         ~ControlRegisterFrame( VOID ) noexcept;
         // CR1，CR5~CR7, CR9~CR15为保留，无法访问
-        // CR8目前不知道咋访问
     } _packed;
-    PUBLIC struct GeneralRegisterFrame
+    PUBLIC struct GeneralPurposeRegistersFrame
     {
         Lib::Types::uint64_t rax;
         Lib::Types::uint64_t rbx;
@@ -52,9 +40,122 @@ PUBLIC namespace QuantumNEC::Architecture {
     } _packed;
     PUBLIC struct RegisterFrame :
         SegmentRegisterFrame,
-        GeneralRegisterFrame
+        GeneralPurposeRegistersFrame
     {
     } _packed;
+    struct ControlRegisters
+    {
+        struct CR0
+        {
+            Lib::Types::uint64_t PE : 1;     // 如果PE=1，则保护模式启动，如果PE=0，则在实模式下运行
+            Lib::Types::uint64_t MP : 1;     // 监视协处理器
+            Lib::Types::uint64_t EM : 1;     // x87 FPU仿真
+            Lib::Types::uint64_t TS : 1;     // 任务已切换
+            Lib::Types::uint64_t ET : 1;     // 扩展类型
+            Lib::Types::uint64_t NE : 1;     // Numeric error
+            Lib::Types::uint64_t : 10;
+            Lib::Types::uint64_t WP : 1;     // 控制开启内存写保护，WP=0开启写保护，对只读页面尝试写入将触发异常，这一机制常常被用来实现写时复制功能
+            Lib::Types::uint64_t : 1;
+            Lib::Types::uint64_t AM : 1;     // 控制启用内存对齐自动检查
+            Lib::Types::uint64_t : 10;
+            Lib::Types::uint64_t NW : 1;     // 控制使用通写还是回写，用于维护内存数据一致性，NW=1关闭该功能，数据一致性即通过MESI协议
+            Lib::Types::uint64_t CD : 1;     // 控制Cache高速缓存功能，CD=1关闭该功能
+            Lib::Types::uint64_t PG : 1;     // 开启分页模式
+        };
+
+        // CR1 保留
+        // CPU在尝试访问它时将抛出#UD异常。
+
+        struct CR2
+        {
+            /*
+             *   x86架构中的CR2寄存器是页故障线性地址寄存器，也称为页故障地址寄存器（Page Fault Linear Address Register）。当CPU检测到一个页故障（Page Fault）时，它会将故障发生时的线性地址存储在CR2寄存器中，这个地址指向导致页故障的页面。
+             *   内核可以通过读取CR2寄存器来获取引起页故障的地址，然后对该地址所在的页面进行处理，比如进行页面的分配或者进行页面的交换。CR2寄存器的值可以在中断或异常处理例程中读取。
+             *   在保护模式下，访问CR2寄存器需要使用特殊的指令，比如MOV CR2, EAX将EAX寄存器的值写入CR2寄存器，或MOV EAX, CR2将CR2寄存器的值读取到EAX寄存器中。在x86_64架构下，CR2寄存器的大小为64位。
+             */
+
+            Lib::Types::uint64_t PFLA;
+        };
+        struct CR3
+        {
+            /*
+             *   cr3寄存器和MMU密切相关，保存了当前进程所使用的虚拟地址空间的页目录地址，可以说是整个虚拟地址翻译中的顶级指挥棒，在进程空间切换的时候，CR3也将同步切换。
+             *   cr3寄存器的高20位用于保存页目录地址，0-11位记录标记位，所以页目录地址必须是4KB的整数倍。
+             */
+
+            Lib::Types::uint64_t : 3;
+            Lib::Types::uint64_t PWT : 1;
+            Lib::Types::uint64_t PCD : 1;
+            Lib::Types::uint64_t : 7;
+            Lib::Types::uint64_t page_directory_base : 52;
+        };
+        struct CR4
+        {
+            /*
+             *   用于控制CPU的特性和操作系统的行为。它的作用如下：
+             *   控制分页机制：x86CR4寄存器的最重要作用是控制分页机制。在64位x86处理器中，x86CR4寄存器的第5位（PAE）控制是否启用物理地址扩展（Physical Address Extension，PAE）模式，第7位（PSE）控制是否启用页大小扩展（Page Size Extension，PSE）模式，第12位（PCIDE）控制是否启用页表缓存（Page Directory Cache，PDC）。
+             *   启用SMEP和SMAP保护机制：x86CR4寄存器的第20和第21位控制启用Supervisor Mode Execution Protection（SMEP）和Supervisor Mode Access Prevention（SMAP）保护机制。
+             *   启用虚拟化扩展：x86CR4寄存器的第13位控制是否启用虚拟化扩展（Virtualization Extension，VME）。
+             *   其他：x86CR4寄存器还控制着其他一些特性，如Debugging Extensions（DE）、Machine Check Exception（MCE）和Page Attribute Table（PAT）等。
+             *   PVI	Protected-mode Virtual Interrupts
+             *   TSD	Time Stamp Disable
+             *   DE	    Debugging Extensions
+             *   PSE	Page Size Extension
+             *   PAE	Physical Address Extension
+             *   MCE	Machine Check Exception
+             *   PGE	Page Global Enabled
+             *   PCE	Performance-Monitoring Counter enable
+             *   OSFXSR	Operating system support for FXSAVE and FXRSTOR instructions
+             *   OSXMMEXCPT	Operating System Support for Unmasked SIMD Floating-Point Exceptions
+             *   UMIP	User-Mode Instruction Prevention (if set, #GP on SGDT, SIDT, SLDT, SMSW, and STR instructions when CPL > 0)
+             *   VMXE	Virtual Machine Extensions Enable
+             *   SMXE	Safer Mode Extensions Enable
+             *   FSGSBASE	Enables the instructions RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE
+             *   PCIDE	PCID Enable
+             *   OSXSAVE	XSAVE and Processor Extended States Enable
+             *   SMEP	Supervisor Mode Execution Protection Enable
+             *   SMAP	Supervisor Mode Access Prevention Enable
+             *   PKE	Protection Key Enable
+             *   CET	Control-flow Enforcement Technology
+             *   PKS	Enable Protection Keys for Supervisor-Mode Pages
+             */
+
+            Lib::Types::uint64_t VME : 1;
+            Lib::Types::uint64_t PVI : 1;
+            Lib::Types::uint64_t TSD : 1;
+            Lib::Types::uint64_t DE : 1;
+            Lib::Types::uint64_t PSE : 1;
+            Lib::Types::uint64_t PAE : 1;
+            Lib::Types::uint64_t MCE : 1;
+            Lib::Types::uint64_t PGE : 1;
+            Lib::Types::uint64_t PCE : 1;
+            Lib::Types::uint64_t OSFXSR : 1;
+            Lib::Types::uint64_t OSXMMEXCPT : 1;
+            Lib::Types::uint64_t UMIP : 1;
+            Lib::Types::uint64_t : 1;
+            Lib::Types::uint64_t VMXE : 1;
+            Lib::Types::uint64_t SMXE : 1;
+            Lib::Types::uint64_t : 1;
+            Lib::Types::uint64_t FSGSBASE : 1;
+            Lib::Types::uint64_t PCIDE : 1;
+            Lib::Types::uint64_t OSXSAVE : 1;
+            Lib::Types::uint64_t : 1;
+            Lib::Types::uint64_t SMEP : 1;
+            Lib::Types::uint64_t SMAP : 1;
+            Lib::Types::uint64_t PKE : 1;
+            Lib::Types::uint64_t CET : 1;
+            Lib::Types::uint64_t PKS : 1;
+            Lib::Types::uint64_t : 39;
+        };
+        // CR5 ~ CR7 保留，如果使用结果和 CR1 一样.
+        struct CR8
+        {
+            // 任务优先级寄存器
+            Lib::Types::uint64_t TPL : 4;
+            Lib::Types::uint64_t : 60;
+        };
+        // CR9 ~ CR15 保留，如果使用结果和 CR1 一样.
+    };
 
     PUBLIC constexpr CONST auto IA32_APIC_BASE_MSR { 0x1B };
     PUBLIC constexpr CONST auto IA32_APIC_BASE_MSR_BSP { 1UL << 8U };     // 处理器是 BSP
@@ -184,6 +285,7 @@ PUBLIC namespace QuantumNEC::Architecture {
     PUBLIC constexpr const auto IDT_DESC_32_TYPE { 0xE };     // 32 位的门
     PUBLIC constexpr const auto IDT_DESC_16_TYPE { 0x6 };     // 16 位的门
 
+    PUBLIC constexpr const auto INTERRUPT_DESCRIPTOR_TABLE_COUNT { 1 };
     PUBLIC constexpr const auto INTERRUPT_DESCRIPTOR_COUNT { 256 };
     PUBLIC constexpr const auto GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT { 32 };
     PUBLIC constexpr const auto SEGMENT_DESCRIPTOR_COUNT { 8192 };

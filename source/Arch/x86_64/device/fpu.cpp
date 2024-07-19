@@ -3,6 +3,7 @@
 #include <Kernel/memory.hpp>
 #include <Lib/IO/Stream/iostream>
 PUBLIC namespace QuantumNEC::Architecture {
+    inline STATIC Lib::Types::Ptr< VOID > last_fpu_task { };
     FPU::FPU( VOID ) noexcept {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the FPU Management" << Lib::IO::endl;
         // Lib::Types::BOOL exist { this->check_fpu( ) };
@@ -12,11 +13,11 @@ PUBLIC namespace QuantumNEC::Architecture {
         // }
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the FPU Management" << Lib::IO::endl;
     }
-    auto FPU::flush_fpu( VOID )->VOID {
+    auto FPU::FPUFrame::flush_fpu( VOID )->VOID {
         ASM( "fnclex \n\t"
              "fninit \n\t" );
     }
-    auto FPU::check_fpu( VOID )->Lib::Types::BOOL {
+    auto FPU::FPUFrame::check_fpu( VOID )->Lib::Types::BOOL {
         Lib::Types::uint32_t code { 114514 };
         ASM(
             "MOVQ %%CR0,%%RAX \n\t"
@@ -33,17 +34,17 @@ PUBLIC namespace QuantumNEC::Architecture {
             : "rax" );
         return !code;
     }
-    auto FPU::enable_fpu( IN Lib::Types::Ptr< VOID > task )->VOID {
-        CPUs::write_cr0( CPUs::read_cr0( ) | ( static_cast< Lib::Types::int64_t >( CR0_COMMAND::EM ) | static_cast< Lib::Types::int64_t >( CR0_COMMAND::TS ) ) );
-        Lib::Types::Ptr< Kernel::Task::ProcessPCB > _last_fpu_task { reinterpret_cast< decltype( _last_fpu_task ) >( last_fpu_task ) };
-        Lib::Types::Ptr< Kernel::Task::ProcessPCB > _task { reinterpret_cast< decltype( _task ) >( task ) };
-        using enum Kernel::Task::TaskFlags;
+    auto FPU::FPUFrame::enable_fpu( IN Lib::Types::Ptr< VOID > task )->VOID {
+        auto cr0 = CPUs::read_cr0( );
+        cr0.EM = 1;
+        cr0.TS = 1;
+        CPUs::write_cr0( cr0 );
+        auto _last_fpu_task { reinterpret_cast< Kernel::Process * >( last_fpu_task ) }, _task { reinterpret_cast< Kernel::Process * >( task ) };
         if ( _last_fpu_task == task ) {
             // 没有变化，不需要恢复浮点环境
             return;
         }
-
-        if ( _last_fpu_task && _last_fpu_task->flags & static_cast< Lib::Types::int64_t >( FPU_ENABLED ) ) {
+        if ( _last_fpu_task && _last_fpu_task->flags & Kernel::TASK_FLAG_FPU_ENABLE ) {
             // 存在使用过浮点处理单元的进程，需要保存浮点环境
             if ( _last_fpu_task->fpu_frame ) {
                 while ( true )
@@ -51,7 +52,7 @@ PUBLIC namespace QuantumNEC::Architecture {
             }
 
             ASM( "fnsave (%0)\n" ::"r"( _last_fpu_task->fpu_frame ) );
-            _last_fpu_task->flags &= ~( static_cast< Lib::Types::int64_t >( FPU_ENABLED ) );
+            _last_fpu_task->flags &= ~( Kernel::TASK_FLAG_FPU_ENABLE );
         }
 
         _last_fpu_task = _task;
@@ -63,12 +64,14 @@ PUBLIC namespace QuantumNEC::Architecture {
         else {
             // 否则，初始化浮点环境
             flush_fpu( );
-            _task->fpu_frame = new FPUFrame;
-            _task->flags |= ( static_cast< Lib::Types::int64_t >( FPU_ENABLED ) | static_cast< Lib::Types::int64_t >( FPU_USED ) );
+            _task->flags |= ( Kernel::TASK_FLAG_FPU_ENABLE | Kernel::TASK_FLAG_FPU_USED );
         }
     }
 
-    auto FPU::disable_fpu( IN Lib::Types::Ptr< VOID > )->VOID {
-        CPUs::write_cr0( CPUs::read_cr0( ) | ( static_cast< Lib::Types::int64_t >( CR0_COMMAND::EM ) | static_cast< Lib::Types::int64_t >( CR0_COMMAND::TS ) ) );
+    auto FPU::FPUFrame::disable_fpu( IN Lib::Types::Ptr< VOID > )->VOID {
+        auto cr0 = CPUs::read_cr0( );
+        cr0.EM = 1;
+        cr0.TS = 1;
+        CPUs::write_cr0( cr0 );
     }
 }

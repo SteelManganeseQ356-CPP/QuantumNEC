@@ -83,6 +83,19 @@ PUBLIC namespace QuantumNEC::Kernel {
             return;
         }
     };
+    PUBLIC constexpr CONST auto PAGE_XD { 1UL << 63 };
+    PUBLIC constexpr CONST auto PAGE_PAT { 1UL << 7 };
+    PUBLIC constexpr CONST auto PAGE_GLOBAL { 1UL << 8 };
+    PUBLIC constexpr CONST auto PAGE_PS { 1UL << 7 };
+    PUBLIC constexpr CONST auto PAGE_DIRTY { 1UL << 6 };
+    PUBLIC constexpr CONST auto PAGE_ACCESSED { 1UL << 5 };
+    PUBLIC constexpr CONST auto PAGE_PCD { 1UL << 4 };
+    PUBLIC constexpr CONST auto PAGE_PWT { 1UL << 3 };
+    PUBLIC constexpr CONST auto PAGE_PRESENT { 1UL << 0 };
+    PUBLIC constexpr CONST auto PAGE_RW_W { 1ull << 1 };
+    PUBLIC constexpr CONST auto PAGE_US_S { 1UL << 0 };
+    PUBLIC constexpr CONST auto PAGE_US_U { 1ull << 2 };
+    PUBLIC constexpr CONST auto PAGE_RW_R { 1UL << 0 };
 
     PUBLIC class Table
     {
@@ -173,6 +186,47 @@ PUBLIC namespace QuantumNEC::Kernel {
         }
         constexpr auto set_xd( IN Lib::Types::uint64_t bit ) {
             this->execute_disable = bit;
+        }
+        constexpr auto get_p( VOID ) {
+            return this->present;
+        }
+        constexpr auto get_rw( VOID ) {
+            return this->read_write;
+        }
+        constexpr auto get_us( VOID ) {
+            return this->user_supervisor;
+        }
+        constexpr auto get_pwt( VOID ) {
+            return this->write_through;
+        }
+        constexpr auto get_pcd( VOID ) {
+            return this->cache_disable;
+        }
+        constexpr auto get_a( VOID ) {
+            return this->accessed;
+        }
+        constexpr auto get_d( VOID ) {
+            return this->dirty;
+        }
+        constexpr auto get_ps_pat( VOID ) {
+            return this->page_attribute_table_page_size;
+        }
+
+        constexpr auto get_g( VOID ) {
+            return this->global;
+        }
+        constexpr auto get_avl( VOID ) {
+            return this->available;
+        }
+
+        constexpr auto get_pk( VOID ) {
+            return this->protection_key;
+        }
+        constexpr auto get_xd( VOID ) {
+            return this->execute_disable;
+        }
+        constexpr auto get_address( VOID ) {
+            return this->address;
         }
         auto set_address( IN Lib::Types::uint64_t bit ) {
             *reinterpret_cast< Lib::Types::uint64_t * >( this ) |= bit;
@@ -288,38 +342,38 @@ PUBLIC namespace QuantumNEC::Kernel {
          * @param flags 映射标志
          * @param mode 映射页的模式 (4K/2M/1G)
          */
-        STATIC auto map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode mode, IN Lib::Types::Ptr< PageMapLevel4Table > pml = kernel_page_table ) -> VOID;
+        auto map( IN Lib::Types::uint64_t physics_address, IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::uint16_t flags, IN MapMode mode, IN Lib::Types::Ptr< PageMapLevel4Table > pml = kernel_page_table ) -> VOID;
         /**
          * @brief 取消映射页
          * @param virtual_address 将取消映射的指定虚拟地址
          * @param size 要取消映射的内存页大小
          */
-        STATIC auto unmap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< PageMapLevel4Table > pml = kernel_page_table ) -> VOID;
+        auto unmap( IN Lib::Types::uint64_t virtual_address, IN Lib::Types::size_t size, IN Lib::Types::Ptr< PageMapLevel4Table > pml = kernel_page_table ) -> VOID;
 
     public:
         /**
          * @brief 控制页保护开关
          * @param flags 如果为true那么开启页保护，如果为false那么关闭页保护
          */
-        STATIC auto page_table_protect( IN Lib::Types::BOOL flags ) -> VOID;
+        auto page_table_protect( IN Lib::Types::BOOL flags ) -> VOID;
         /**
          * @brief 制作页表
          * @return 制作的页目录地址
          */
-        STATIC auto make_page_table( VOID ) -> Lib::Types::Ptr< PageMapLevel4Table >;
+        auto make_page_table( VOID ) -> Lib::Types::Ptr< PageMapLevel4Table >;
         /**
          * @brief 激活页表
          * @param page_directory 页表地址
          */
-        STATIC auto activate_page_table( IN Lib::Types::Ptr< VOID > page_directory_table_address ) -> VOID;
+        auto activate_page_table( IN Lib::Types::Ptr< VOID > page_directory_table_address ) -> VOID;
         /**
          * @brief 获取当前页表
          */
-        STATIC auto get_current_page_tabel( VOID ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
+        auto get_current_page_tabel( VOID ) -> Lib::Types::Ptr< Lib::Types::uint64_t >;
         /**
          * @brief 获取规范地址掩码
          */
-        STATIC auto get_canonical_address_mask( VOID ) -> Lib::Types::uint64_t;
+        auto get_canonical_address_mask( VOID ) -> Lib::Types::uint64_t;
 
         inline STATIC PageMapLevel4Table *kernel_page_table { };
     };

@@ -1,4 +1,6 @@
-
+#include "Arch/x86_64/cpu/xdt.hpp"
+#include "Kernel/Task/process.hpp"
+#include "Lib/Types/type_base.hpp"
 #include <Arch/x86_64/platform/platform.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Kernel/task.hpp>
@@ -11,7 +13,7 @@ PUBLIC namespace QuantumNEC::Architecture {
      * 第一个系统调用
      * 它的作用是进行进程间通信，消息发送/接收
      */
-    PRIVATE auto syscall_send_receive( IN Lib::Types::Ptr< CPUs::InterruptFrame > frame )->Lib::Types::Ptr< CPUs::InterruptFrame > {
+    PRIVATE auto syscall_send_receive( IN Lib::Types::Ptr< InterruptDescriptorTable::InterruptFrame > frame )->Lib::Types::Ptr< InterruptDescriptorTable::InterruptFrame > {
         Lib::Types::uint64_t function { frame->regs.rax };
         Syscall::SyscallStatus status { Syscall::SyscallStatus::ERROR };
         Lib::Types::uint64_t source_destination { frame->regs.rdi };
@@ -27,7 +29,7 @@ PUBLIC namespace QuantumNEC::Architecture {
             break;
         }
         if ( status != Syscall::SyscallStatus::SUCCESS ) {
-            Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << Task::get_current< Task::ProcessPCB >( )->name << " called " << static_cast< Lib::Types::uint32_t >( function ) << " syscall error!"
+            Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << Kernel::get_current< Kernel::Process >( )->name << " called " << static_cast< Lib::Types::uint32_t >( function ) << " syscall error"
                                                                 << " to PID:" << source_destination << "(" << static_cast< Lib::Types::int32_t >( status ) << ")" << Lib::IO::endl;
             while ( TRUE )
                 ;
@@ -37,9 +39,9 @@ PUBLIC namespace QuantumNEC::Architecture {
     }
 
     Syscall::Syscall( VOID ) noexcept {
-        this->set_syscall_table( 0, syscall_send_receive );
-        this->set_syscall_table( 1, syscall_send_receive );
-        this->set_syscall_table( 2, syscall_send_receive );
+        this->set_syscall_table( static_cast< Lib::Types::uint64_t >( Syscall::SyscallFunction::MESSAGE_SEND ), syscall_send_receive );
+        this->set_syscall_table( static_cast< Lib::Types::uint64_t >( Syscall::SyscallFunction::MESSAGE_RECEIVE ), syscall_send_receive );
+        this->set_syscall_table( static_cast< Lib::Types::uint64_t >( Syscall::SyscallFunction::MESSAGE_SEND_RECEIVE ), syscall_send_receive );
     }
     auto Syscall::get_syscall_table( VOID )->Lib::Types::Ptr< SyscallEntry > {
         return syscall_table;

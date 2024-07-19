@@ -35,7 +35,7 @@ PUBLIC namespace {
 }
 PUBLIC namespace QuantumNEC::Architecture {
     Acpi::Acpi( IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept :
-        rsdp { _config->AcpiData.rsdpTable },
+        rsdp { _config->acpi_table },
         xsdt { reinterpret_cast< Lib::Types::Ptr< Xsdt > >( this->rsdp->xsdtAddress ) } {
         using namespace Lib::Types;
         auto checkSum { []( IN Lib::Types::Ptr< VOID > buffer, IN Lib::Types::size_t size ) -> Lib::Types::BOOL {
@@ -59,6 +59,7 @@ PUBLIC namespace QuantumNEC::Architecture {
             return NULL;
         };
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the advanced configuration power interface." << Lib::IO::endl;
+
         if ( !this->is_valid< Rsdp >( ) ) {
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::ERROR ] << "RSD pointer found is not valid." << Lib::IO::endl;
             while ( true )

@@ -1,6 +1,4 @@
-#include <Kernel/Memory/heap.hpp>
-#include <Kernel/Memory/paging.hpp>
-#include <Kernel/Memory/map.hpp>
+#include <Kernel/memory.hpp>
 #include <Lib/STL/string>
 #include <Lib/Base/deflib.hpp>
 #include <Arch/Arch.hpp>
@@ -9,13 +7,12 @@
 PUBLIC namespace {
     using namespace QuantumNEC::Kernel;
     PRIVATE TaskLock lock { };
-    
 }
 
 PUBLIC namespace QuantumNEC::Kernel {
     HeapMemory::HeapMemory( IN Lib::Types::Ptr< Lib::Types::BootConfig > ) noexcept {
         Lib::STL::list_init( &this->global_memory_zone_table );
-        Lib::Types::Ptr< Zone > zone { reinterpret_cast< decltype( zone ) >( PageMemory::malloc( 1, PageMemory::MemoryPageType::PAGE_2M ) ) };
+        Lib::Types::Ptr< Zone > zone { reinterpret_cast< decltype( zone ) >( Memory::page->malloc( 1, PageMemory::MemoryPageType::PAGE_2M ) ) };
         Lib::STL::list_init( &zone->block_table );
         zone->zone_node.container = reinterpret_cast< decltype( zone->zone_node.container ) >( zone );
         zone->is_full = FALSE;
@@ -68,7 +65,7 @@ PUBLIC namespace QuantumNEC::Kernel {
                         // 如果连block都不足已分配那么直接放弃这块内存，设置整个内存块已满
                         zone->is_full = TRUE;
                         // 并开辟新内存区域
-                        zone = reinterpret_cast< decltype( zone ) >( ( PageMemory::malloc( 1, PageMemory::MemoryPageType::PAGE_2M ) ) );
+                        zone = reinterpret_cast< decltype( zone ) >( ( Memory::page->malloc( 1, PageMemory::MemoryPageType::PAGE_2M ) ) );
                         Lib::STL::list_init( &zone->block_table );
                         zone->zone_node.container = reinterpret_cast< decltype( zone->zone_node.container ) >( zone );
                         zone->is_full = FALSE;
@@ -93,7 +90,7 @@ PUBLIC namespace QuantumNEC::Kernel {
         else if ( size >= PAGE_SIZE ) {
             Lib::Types::uint64_t page_count { size % PAGE_SIZE ? size / PAGE_SIZE + 1 : size / PAGE_SIZE };
             // 超过一页大小的分配量那么直接分配多个页或者一个整页
-            zone = reinterpret_cast< decltype( zone ) >( reinterpret_cast< Lib::Types::uint64_t >( PageMemory::malloc( page_count, PageMemory::MemoryPageType::PAGE_2M ) ) );
+            zone = reinterpret_cast< decltype( zone ) >( reinterpret_cast< Lib::Types::uint64_t >( Memory::page->malloc( page_count, PageMemory::MemoryPageType::PAGE_2M ) ) );
             zone->zone_node.container = reinterpret_cast< decltype( zone->zone_node.container ) >( zone );
             zone->is_full = size % PAGE_SIZE ? FALSE : TRUE;
             zone->size = page_count * PAGE_SIZE;
@@ -139,12 +136,11 @@ PUBLIC namespace QuantumNEC::Kernel {
             // 但是前提是它不是最后一个块
             // 如果是最后一个块那么也是啥也不干，因为要保证一定有一块内存
             list_delete( &zone->zone_node );
-            PageMemory::free( zone, zone->size / PAGE_SIZE, PageMemory::MemoryPageType::PAGE_2M );
+            Memory::page->free( zone, zone->size / PAGE_SIZE, PageMemory::MemoryPageType::PAGE_2M );
             Lib::STL::memset( zone, 0, zone->size );
         }
         // 反之，啥也不干
         lock.release( );
         return;
     }
-    
 }

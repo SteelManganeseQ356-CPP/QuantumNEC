@@ -36,8 +36,8 @@ PUBLIC namespace QuantumNEC::Kernel {
         virtual ~HeapMemory( VOID ) noexcept = default;
 
     public:
-        STATIC auto malloc( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
-        STATIC auto free( IN Lib::Types::Ptr< VOID > address ) -> VOID;
+        auto malloc( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
+        auto free( IN Lib::Types::Ptr< VOID > address ) -> VOID;
 
     private:
         inline STATIC Lib::STL::ListTable global_memory_zone_table { };

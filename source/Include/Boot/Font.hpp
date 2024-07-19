@@ -1,21 +1,15 @@
 #pragma once
-#include <Boot/Data.hpp>
+#include <Boot/base.hpp>
 namespace QuantumNEC::Boot {
-typedef struct
-{
-    VOID *fontBuffer;
-    auto set( VOID ) -> VOID {
-    }
-    auto put( VOID ) -> VOID {
-    }
-} UnicodeTTF;
-class BootServiceFont : protected BootServiceDataManager< UnicodeTTF >
+class FontLoaderService
 {
 public:
-    explicit BootServiceFont( IN UnicodeTTF * ) noexcept( true );
-    virtual ~BootServiceFont( VOID ) noexcept( true ) = default;
+    explicit FontLoaderService( IN uchar_t *path ) noexcept;
+    ~FontLoaderService( VOID ) noexcept {
+    }
 
-public:
-    auto getUnicodeTTF( IN CONST wchar_t *fontPath ) -> EFI_STATUS;
+private:
+    VOID *font_frame;
 };
+
 }     // namespace QuantumNEC::Boot

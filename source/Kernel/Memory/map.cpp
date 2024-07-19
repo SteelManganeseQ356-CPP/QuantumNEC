@@ -1,6 +1,6 @@
 #include <Kernel/Memory/map.hpp>
 #include <Kernel/Memory/heap.hpp>
-#include <Kernel/Memory/paging.hpp>
+#include <Kernel/Memory/page.hpp>
 #include <Arch/Arch.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
@@ -211,7 +211,8 @@ PUBLIC namespace QuantumNEC::Kernel {
         this->kernel_page_table = new ( reinterpret_cast< VOID * >( KERNEL_PAGE_TABLE_PHYSICAL_ADDRESS ) ) PageMapLevel4Table { };
         this->kernel_page_table->make( PAGE_PRESENT | PAGE_RW_W | PAGE_US_U, MemoryPageType::PAGE_2M );
         // 挂载页表
-        Architecture::ArchitectureManager< TARGET_ARCH >::set_page_table( new ( this->kernel_page_table ) Lib::Types::uint64_t );
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_page_table( reinterpret_cast< Lib::Types::uint64_t * >( this->kernel_page_table ) );
+
         // 映射
         /*
          * 系统内存分配:
@@ -238,8 +239,8 @@ PUBLIC namespace QuantumNEC::Kernel {
          * 内核页表结尾         -> ..................      = [32MB + X MB之后] --> 空闲
          */
 
-        KERNEL_VRAM_PHYSICAL_ADDRESS = _config->GraphicsData.FrameBufferBase;
-        KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS = 0x2500000 + this->kernel_page_table->size( );
+        KERNEL_VRAM_PHYSICAL_ADDRESS = _config->graphics_data.FrameBufferBase;
+        KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS = KERNEL_PAGE_TABLE_PHYSICAL_ADDRESS + this->kernel_page_table->size( );
 
         KERNEL_FREE_MEMORY_VIRTUAL_ADDRESS = KERNEL_BASE_ADDRESS + KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS;
         KERNEL_I_O_APIC_PHYSICAL_ADDRESS = reinterpret_cast< Lib::Types::uint64_t >( Architecture::ArchitectureManager< TARGET_ARCH >::io_apic_address );
@@ -259,14 +260,14 @@ PUBLIC namespace QuantumNEC::Kernel {
         this->map( KERNEL_FONT_MEMORY_PHYSICAL_ADDRESS, KERNEL_FONT_MEMORY_VIRTUAL_ADDRESS, FONT_FILE_OCCUPIES_PAGE, PAGE_US_U | PAGE_RW_W | PAGE_PRESENT, MapMode::MEMORY_MAP_2M );
 
         // 映射页表以及空闲内存
-        for ( auto page_address { KERNEL_PAGE_TABLE_PHYSICAL_ADDRESS }; page_address < PageMemory::memory_total; page_address += PAGE_SIZE ) {
+        for ( auto page_address { KERNEL_PAGE_TABLE_PHYSICAL_ADDRESS }; page_address < Memory::page->memory_total; page_address += PAGE_SIZE ) {
             // 从空闲内存起始地址开始映射
             this->map( page_address, KERNEL_BASE_ADDRESS + page_address, 1, PAGE_US_U | PAGE_RW_W | PAGE_PRESENT, MapMode::MEMORY_MAP_2M );
         }
 
         // 剔除被占用的内存(0 -> 32MB + pagetable size MB)
         for ( auto index { 0ull }; index < KERNEL_FREE_MEMORY_PHYSICAL_ADDRESS / PAGE_SIZE + 1; ++index ) {
-            PageMemory::bitmap_.set( index, 1 );
+            Memory::page->bitmap_.set( index, 1 );
         }
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Mapping the pages table is OK." << Lib::IO::endl;
     }
@@ -331,12 +332,15 @@ PUBLIC namespace QuantumNEC::Kernel {
     }
 
     auto MemoryMap::page_table_protect( IN Lib::Types::BOOL flags )->VOID {
+        auto cr0 = Architecture::ArchitectureManager< TARGET_ARCH >::read_cr0( );
         if ( !flags ) {
-            Architecture::ArchitectureManager< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManager< TARGET_ARCH >::read_cr0( ) & ~0x10000 );
+            cr0.WP = 1;
+            Architecture::ArchitectureManager< TARGET_ARCH >::write_cr0( cr0 );
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "Disable the page protection." << Lib::IO::endl;
         }
         else {
-            Architecture::ArchitectureManager< TARGET_ARCH >::write_cr0( Architecture::ArchitectureManager< TARGET_ARCH >::read_cr0( ) | 0x10000 );
+            cr0.WP = 0;
+            Architecture::ArchitectureManager< TARGET_ARCH >::write_cr0( cr0 );
             Lib::IO::sout[ Lib::IO::ostream::HeadLevel::SYSTEM ] << "Enable the page protection." << Lib::IO::endl;
         }
     };
@@ -351,6 +355,6 @@ PUBLIC namespace QuantumNEC::Kernel {
         //  Architecture::ArchitectureManager< TARGET_ARCH >::set_page_table( page_directory_table_address ? reinterpret_cast< Lib::Types::uint64_t * >( page_directory_table_address ) : reinterpret_cast< Lib::Types::uint64_t * >( kernel_page_table ) );
     }
     auto MemoryMap::get_current_page_tabel( VOID )->Lib::Types::Ptr< Lib::Types::uint64_t > {
-        return reinterpret_cast< Lib::Types::Ptr< Lib::Types::uint64_t > >( Architecture::ArchitectureManager< TARGET_ARCH >::read_cr3( ) );
+        return reinterpret_cast< Lib::Types::uint64_t * >( Architecture::ArchitectureManager< TARGET_ARCH >::read_cr3( ).page_directory_base );
     }
 }

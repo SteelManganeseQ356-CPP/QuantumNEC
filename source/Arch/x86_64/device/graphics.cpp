@@ -3,7 +3,7 @@
 PUBLIC namespace QuantumNEC::Architecture {
     Graphics::Graphics(
         IN CONST Lib::Types::Ptr< Lib::Types::BootConfig > bootConfig ) noexcept :
-        config { &bootConfig->GraphicsData } {
+        config { &bootConfig->graphics_data } {
         this->window_initialize( );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the Device Driver." << Lib::IO::endl;
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the Graphical Management." << Lib::IO::endl;

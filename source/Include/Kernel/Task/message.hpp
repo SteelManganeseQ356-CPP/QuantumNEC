@@ -9,9 +9,6 @@ PUBLIC namespace QuantumNEC::Kernel {
     PUBLIC constexpr CONST auto INTERRUPT { 0x114514 };
     PUBLIC class Message
     {
-    public:
-        Lib::Types::uint64_t source; /* 发出这个消息的进程pid */
-        Lib::Types::uint32_t type;   /* 消息类型 */
     private:
         union {
             struct
@@ -42,6 +39,8 @@ PUBLIC namespace QuantumNEC::Kernel {
         } message;
 
     public:
+        Lib::Types::uint64_t source;          /* 发出这个消息的进程pid */
+        Lib::Types::uint32_t type;            /* 消息类型 */
         Lib::Types::uint64_t send_to;         /* 记录进程想要向谁发送消息 */
         Lib::Types::uint64_t receive_from;    /* 记录进程想要从谁获取消息 */
         Lib::Types::uint64_t has_int_message; /* 有来自中断的消息,这个结构被中断处理程序置为1 */

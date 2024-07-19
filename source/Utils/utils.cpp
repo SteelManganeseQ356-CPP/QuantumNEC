@@ -161,6 +161,16 @@ PUBLIC namespace QuantumNEC::Utils {
                                    field_width, precision, flags );
                 }
                 break;
+            case 'b':
+                if ( qualifier == 'l' ) {
+                    str1 = number( str1, va_arg( args, Lib::Types::uint64_t ), 2,
+                                   field_width, precision, flags );
+                }
+                else {
+                    str1 = number( str1, va_arg( args, Lib::Types::uint32_t ), 2,
+                                   field_width, precision, flags );
+                }
+                break;
             case 'n':
                 if ( qualifier == 'l' ) {
                     Lib::Types::Ptr< Lib::Types::int64_t > IP = va_arg( args, Lib::Types::Ptr< Lib::Types::int64_t > );
@@ -201,6 +211,7 @@ PUBLIC namespace QuantumNEC::Utils {
         }
         return i;
     }
+
     PUBLIC auto number(
         IN OUT Lib::Types::Ptr< Lib::Types::char_t > str,
         IN Lib::Types::int64_t num, IN Lib::Types::int32_t base,

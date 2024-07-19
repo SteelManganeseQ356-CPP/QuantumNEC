@@ -2,7 +2,7 @@
 PUBLIC namespace QuantumNEC::Architecture {
     Hpet ::Hpet( VOID ) noexcept {
         // 开启HPET
-        HpetInfo *info { reinterpret_cast< decltype( info ) >( Device::hpet->hpet_address.address ) };
+        auto info { reinterpret_cast< HpetInfo * >( Device::hpet->hpet_address.address ) };
         info->general_configuration = 3;
         CPUs::mfence( );
         // edge triggered & periodic

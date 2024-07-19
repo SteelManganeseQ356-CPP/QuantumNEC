@@ -8,11 +8,11 @@ using namespace QuantumNEC::Lib::IO;
 /**
  * @brief 中断入口函数表
  */
-PUBLIC Architecture::InterruptDescriptorManager::InterruptEntry interrupt_entry_table[ INTERRUPT_DESCRIPTOR_COUNT ];
+PUBLIC Architecture::InterruptDescriptorTable::InterruptEntry interrupt_entry_table[ INTERRUPT_DESCRIPTOR_COUNT ];
 
 PUBLIC Lib::Types::Ptr< CONST Lib::Types::char_t > interrupt_name[ INTERRUPT_DESCRIPTOR_COUNT ];     // 各个异常的名字
 
-_C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Architecture::CPUs::InterruptFrame > frame ) -> Lib::Types::Ptr< CONST Architecture::CPUs::InterruptFrame > {
+_C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST InterruptDescriptorTable::InterruptFrame > frame ) -> Lib::Types::Ptr< CONST InterruptDescriptorTable::InterruptFrame > {
 #ifndef APIC
     if ( frame->vector == 0x27 || frame->vector == 0x2f )     // 0x2f是从片8259A上的最后一个irq引脚，保留
         return frame;                                         // IRQ7和IRQ15会产生伪中断(spurious interrupt),无须处理。
@@ -23,7 +23,7 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
         // 显示各个寄存器值
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "Rflags -> %#018lx\n\r", frame->rflags );
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "RIP -> %#018lx\tRSP -> %#018lx\tSS  -> %#018lx\tCS  -> %#018lx\n\r", frame->rip, frame->rsp, frame->ss, frame->cs );
-        Architecture::CPUs::InterruptDescriptorManager::display_registers( &frame->regs );
+        InterruptDescriptorTable::InterruptDescriptorTable::display_registers( &frame->regs );
         if ( frame->error_code ) {
             sout[ ostream::HeadLevel::INFO ] << "Error Code -> " << frame->error_code << endl;
         }
@@ -92,8 +92,7 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
 
 #define SET_TRAP_HANDLER( index, ist )                                      \
     ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
-    this->make_descriptor(                                                  \
-        index,                                                              \
+    this->descriptor_table[ 0 ][ index ].make(                              \
         function,                                                           \
         SELECTOR_CODE64_KERNEL,                                             \
         ist,                                                                \
@@ -103,8 +102,7 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
  */
 #define SET_SYSTEM_HANDLER( index, ist )                                    \
     ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
-    this->make_descriptor(                                                  \
-        index,                                                              \
+    this->descriptor_table[ 0 ][ index ].make(                              \
         function,                                                           \
         SELECTOR_CODE64_KERNEL,                                             \
         ist,                                                                \
@@ -114,8 +112,7 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
  */
 #define SET_SYSTEM_INTERRUPT_HANDLER( index, ist )                          \
     ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
-    this->make_descriptor(                                                  \
-        index,                                                              \
+    this->descriptor_table[ 0 ][ index ].make(                              \
         function,                                                           \
         SELECTOR_CODE64_KERNEL,                                             \
         ist,                                                                \
@@ -125,20 +122,18 @@ _C_LINK ASMCALL auto general_interrupt_handler( IN Lib::Types::Ptr< CONST Archit
  */
 #define SET_INTERRUPT_HANDLER( index, ist )                                 \
     ASM( "LEAQ InterruptHandler" #index "(%%RIP), %0" : "=r"( function ) ); \
-    this->make_descriptor(                                                  \
-        index,                                                              \
+    this->descriptor_table[ 0 ][ index ].make(                              \
         function,                                                           \
         SELECTOR_CODE64_KERNEL,                                             \
         ist,                                                                \
         static_cast< Lib::Types::uint8_t >( InterruptDescriptorAttribute::INTERRUPT ) )
 PUBLIC namespace QuantumNEC::Architecture {
-    InterruptDescriptorManager::InterruptDescriptorManager( IN Lib::Types::Ptr< InterruptDescriptor > _descriptor, IN Lib::Types::uint16_t _num ) noexcept :
-        Descriptor< InterruptDescriptor > {
-            _descriptor, _num
-        } {
+    InterruptDescriptorTable::InterruptDescriptorTable( VOID ) noexcept :
+        Descriptor< InterruptDescriptor, INTERRUPT_DESCRIPTOR_TABLE_COUNT, INTERRUPT_DESCRIPTOR_COUNT > { } {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the interrupt descriptor table management." << Lib::IO::endl;
         Architecture::CPUs::cli( );     // 关中断
         Lib::STL::memset( this->xdtr.descriptor, 0, INTERRUPT_DESCRIPTOR_COUNT * sizeof( InterruptDescriptor ) );
+
         for ( Lib::Types::uint16_t i { }; i < INTERRUPT_DESCRIPTOR_COUNT; ++i ) {
             interrupt_name[ i ] = "unknown";                            // 先统一赋值为unknown
             interrupt_entry_table[ i ] = general_interrupt_handler;     // 默认为general_interrupt_handler
@@ -437,75 +432,58 @@ PUBLIC namespace QuantumNEC::Architecture {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the interrupt descriptor table management." << Lib::IO::endl;
     }
 
-    auto InterruptDescriptorManager::load( VOID ) CONST->VOID {
+    auto InterruptDescriptorTable::load( VOID ) CONST->VOID {
         ASM( "lidt %0" ::"m"( this->xdtr ) );
         return;
     }
-    auto InterruptDescriptorManager::read( VOID ) CONST->Lib::Types::Ptr< InterruptDescriptor > {
+    auto InterruptDescriptorTable::read( VOID ) CONST->Lib::Types::Ptr< InterruptDescriptor > {
         // 获取idt地址并返回
         ASM( "sidt %0" ::"m"( this->xdtr ) );
         return this->xdtr.descriptor;
     }
-    auto InterruptDescriptorManager::make_descriptor( IN CONST Lib::Types::uint16_t index,
-                                                      IN CONST Lib::Types::uint64_t entry_point,
-                                                      IN CONST Lib::Types::uint16_t selector,
-                                                      IN CONST Lib::Types::uint8_t ist,
-                                                      IN CONST Lib::Types::uint8_t attributes )
-        ->Lib::Types::L_Ref< InterruptDescriptor > {
-        Lib::Types::Ptr< Architecture::InterruptDescriptor > entry = &this->xdtr.descriptor[ index ];
-        entry->offset_low = ( entry_point & 0xffff );
-        entry->selector = selector;
-        entry->ist = ist;
-        entry->attribute = attributes;
-        entry->offset_middle = static_cast< decltype( entry->offset_middle ) >( ( entry_point >> 16 ) & 0xffff );
-        entry->offset_high = static_cast< decltype( entry->offset_high ) >( ( entry_point >> 32 ) & 0xffffffff );
-        return *entry;
-    }
-    auto InterruptDescriptorManager::display_registers( IN Lib::Types::Ptr< CONST RegisterFrame > registers )->VOID {
+
+    auto InterruptDescriptorTable::display_registers( IN Lib::Types::Ptr< CONST RegisterFrame > registers )->VOID {
         using namespace ::QuantumNEC::Lib::IO;
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "RAX -> %#018lx\tRBX -> %#018lx\tRCX -> %#018lx\tRDX -> %#018lx\n\r", registers->rax, registers->rbx, registers->rcx, registers->rdx );
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "R8  -> %#018lx\tR9  -> %#018lx\tR10 -> %#018lx\tR11 -> %#018lx\tR12 -> %#018lx\tR13 -> %#018lx\tR14 -> %#018lx\tR15 -> %#018lx\n\r", registers->r8, registers->r9, registers->r10, registers->r11, registers->r12, registers->r13, registers->r14, registers->r15 );
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "RDI -> %#018lx\tRSI -> %#018lx\tRBP -> %#018lx\n\r", registers->rdi, registers->rsi, registers->rbp );
         ControlRegisterFrame control_registers_frame { };
-        sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "CR0 -> %#018lx\tCR2 -> %#018lx\tCR3 -> %#018lx\tCR4 -> %#018lx\n\r", control_registers_frame.cr0, control_registers_frame.cr2, control_registers_frame.cr3, control_registers_frame.cr4 );
+        sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "CR0 -> %#018lx\tCR2 -> %#018lx\tCR3 -> %#018lx\tCR4 -> %#018lx\n\tCR8 -> %#018lx\r ", control_registers_frame.cr0, control_registers_frame.cr2, control_registers_frame.cr3, control_registers_frame.cr4, control_registers_frame.cr8 );
         sout[ ostream::HeadLevel::INFO ].printk( DisplayColor::WHITE, DisplayColor::BLACK, "DS -> %#018lx\tES -> %#018lx\tFS -> %#018lx\tGS -> %#018lx\n\r", registers->ds, registers->es, registers->fs, registers->gs );
         return;
     }
-    auto InterruptDescriptorManager::set_interrupt_handler( IN CONST Lib::Types::uint8_t irq, IN InterruptEntry handle )->VOID {
+    auto InterruptDescriptorTable::set_interrupt_handler( IN CONST Lib::Types::uint8_t irq, IN InterruptEntry handle )->VOID {
         if ( irq > 0x1d ) {
             interrupt_entry_table[ irq ] = handle;
         }
         return;
     }
-    auto InterruptDescriptorManager::set_exception_handler( IN CONST Lib::Types::uint8_t irq, IN InterruptEntry handle )->VOID {
+    auto InterruptDescriptorTable::set_exception_handler( IN CONST Lib::Types::uint8_t irq, IN InterruptEntry handle )->VOID {
         if ( irq < 0x1e ) {
             interrupt_entry_table[ irq ] = handle;
         }
         return;
     }
-    GlobalSegmentDescriptorManager::GlobalSegmentDescriptorManager( IN GlobalSegmentDescriptor _descriptor[ GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT ][ SEGMENT_DESCRIPTOR_COUNT ], IN Lib::Types::uint16_t _size ) noexcept :
-        Descriptor< GlobalSegmentDescriptor > {
-            _descriptor[ 0 ], _size
-        } {
+    GlobalSegmentDescriptorTable::GlobalSegmentDescriptorTable( VOID ) noexcept :
+        Descriptor< GlobalSegmentDescriptor, GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT, SEGMENT_DESCRIPTOR_COUNT > { } {
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::START ] << "Initialize the global segment descriptor table management." << endl;
-
         for ( Lib::Types::size_t i { }, tss_base_low { }, tss_base_high { }; i < GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT; ++i ) {
             tss_base_low = ( reinterpret_cast< Lib::Types::uint64_t >( &this->tss[ i ] ) ) & 0xffffffff;
             tss_base_high = ( reinterpret_cast< Lib::Types::uint64_t >( &this->tss[ i ] ) >> 32 ) & 0xffffffff;
-            this->tss[ i ].io_map_base_address = ( sizeof( TaskStateSegmentDescriptor ) << 16 );
+            this->tss[ i ].set_io_map_base_address( static_cast< Lib::Types::uint16_t >( sizeof( TaskStateSegmentDescriptor ) << 16 ) );
             // 设置GDT里的LDT
-            this->make_descriptor( _descriptor[ i ], 0, 0, 0, 0 );                                                                        /*0	        NULL descriptor                                                             0x00*/
-            this->make_descriptor( _descriptor[ i ], 1, 0, 0, AR_CODE64 );                                                                /*1	        KERNEL	Code	                                            64-bit	Segment 0x08*/
-            this->make_descriptor( _descriptor[ i ], 2, 0, 0, AR_DATA64 );                                                                /*2	        KERNEL	Data	                                            64-bit	Segment 0x10*/
-            this->make_descriptor( _descriptor[ i ], 3, 0, 0xfffff, AR_CODE32_DPL3 );                                                     /*3	        USER	Code	                                            32-bit	Segment 0x18*/
-            this->make_descriptor( _descriptor[ i ], 4, 0, 0xfffff, AR_DATA32_DPL3 );                                                     /*4	        USER	Data	                                            32-bit	Segment 0x20*/
-            this->make_descriptor( _descriptor[ i ], 5, 0, 0, AR_CODE64_DPL3 );                                                           /*5	        USER	Code	                                            64-bit	Segment 0x28*/
-            this->make_descriptor( _descriptor[ i ], 6, 0, 0, AR_DATA64_DPL3 );                                                           /*6	        USER	Data	                                            64-bit	Segment 0x30*/
-            this->make_descriptor( _descriptor[ i ], 7, 0, 0xfffff, AR_CODE32 );                                                          /*7	        KERNEL	Code	                                            32-bit	Segment	0x38*/
-            this->make_descriptor( _descriptor[ i ], 8, 0, 0xfffff, AR_DATA32 );                                                          /*8	        KERNEL	Data	                                            32-bit	Segment	0x40*/
-            this->make_descriptor( _descriptor[ i ], 9, 0, 0, 0 );                                                                        /*9	        NULL descriptor                                                             0x48*/
-            this->make_descriptor( _descriptor[ i ], 10, tss_base_low & 0xffffffff, sizeof( TaskStateSegmentDescriptor ) - 1, AR_TSS64 ); /*10 ~ 11   TSS (10->low 11->high, jmp one segment <9>)                 64-bit          0x50*/
-            Lib::STL::memcpy( &_descriptor[ i ][ 11 ], &tss_base_high, 8 );
+            this->descriptor_table[ i ][ 0 ].make( 0, 0, 0 );                                                                        /*0	        NULL descriptor                                                             0x00*/
+            this->descriptor_table[ i ][ 1 ].make( 0, 0, AR_CODE64 );                                                                /*1	        KERNEL	Code	                                            64-bit	Segment 0x08*/
+            this->descriptor_table[ i ][ 2 ].make( 0, 0, AR_DATA64 );                                                                /*2	        KERNEL	Data	                                            64-bit	Segment 0x10*/
+            this->descriptor_table[ i ][ 3 ].make( 0, 0xfffff, AR_CODE32_DPL3 );                                                     /*3	        USER	Code	                                            32-bit	Segment 0x18*/
+            this->descriptor_table[ i ][ 4 ].make( 0, 0xfffff, AR_DATA32_DPL3 );                                                     /*4	        USER	Data	                                            32-bit	Segment 0x20*/
+            this->descriptor_table[ i ][ 5 ].make( 0, 0, AR_CODE64_DPL3 );                                                           /*5	        USER	Code	                                            64-bit	Segment 0x28*/
+            this->descriptor_table[ i ][ 6 ].make( 0, 0, AR_DATA64_DPL3 );                                                           /*6	        USER	Data	                                            64-bit	Segment 0x30*/
+            this->descriptor_table[ i ][ 7 ].make( 0, 0xfffff, AR_CODE32 );                                                          /*7	        KERNEL	Code	                                            32-bit	Segment	0x38*/
+            this->descriptor_table[ i ][ 8 ].make( 0, 0xfffff, AR_DATA32 );                                                          /*8	        KERNEL	Data	                                            32-bit	Segment	0x40*/
+            this->descriptor_table[ i ][ 9 ].make( 0, 0, 0 );                                                                        /*9	        NULL descriptor                                                             0x48*/
+            this->descriptor_table[ i ][ 10 ].make( tss_base_low & 0xffffffff, sizeof( TaskStateSegmentDescriptor ) - 1, AR_TSS64 ); /*10 ~ 11   TSS (10->low 11->high, jmp one segment <9>)                 64-bit          0x50*/
+            Lib::STL::memcpy( &this->descriptor_table[ i ][ 11 ], &tss_base_high, 8 );
             // 还剩下13 ~ 8192个描述符保留
         }
         sout[ ostream::HeadLevel::SYSTEM ] << "Loading the global segment descriptor table." << endl;
@@ -513,10 +491,10 @@ PUBLIC namespace QuantumNEC::Architecture {
         this->load( );
         // 加载全局段中的TSS
         sout[ ostream::HeadLevel::SYSTEM ] << "Loading the task state segment in global segment." << endl;
-        this->load_tr( SELECTOR_TSS );
+        this->tss[ 0 ].load_tr( SELECTOR_TSS );
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the global segment descriptor table management." << Lib::IO::endl;
     }
-    auto GlobalSegmentDescriptorManager::load( VOID ) CONST->VOID {
+    auto GlobalSegmentDescriptorTable::load( VOID ) CONST->VOID {
         ASM( "lgdt %[GDTR]" ::[ GDTR ] "m"( this->xdtr ) );
         ASM(
             "MOVQ %%RAX, %%DS \n\t"
@@ -531,26 +509,38 @@ PUBLIC namespace QuantumNEC::Architecture {
             ".next: \n\t"
             :
             : [SELECTOR_CODE64] "i"( SELECTOR_CODE64_KERNEL ),
-              [SELECTOR_DATA64] "rax"( SELECTOR_DATA64_KERNEL )
+              [SELECTOR_DATA64] "a"( SELECTOR_DATA64_KERNEL )
             : );
         return;
     }
-    auto GlobalSegmentDescriptorManager::read( VOID ) CONST->Lib::Types::Ptr< GlobalSegmentDescriptor > {
+    auto GlobalSegmentDescriptorTable::read( VOID ) CONST->Lib::Types::Ptr< GlobalSegmentDescriptor > {
         ASM( "sgdt %0" ::"m"( this->xdtr ) );
         return this->xdtr.descriptor;
     }
-    auto GlobalSegmentDescriptorManager::load_tr( IN Lib::Types::size_t segment )->VOID {
-        ASM( "ltr %%ax" ::"a"( segment ) : "memory" );
+
+    auto InterruptDescriptor::make( IN CONST Lib::Types::uint64_t entry_point,
+                                    IN CONST Lib::Types::uint16_t selector,
+                                    IN CONST Lib::Types::uint8_t ist,
+                                    IN CONST Lib::Types::uint8_t attributes )
+        ->Lib::Types::L_Ref< InterruptDescriptor > {
+        this->offset_low = ( entry_point & 0xffff );
+        this->selector = selector;
+        this->ist = ist;
+        this->attribute = attributes;
+        this->offset_middle = static_cast< decltype( this->offset_middle ) >( ( entry_point >> 16 ) & 0xffff );
+        this->offset_high = static_cast< decltype( this->offset_high ) >( ( entry_point >> 32 ) & 0xffffffff );
+        return *this;
     }
-    auto GlobalSegmentDescriptorManager::make_descriptor( IN Lib::Types::Ptr< GlobalSegmentDescriptor > descriptor, IN Lib::Types::uint8_t index, IN Lib::Types::uint64_t base, IN Lib::Types::uint64_t limit, IN Lib::Types::uint64_t access )->Lib::Types::L_Ref< GlobalSegmentDescriptor > {
-        Lib::Types::Ptr< GlobalSegmentDescriptor > entry { &descriptor[ index ] };
-        // 分别设置描述符
-        entry->limit_low = limit & 0xffff;
-        entry->base_low = base & 0xffff;
-        entry->base_middle = ( base & 0xff0000 ) >> 16;
-        entry->access_right = access & 0xff;
-        entry->limit_high = ( ( limit >> 16 ) & 0xf ) | ( ( access >> 8 ) & 0xf0 );
-        entry->base_high = ( base >> 24 ) & 0xff;
-        return *entry;
+    auto GlobalSegmentDescriptor::make( IN Lib::Types::uint64_t base,
+                                        IN Lib::Types::uint64_t limit,
+                                        IN Lib::Types::uint64_t access )
+        ->Lib::Types::L_Ref< GlobalSegmentDescriptor > {
+        this->limit_low = limit & 0xffff;
+        this->base_low = base & 0xffff;
+        this->base_middle = ( base & 0xff0000 ) >> 16;
+        this->access_right = access & 0xff;
+        this->limit_high = ( ( limit >> 16 ) & 0xf ) | ( ( access >> 8 ) & 0xf0 );
+        this->base_high = ( base >> 24 ) & 0xff;
+        return *this;
     }
 }

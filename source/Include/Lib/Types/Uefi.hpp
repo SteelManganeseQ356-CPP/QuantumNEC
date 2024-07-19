@@ -61,17 +61,6 @@ typedef enum class EfiMemoryType : Lib::Types::uint32_t {
     EfiMaxMemoryType
 } EfiMemoryType;
 
-typedef struct
-{
-    UINTN Size;
-    UINTN PageSize;
-    UINTN Width;
-    UINTN Height;
-    UINTN Offset;
-    UINT64 PixelStart;
-    UINT64 BitsPerPx;
-} BmpConfig;
-
 // Root System Description Pointer
 typedef struct
 {
@@ -85,10 +74,7 @@ typedef struct
     UINT8 extendedChecksum;
     CHAR8 reserved[ 3 ];
 } _packed Rsdp;
-typedef struct
-{
-    Lib::Types::Ptr< Rsdp > rsdpTable;
-} AcpiConfig;
+
 typedef struct
 {
     EfiPhysicalAddress FrameBufferBase;
@@ -141,17 +127,13 @@ typedef struct
     UINTN DescriptorSize;
     UINT32 DescriptorVersion;
 } MemoryConfig;
-typedef struct
-{
-    Lib::Types::Ptr< VOID > fontBuffer;
-} UnicodeTTF;
+
 typedef struct BootConfig
 {
-    GraphicsConfig GraphicsData;
-    MemoryConfig MemoryData;
-    AcpiConfig AcpiData;
-    UnicodeTTF FontData;
-    BmpConfig BmpData;
+    GraphicsConfig graphics_data;
+    MemoryConfig memory_map;
+    Lib::Types::Ptr< Rsdp > acpi_table;
+    UINTN font_frame;
 } BootConfig;
 }     // namespace QuantumNEC::Lib::Types
 using QuantumNEC::Lib::Types::SYSTEM_SUCCESS;

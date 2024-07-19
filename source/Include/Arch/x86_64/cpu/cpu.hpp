@@ -6,10 +6,7 @@ PUBLIC namespace QuantumNEC::Architecture {
     /**
      * @brief CPU管理类
      */
-    PUBLIC class CPUs :
-        public InterruptDescriptorManager,
-        public GlobalSegmentDescriptorManager
-
+    PUBLIC class CPUs
     {
     public:
         struct CpuidStatus
@@ -45,38 +42,17 @@ PUBLIC namespace QuantumNEC::Architecture {
         STATIC auto io_out8( IN Lib::Types::uint16_t port, IN Lib::Types::uint8_t value ) -> VOID;
         STATIC auto io_out16( IN Lib::Types::uint16_t port, IN Lib::Types::uint16_t value ) -> VOID;
         STATIC auto io_out32( IN Lib::Types::uint16_t port, IN Lib::Types::uint32_t value ) -> VOID;
-        STATIC auto read_cr15( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr15( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr14( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr14( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr13( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr13( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr12( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr12( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr11( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr11( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr10( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr10( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr9( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr9( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr8( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr8( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr7( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr7( IN Lib::Types::uint64_t cr2 ) -> VOID;
-        STATIC auto read_cr6( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr6( IN Lib::Types::uint64_t cr0 ) -> VOID;
-        STATIC auto read_cr5( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr5( IN Lib::Types::uint64_t cr0 ) -> VOID;
-        STATIC auto read_cr4( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr4( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr3( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr3( IN Lib::Types::uint64_t cr3 ) -> VOID;
-        STATIC auto read_cr2( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr2( IN Lib::Types::uint64_t cr2 ) -> VOID;
-        STATIC auto read_cr1( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr1( IN Lib::Types::uint64_t cr0 ) -> VOID;
-        STATIC auto read_cr0( VOID ) -> Lib::Types::uint64_t;
-        STATIC auto write_cr0( IN Lib::Types::uint64_t cr0 ) -> VOID;
+
+        STATIC auto read_cr8( VOID ) -> ControlRegisters::CR8;
+        STATIC auto write_cr8( IN ControlRegisters::CR8 cr8 ) -> VOID;
+        STATIC auto read_cr4( VOID ) -> ControlRegisters::CR4;
+        STATIC auto write_cr4( IN ControlRegisters::CR4 cr4 ) -> VOID;
+        STATIC auto read_cr3( VOID ) -> ControlRegisters::CR3;
+        STATIC auto write_cr3( IN ControlRegisters::CR3 cr3 ) -> VOID;
+        STATIC auto read_cr2( VOID ) -> ControlRegisters::CR2;
+        STATIC auto write_cr2( IN ControlRegisters::CR2 cr2 ) -> VOID;
+        STATIC auto read_cr0( VOID ) -> ControlRegisters::CR0;
+        STATIC auto write_cr0( IN ControlRegisters::CR0 cr0 ) -> VOID;
         STATIC auto invlpg( IN Lib::Types::Ptr< VOID > address ) -> VOID;
         STATIC auto pause( VOID ) -> VOID;
         STATIC auto mfence( VOID ) -> VOID;
@@ -84,10 +60,6 @@ PUBLIC namespace QuantumNEC::Architecture {
         STATIC auto sfence( VOID ) -> VOID;
         STATIC auto set_page_table( IN Lib::Types::Ptr< Lib::Types::uint64_t > mmap ) -> VOID;
         STATIC auto flush_tlb( VOID ) -> VOID;
-
-    private:
-        inline STATIC QuantumNEC::Architecture::GlobalSegmentDescriptor _used gdt[ GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT ][ SEGMENT_DESCRIPTOR_COUNT ] { };
-        inline STATIC QuantumNEC::Architecture::InterruptDescriptor idt[ INTERRUPT_DESCRIPTOR_COUNT ] { };
     };
 
     // cpuid

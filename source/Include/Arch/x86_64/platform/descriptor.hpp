@@ -2,21 +2,19 @@
 #include <Lib/Base/deflib.hpp>
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
-#include <concepts>
+#include <type_traits>
 PUBLIC namespace QuantumNEC::Architecture::Platform {
     /**
      * @brief 描述符管理模板
      * @tparam D 要管理的描述符，约定必须有一个set成员函数，接受一个D*参数，返回D&
      */
-    PUBLIC template < typename D >
-        requires requires( Lib::Types::Ptr< D > test ) {
-            { test->set( test ) } -> std::same_as< D & >;
-        }
+    PUBLIC template < typename DescriptorType, Lib::Types::uint64_t table_count, Lib::Types::uint64_t descriptor_count >
+        requires std::is_compound_v< DescriptorType >
     class Descriptor
     {
     public:
-        explicit( TRUE ) Descriptor( IN Lib::Types::Ptr< D > _descriptor, IN Lib::Types::uint16_t _descriptorCount ) noexcept :
-            xdtr { Lib::Types::uint16_t( sizeof( D ) * _descriptorCount - 1 ), _descriptor } {
+        explicit Descriptor( VOID ) noexcept :
+            xdtr { Lib::Types::uint16_t( sizeof( DescriptorType ) * descriptor_count - 1 ), *this->descriptor_table } {
         }
         virtual ~Descriptor( VOID ) noexcept = default;
 
@@ -29,7 +27,7 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
          * @brief 读取
          * @return 指向Descriptor Table的指针
          */
-        virtual auto read( VOID ) const -> Lib::Types::Ptr< D > = 0;
+        virtual auto read( VOID ) const -> Lib::Types::Ptr< DescriptorType > = 0;
 
     protected:
         /**
@@ -38,7 +36,9 @@ PUBLIC namespace QuantumNEC::Architecture::Platform {
         struct DescriptorRegister
         {
             Lib::Types::uint16_t size { };
-            Lib::Types::Ptr< D > descriptor { };
+            Lib::Types::Ptr< DescriptorType > descriptor { };
         } _packed xdtr;
+
+        inline STATIC DescriptorType descriptor_table[ table_count ][ descriptor_count ];
     };
 }

@@ -28,9 +28,3 @@ _asm_thread_switch_to:
     POP RBP
     STI
     RET  /* 返回到上面switch_to下面的那句注释的RIP */
-.section .data
-.GLOBAL stack_space
-.GLOBAL stack_top
-stack_space = 0x0200000     
-stack_top = stack_space + 0x10000
- 

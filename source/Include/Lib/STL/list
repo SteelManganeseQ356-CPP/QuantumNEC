@@ -4,59 +4,60 @@
 #include <Lib/Types/type_bool.hpp>
 #include <Lib/Types/type_int.hpp>
 #include <Lib/Types/type_ptr.hpp>
+#include <Arch/Arch.hpp>
 #include <concepts>
 PUBLIC namespace QuantumNEC::Lib::STL {
-    PUBLIC typedef struct ListNode
+    PUBLIC struct ListNode
     {
         Lib::Types::Ptr< ListNode > prev { }; /* 上一个节点 */
         Lib::Types::Ptr< ListNode > next { }; /* 下一个节点 */
         Lib::Types::Ptr< VOID > container { };
-    } ListNode;     // 双向链表
-    PUBLIC typedef struct
+    };     // 双向链表
+    PUBLIC struct ListTable
     {
         ListNode head { }; /* 链表头 */
         ListNode end { };  /* 链表尾 */
-    } ListTable;
+    };
 
     /**
      * @brief 初始化链表
      * @param list 待初始化链表的指针
      */
-    PUBLIC auto list_init( IN OUT Lib::Types::Ptr< ListTable > list )->VOID;
+    PUBLIC inline auto list_init( IN OUT Lib::Types::Ptr< ListTable > list )->VOID;
     /**
      * @brief 插入节点到链表末尾
      * @param entry 链表指针
      * @param New 要添加的元素的指针
      */
-    PUBLIC auto list_add_to_end( IN OUT Lib::Types::Ptr< ListTable > entry,
-                                 IN OUT Lib::Types::Ptr< ListNode > New )
+    PUBLIC inline auto list_add_to_end( IN OUT Lib::Types::Ptr< ListTable > entry,
+                                        IN OUT Lib::Types::Ptr< ListNode > New )
         ->VOID;
     /**
      * @brief 插入节点到链表开头
      * @param entry 链表指针
      * @param New  要添加的元素的指针
      */
-    PUBLIC auto list_add_to_head( IN OUT Lib::Types::Ptr< ListTable > entry,
-                                  IN OUT Lib::Types::Ptr< ListNode > New )
+    PUBLIC inline auto list_add_to_head( IN OUT Lib::Types::Ptr< ListTable > entry,
+                                         IN OUT Lib::Types::Ptr< ListNode > New )
         ->VOID;
     /**
      * @brief 删除节点
      * @param entry 要弹出的节点
      */
-    PUBLIC auto list_delete( IN OUT Lib::Types::Ptr< ListNode > entry )->VOID;
+    PUBLIC inline auto list_delete( IN OUT Lib::Types::Ptr< ListNode > entry )->VOID;
 
     /**
      * @brief 将链表第一个元素弹出并返回
      * @param objList 要操作的链表
      * @return 第一个元素
      */
-    PUBLIC auto list_pop( IN OUT Lib::Types::Ptr< ListTable > entry )
+    PUBLIC inline auto list_pop( IN OUT Lib::Types::Ptr< ListTable > entry )
         ->Lib::Types::Ptr< ListNode >;
     /**
      * @brief 判断下一节点是否相同
      * @param entry 要判断的链表
      */
-    PUBLIC auto list_is_empty( IN Lib::Types::Ptr< ListTable > entry )->Types::BOOL;
+    PUBLIC inline auto list_is_empty( IN Lib::Types::Ptr< ListTable > entry )->Types::BOOL;
     /**
      * @brief 在链表中查找节点
      * @param entry 在此链表中查找
@@ -64,20 +65,20 @@ PUBLIC namespace QuantumNEC::Lib::STL {
      * @retval false 查找失败
      * @retval true  找到元素
      */
-    PUBLIC auto list_find( IN Lib::Types::Ptr< ListTable > entry,
-                           IN Lib::Types::Ptr< ListNode > objnode )
+    PUBLIC inline auto list_find( IN Lib::Types::Ptr< ListTable > entry,
+                                  IN Lib::Types::Ptr< ListNode > objnode )
         ->Types::BOOL;
     /**
      * @brief 判断上一节点十分为空
      * @param node 要判断的节点
      */
-    PUBLIC auto list_prev( IN Lib::Types::Ptr< ListNode > node )
+    PUBLIC inline auto list_prev( IN Lib::Types::Ptr< ListNode > node )
         ->Lib::Types::Ptr< ListNode >;
     /**
      * @brief 判断下一节点十分为空
      * @param node 要判断的节点
      */
-    PUBLIC auto list_next( IN Lib::Types::Ptr< ListNode > node )
+    PUBLIC inline auto list_next( IN Lib::Types::Ptr< ListNode > node )
         ->Lib::Types::Ptr< ListNode >;
 
     /**
@@ -91,7 +92,7 @@ PUBLIC namespace QuantumNEC::Lib::STL {
         requires requires( Func f, Lib::Types::Ptr< ListNode > n, Args a ) {
             { f( n, a ) } -> std::same_as< Lib::Types::BOOL >;
         }
-    PUBLIC auto list_traversal( IN OUT Lib::Types::Ptr< ListTable > objList, IN CONST Func func, IN CONST Args arg )
+    PUBLIC inline auto list_traversal( IN OUT Lib::Types::Ptr< ListTable > objList, IN CONST Func func, IN CONST Args arg )
         ->Lib::Types::Ptr< ListNode > {
         Lib::Types::Ptr< ListNode > node { objList->head.next };
         /* 如果队列为空，就必然没有符合条件的结点，故直接返回 NULL */
@@ -114,4 +115,65 @@ PUBLIC namespace QuantumNEC::Lib::STL {
      * @return 链表长度
      */
     PUBLIC auto list_length( IN Lib::Types::Ptr< ListTable > objList )->Lib::Types::size_t;
+}
+
+PUBLIC namespace QuantumNEC::Lib::STL {
+    inline auto list_insert_before = []( IN OUT Lib::Types::Ptr< ListNode > node, IN OUT Lib::Types::Ptr< ListNode > in_before ) -> VOID {
+        in_before->prev->next = node;
+        node->prev = in_before->prev;
+        node->next = in_before;
+        in_before->prev = node;
+    };
+    PUBLIC inline auto list_init( IN OUT Lib::Types::Ptr< ListTable > list )->VOID {
+        list->head.prev = NULL;
+        list->head.next = &list->end;
+        list->end.prev = &list->head;
+        list->end.next = NULL;
+    }
+    PUBLIC inline auto list_add_to_end( IN OUT Lib::Types::Ptr< ListTable > entry, IN OUT Lib::Types::Ptr< ListNode > New )->VOID {
+        list_insert_before( New, &entry->end );
+    }
+
+    PUBLIC inline auto list_add_to_head( IN OUT Lib::Types::Ptr< ListTable > entry, IN OUT Lib::Types::Ptr< ListNode > New )->VOID {
+        list_insert_before( New, entry->head.next );
+    }
+
+    PUBLIC inline auto list_delete( IN OUT Lib::Types::Ptr< ListNode > entry )->VOID {
+        auto status { Architecture::ArchitectureManager< TARGET_ARCH >::disable_interrupt( ) };
+        entry->next->prev = entry->prev;
+        entry->prev->next = entry->next;
+        Architecture::ArchitectureManager< TARGET_ARCH >::set_interrupt( status );
+    }
+    PUBLIC inline auto list_pop( IN OUT Lib::Types::Ptr< ListTable > entry )->Lib::Types::Ptr< ListNode > {
+        Lib::Types::Ptr< ListNode > node { entry->head.next };
+        list_delete( node );
+        return node;
+    }
+    PUBLIC inline auto list_is_empty( IN Lib::Types::Ptr< ListTable > entry )->Lib::Types::BOOL {
+        return entry->head.next == &entry->end ? TRUE : FALSE;
+    }
+
+    PUBLIC inline auto list_prev( IN Lib::Types::Ptr< ListNode > node )->Lib::Types::Ptr< ListNode > {
+        return node->prev ? node->prev : NULL;
+    }
+
+    PUBLIC inline auto list_next( IN Lib::Types::Ptr< ListNode > node )->Lib::Types::Ptr< ListNode > {
+        return node->next ? node->next : NULL;
+    }
+    PUBLIC inline auto list_find( IN Lib::Types::Ptr< ListTable > entry, IN Lib::Types::Ptr< ListNode > objNode )->Lib::Types::BOOL {
+        ListNode near *node { entry->head.next };
+        while ( node != &( entry->end ) ) {
+            if ( node == objNode )
+                return TRUE;
+            node = node->next;
+        }
+        return FALSE;
+    }
+    PUBLIC inline auto list_length( IN Lib::Types::Ptr< ListTable > objList )->Lib::Types::size_t {
+        Types::size_t length { };
+        for ( auto node { objList->head.next }; node != &objList->end; ++length ) {
+            node = node->next;
+        }
+        return length;
+    }
 }

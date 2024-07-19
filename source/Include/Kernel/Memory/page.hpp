@@ -1,5 +1,4 @@
 #pragma once
-#include "Lib/Types/type_base.hpp"
 #include <Kernel/Memory/map.hpp>
 #include <Lib/Base/bitmap.hpp>
 #include <Lib/Types/Uefi.hpp>
@@ -36,19 +35,7 @@ PUBLIC namespace QuantumNEC::Kernel {
         return ( ( (unsigned long)( addr ) + PAGE_4K_SIZE - 1 ) & PAGE_4K_MASK );
     };
     PUBLIC constexpr CONST auto MEMORY_PAGE_DESCRIPTOR { 2048 };
-    PUBLIC constexpr CONST auto PAGE_XD { 1UL << 63 };
-    PUBLIC constexpr CONST auto PAGE_PAT { 1UL << 7 };
-    PUBLIC constexpr CONST auto PAGE_GLOBAL { 1UL << 8 };
-    PUBLIC constexpr CONST auto PAGE_PS { 1UL << 7 };
-    PUBLIC constexpr CONST auto PAGE_DIRTY { 1UL << 6 };
-    PUBLIC constexpr CONST auto PAGE_ACCESSED { 1UL << 5 };
-    PUBLIC constexpr CONST auto PAGE_PCD { 1UL << 4 };
-    PUBLIC constexpr CONST auto PAGE_PWT { 1UL << 3 };
-    PUBLIC constexpr CONST auto PAGE_PRESENT { 1UL << 0 };
-    PUBLIC constexpr CONST auto PAGE_RW_W { 1 << 1 };
-    PUBLIC constexpr CONST auto PAGE_US_S { 1UL << 0 };
-    PUBLIC constexpr CONST auto PAGE_US_U { 1 << 2 };
-    PUBLIC constexpr CONST auto PAGE_RW_R { 1UL << 0 };
+
     /**
      * @brief 将物理地址转换为线性地址
      */
@@ -91,23 +78,24 @@ PUBLIC namespace QuantumNEC::Kernel {
         virtual ~PageMemory( VOID ) noexcept = default;
 
     public:
-        STATIC auto malloc( IN Lib::Types::size_t size, IN MemoryPageType type ) -> Lib::Types::Ptr< VOID >;
-        STATIC auto free( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size, IN MemoryPageType type ) -> VOID;
+        auto malloc( IN Lib::Types::size_t size, IN MemoryPageType type ) -> Lib::Types::Ptr< VOID >;
+        auto free( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size, IN MemoryPageType type ) -> VOID;
 
     private:
-        STATIC auto malloc_2M_page( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
-        STATIC auto free_2M_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size ) -> VOID;
-        STATIC auto malloc_4K_page( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
-        STATIC auto free_4K_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size ) -> VOID;
-        STATIC auto malloc_1G_page( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
-        STATIC auto free_1G_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size ) -> VOID;
+        auto malloc_2M_page( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
+        auto free_2M_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size ) -> VOID;
+        auto malloc_4K_page( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
+        auto free_4K_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size ) -> VOID;
+        auto malloc_1G_page( IN Lib::Types::size_t size ) -> Lib::Types::Ptr< VOID >;
+        auto free_1G_page( IN Lib::Types::Ptr< VOID > address, IN Lib::Types::size_t size ) -> VOID;
 
     public:
-        inline STATIC Lib::Types::size_t memory_total { };
-        inline STATIC Lib::Types::size_t general_memory_total { };
+        Lib::Types::size_t memory_total { };
+        Lib::Types::size_t general_memory_total { };
 
     private:
-        inline STATIC BitMapEntry page_descriptor_entry[ MEMORY_PAGE_DESCRIPTOR ] { };
-        inline STATIC Lib::Base::Bitmap bitmap_ { };
+        BitMapEntry page_descriptor_entry[ MEMORY_PAGE_DESCRIPTOR ] { };
+        Lib::Base::Bitmap bitmap_ { };
     };
+ 
 }

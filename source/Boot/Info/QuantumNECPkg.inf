@@ -6,17 +6,15 @@
     VERSION_STRING = 0.2
     ENTRY_POINT = UefiMain
 [Sources]
-    ../Main.cpp
-    ../Boot.cpp
-    ../ELF.cpp
-    ../File.cpp
-    ../Logger.cpp
-    ../Motion.cpp
-    ../Graphics.cpp
-    ../Memory.cpp
-    ../Utils.cpp
-    ../Acpi.cpp
-    ../Font.cpp
+    ../main.cpp
+    ../boot.cpp
+    ../kloader.cpp
+    ../file.cpp
+    ../graphics.cpp
+    ../memory.cpp
+    ../utils.cpp
+    ../acpi.cpp
+    ../font.cpp
 [Packages]
     MdePkg/MdePkg.dec
     MdeModulePkg/MdeModulePkg.dec

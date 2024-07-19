@@ -2,13 +2,13 @@
 #include <Lib/Base/deflib.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Kernel/task.hpp>
-
+#include <Kernel/memory.hpp>
 PUBLIC namespace QuantumNEC::Architecture {
-    CPUs::CPUs( VOID ) noexcept :
-        InterruptDescriptorManager { idt, Architecture::INTERRUPT_DESCRIPTOR_COUNT },
-        GlobalSegmentDescriptorManager { gdt, Architecture::SEGMENT_DESCRIPTOR_COUNT } {
+    CPUs::CPUs( VOID ) noexcept {
         using namespace QuantumNEC::Lib::IO;
         using namespace QuantumNEC::Lib::Types;
+        InterruptDescriptorTable idt { };
+        GlobalSegmentDescriptorTable gdt { };
         // CPU Management初始化
         Lib::IO::sout[ Lib::IO::ostream::HeadLevel::OK ] << "Initialize the CPU management." << Lib::IO::endl;
         using enum DisplayColor;
@@ -72,9 +72,7 @@ PUBLIC namespace QuantumNEC::Architecture {
     }
     auto CPUs::switch_to( IN OUT Lib::Types::Ptr< VOID > current, IN Lib::Types::Ptr< VOID > next )->VOID {
         using Kernel::Task;
-        volatile Lib::Types::Ptr< Task::ThreadPCB > current_pcb { reinterpret_cast< Lib::Types::Ptr< Task::ThreadPCB > >( current ) }, next_pcb { reinterpret_cast< Lib::Types::Ptr< Task::ThreadPCB > >( next ) };
-        current_pcb->cpu_frame = reinterpret_cast< Lib::Types::Ptr< Kernel::Task::ThreadFrame > >( reinterpret_cast< Lib::Types::uint64_t >( current_pcb->stack ) - sizeof *current_pcb + Kernel::TASK_STACK_SIZE - sizeof *current_pcb->cpu_frame );
-        next_pcb->cpu_frame = reinterpret_cast< Lib::Types::Ptr< Kernel::Task::ThreadFrame > >( reinterpret_cast< Lib::Types::uint64_t >( next_pcb->stack ) - sizeof *next_pcb + Kernel::TASK_STACK_SIZE - sizeof *next_pcb->cpu_frame );
+        auto current_pcb { reinterpret_cast< Lib::Types::Ptr< Kernel::Thread > >( current ) }, next_pcb { reinterpret_cast< Lib::Types::Ptr< Kernel::Thread > >( next ) };
         ASM( "PUSHQ %1\n\t"
              "PUSHQ %0\n\t"
              "LEAQ _asm_thread_switch_to(%%RIP), %%RAX\n\t"
@@ -204,53 +202,43 @@ PUBLIC namespace QuantumNEC::Architecture {
              : "memory" );
     }
 
-    auto CPUs::read_cr4( VOID )->Lib::Types::uint64_t {
-        long cr4 { };
+    auto CPUs::read_cr4( VOID )->ControlRegisters::CR4 {
+        ControlRegisters::CR4 cr4 { };
         ASM( "movq %%cr4, %0" : "=r"( cr4 )::"memory" );
-        return Lib::Types::uint64_t( cr4 );
+        return cr4;
     }
 
-    auto CPUs::write_cr4( IN Lib::Types::uint64_t cr4 )->VOID {
-        ASM( "movq %0, %%cr4" ::"r"( long( cr4 ) ) : "memory" );
+    auto CPUs::write_cr4( IN ControlRegisters::CR4 cr4 )->VOID {
+        ASM( "movq %0, %%cr4" ::"r"( cr4 ) : "memory" );
     }
-    auto CPUs::read_cr3( VOID )->Lib::Types::uint64_t {
-        long cr3 { };
+    auto CPUs::read_cr3( VOID )->ControlRegisters::CR3 {
+        ControlRegisters::CR3 cr3 { };
         ASM( "movq %%cr3, %0" : "=r"( cr3 )::"memory" );
-        return Lib::Types::uint64_t( cr3 );
+        return cr3;
     }
 
-    auto CPUs::write_cr3( IN Lib::Types::uint64_t cr3 )->VOID {
-        ASM( "movq %0, %%cr3" ::"r"( long( cr3 ) ) : "memory" );
+    auto CPUs::write_cr3( IN ControlRegisters::CR3 cr3 )->VOID {
+        ASM( "movq %0, %%cr3" ::"r"( cr3 ) : "memory" );
     }
 
-    auto CPUs::read_cr2( VOID )->Lib::Types::uint64_t {
-        long cr2 { };
+    auto CPUs::read_cr2( VOID )->ControlRegisters::CR2 {
+        ControlRegisters::CR2 cr2 { };
         ASM( "movq %%cr2, %0" : "=r"( cr2 )::"memory" );
-        return Lib::Types::uint64_t( cr2 );
+        return cr2;
     }
 
-    auto CPUs::write_cr2( IN Lib::Types::uint64_t cr2 )->VOID {
-        ASM( "movq %0, %%cr2" ::"r"( long( cr2 ) ) : "memory" );
+    auto CPUs::write_cr2( IN ControlRegisters::CR2 cr2 )->VOID {
+        ASM( "movq %0, %%cr2" ::"r"( cr2 ) : "memory" );
     }
 
-    auto CPUs::read_cr1( VOID )->Lib::Types::uint64_t {
-        long cr1 { };
-        ASM( "movq %%cr1, %0" : "=r"( cr1 )::"memory" );
-        return Lib::Types::uint64_t( cr1 );
-    }
-
-    auto CPUs::write_cr1( IN Lib::Types::uint64_t cr1 )->VOID {
-        ASM( "movq %0, %%cr1" ::"r"( long( cr1 ) ) : "memory" );
-    }
-
-    auto CPUs::read_cr0( VOID )->Lib::Types::uint64_t {
-        long cr0 { };
+    auto CPUs::read_cr0( VOID )->ControlRegisters::CR0 {
+        ControlRegisters::CR0 cr0 { };
         ASM( "movq %%cr0, %0" : "=r"( cr0 )::"memory" );
-        return Lib::Types::uint64_t( cr0 );
+        return cr0;
     }
 
-    auto CPUs::write_cr0( IN Lib::Types::uint64_t cr0 )->VOID {
-        ASM( "movq %0, %%cr0" ::"r"( long( cr0 ) ) : "memory" );
+    auto CPUs::write_cr0( IN ControlRegisters::CR0 cr0 )->VOID {
+        ASM( "movq %0, %%cr0" ::"r"( cr0 ) : "memory" );
     }
 
     auto CPUs::invlpg( IN Lib::Types::Ptr< VOID > address )->VOID {
@@ -269,6 +257,7 @@ PUBLIC namespace QuantumNEC::Architecture {
         ASM( "sfence" ::: "memory" );
     }
     auto CPUs::set_page_table( IN Lib::Types::Ptr< Lib::Types::uint64_t > mmap )->VOID {
-        ASM( "MOVQ %0, %%CR3\n\t" ::"r"( mmap ) : "memory" );
+        ASM( "movq %0, %%cr3\n\t" ::"r"( mmap ) );
+        // write_cr3(  );
     }
 }

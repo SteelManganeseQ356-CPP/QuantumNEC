@@ -2,23 +2,31 @@
 #include <Lib/Types/Uefi.hpp>
 #include <Kernel/Task/process.hpp>
 #include <Kernel/Task/thread.hpp>
+#include <Lib/IO/Stream/iostream>
 PUBLIC namespace QuantumNEC::Kernel {
-    PUBLIC class Task :
-        public Thread
+    PUBLIC class Task
     {
     public:
         explicit Task( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept;
         virtual ~Task( VOID ) noexcept;
 
-    public:
-        STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN CONST TaskType type, IN IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN CONST Lib::Types::int64_t flags ) -> Lib::Types::Ptr< VOID > {
-            if ( type == TaskType::PF_KERNEL_PROCESS || type == TaskType::PF_USER_PROCESS ) {
-                return Process::create( entry, arg, type, name, priority, flags );
+        auto create( IN CONST Lib::Types::char_t *_name, IN Lib::Types::int64_t _priority, IN Lib::Types::int64_t _flags, IN TaskFunction _entry, IN TaskArg _arg ) -> VOID * {
+            auto pcb { Memory::page->malloc( 1, PageMemory::MemoryPageType::PAGE_2M ) };
+            if ( ( _flags & TASK_FLAG_KERNEL_PROCESS ) || ( _flags & TASK_FLAG_USER_PROCESS ) ) {
+                return (VOID *)new ( pcb ) Process { _name, _priority, _flags, _entry, _arg };
             }
-            else if ( type == TaskType::PF_KERNEL_THREAD || type == TaskType::PF_USER_THREAD ) {
-                return Thread::create( entry, arg, type, name, priority, flags );
+            else if ( _flags & TASK_FLAG_THREAD ) {
+                return (VOID *)new ( pcb ) Thread { _name, _priority, _flags, _entry, _arg };
             }
-            return NULL;
+            else {
+                Memory::page->free( pcb, 1, PageMemory::MemoryPageType::PAGE_2M );
+                return NULL;
+            }
         }
+
+    public:
+        inline STATIC Process *main_task;
+        inline STATIC Process *idle_task;
+        inline STATIC Process *ready_task;
     };
 }

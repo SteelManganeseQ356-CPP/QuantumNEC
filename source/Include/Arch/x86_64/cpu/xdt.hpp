@@ -11,6 +11,7 @@ PUBLIC namespace QuantumNEC::Architecture {
      */
     PUBLIC struct InterruptDescriptor
     {
+    private:
         Lib::Types::uint16_t offset_low;    /* 偏移15~0 */
         Lib::Types::uint16_t selector;      /* 目标代码段选择子 */
         Lib::Types::uint8_t ist;            /* ist和空值 */
@@ -18,16 +19,26 @@ PUBLIC namespace QuantumNEC::Architecture {
         Lib::Types::uint16_t offset_middle; /* 偏移31~16 */
         Lib::Types::uint32_t offset_high;   /* 偏移63~32 */
         Lib::Types::uint32_t reserved;      /* 保留 */
-        auto set( IN Lib::Types::Ptr< InterruptDescriptor > descriptor ) -> Lib::Types::L_Ref< InterruptDescriptor > {
-            *this = *descriptor;
-            return *this;
-        }
+    public:
+        /**
+         * @brief 设置中断描述符
+         * @param entry_point 中断入口函数头
+         * @param selector 选择器
+         * @param ist 状态
+         * @param attributes 属性
+         * @retval 构建好的中断描述符
+         */
+        auto make(
+            IN CONST Lib::Types::uint64_t entry_point,
+            IN CONST Lib::Types::uint16_t selector,
+            IN CONST Lib::Types::uint8_t ist,
+            IN CONST Lib::Types::uint8_t attributes ) -> Lib::Types::L_Ref< InterruptDescriptor >;
     } _packed;
     /**
      * @brief 中断描述符表管理器
      */
-    PUBLIC class InterruptDescriptorManager :
-        Platform::Descriptor< InterruptDescriptor >
+    PUBLIC class InterruptDescriptorTable :
+        Platform::Descriptor< InterruptDescriptor, INTERRUPT_DESCRIPTOR_TABLE_COUNT, INTERRUPT_DESCRIPTOR_COUNT >
     {
     private:
         /**
@@ -55,13 +66,8 @@ PUBLIC namespace QuantumNEC::Architecture {
         } _packed;
 
     public:
-        /**
-         * @brief 初始化中断描述符表
-         * @param _descriptor 要绑定的中断描述符表
-         * @param _num 要绑定的中断描述符数量
-         */
-        explicit( TRUE ) InterruptDescriptorManager( IN Lib::Types::Ptr< InterruptDescriptor > _descriptor, IN Lib::Types::uint16_t _num ) noexcept;
-        virtual ~InterruptDescriptorManager( VOID ) noexcept = default;
+        explicit InterruptDescriptorTable( VOID ) noexcept;
+        virtual ~InterruptDescriptorTable( VOID ) noexcept = default;
 
     public:
         /**
@@ -73,23 +79,6 @@ PUBLIC namespace QuantumNEC::Architecture {
          * @return 中断描述表开头地址
          */
         virtual auto read( VOID ) const -> Lib::Types::Ptr< InterruptDescriptor > override;
-
-    public:
-        /**
-         * @brief 设置中断描述符
-         * @param index 中断号
-         * @param entryPoint 中断入口函数头
-         * @param selector 选择器
-         * @param ist 状态
-         * @param attributes 属性
-         * @return 构建好的中断描述符
-         */
-        virtual auto make_descriptor(
-            IN CONST Lib::Types::uint16_t index,
-            IN CONST Lib::Types::uint64_t entry_point,
-            IN CONST Lib::Types::uint16_t selector,
-            IN CONST Lib::Types::uint8_t ist,
-            IN CONST Lib::Types::uint8_t attributes ) -> Lib::Types::L_Ref< InterruptDescriptor > final;
 
     public:
         using InterruptEntry = Lib::Types::FuncPtr< Lib::Types::Ptr< CONST InterruptFrame >, Lib::Types::Ptr< CONST InterruptFrame > >;
@@ -112,13 +101,14 @@ PUBLIC namespace QuantumNEC::Architecture {
         STATIC auto set_exception_handler( IN CONST Lib::Types::uint8_t vector, IN InterruptEntry handle ) -> VOID;
     };
     /**
-     * @brief 全局描述符
+     * @brief 全局段描述符
      */
     PUBLIC struct GlobalSegmentDescriptor
     {
+    private:
         /*  全局段描述符内部安排
             8192个一组
-            1 ~ 10 局部段描述符表(LDT)
+            1 ~ 10 段描述符(SD)
             11 任务状态段描述符(TSS)低地址
             12 任务状态段描述符(TSS)高地址
             13 ~ 8192 保留，作为以后扩充
@@ -129,42 +119,54 @@ PUBLIC namespace QuantumNEC::Architecture {
         Lib::Types::uint8_t access_right;     // 40 - 47 flag descType privilege isVaild
         Lib::Types::uint8_t limit_high;       // 48 - 55 limit1 usused
         Lib::Types::uint8_t base_high;        // 56 - 63 base2
-        auto set( IN Lib::Types::Ptr< GlobalSegmentDescriptor > descriptor ) -> Lib::Types::L_Ref< GlobalSegmentDescriptor > {
-            *this = *descriptor;
-            return *this;
-        }
+    public:
+        /**
+         * @brief 为全局描述符制作段描述符
+         * @retval 制作好的全局描述符
+         */
+        auto make(
+            IN Lib::Types::uint64_t base,
+            IN Lib::Types::uint64_t limit,
+            IN Lib::Types::uint64_t access ) -> Lib::Types::L_Ref< GlobalSegmentDescriptor >;
     } _packed;
     /**
      * @brief 任务状态段描述符
      */
     PUBLIC struct TaskStateSegmentDescriptor64
     {
+    private:
         Lib::Types::uint32_t reserved1;
         Lib::Types::uint64_t rsp[ 3 ];
         Lib::Types::uint64_t reserved2;
         Lib::Types::uint64_t ist[ 7 ];
         Lib::Types::uint64_t reserved3;
         Lib::Types::uint32_t io_map_base_address;
-        auto set( IN Lib::Types::Ptr< TaskStateSegmentDescriptor64 > descriptor ) -> Lib::Types::L_Ref< TaskStateSegmentDescriptor64 > {
-            *this = *descriptor;
+
+    public:
+        auto get( VOID ) noexcept -> Lib::Types::L_Ref< CONST TaskStateSegmentDescriptor64 > {
             return *this;
+        }
+        template < Lib::Types::uint64_t task_stack_size >
+        auto set_rsp0( Lib::Types::Ptr< VOID > pcb ) noexcept {
+            this->rsp[ 0 ] = reinterpret_cast< Lib::Types::uint64_t >( pcb ) + task_stack_size;
+        }
+        auto set_io_map_base_address( IN Lib::Types::uint16_t io_map_base_address ) noexcept {
+            this->io_map_base_address = io_map_base_address;
+        }
+        auto load_tr( IN Lib::Types::size_t segment ) noexcept {
+            ASM( "ltr %%ax" ::"a"( segment ) : "memory" );
         }
     } _packed;
     using TaskStateSegmentDescriptor = TaskStateSegmentDescriptor64;
     /**
-     * @brief 全局描述符管理
+     * @brief 全局段描述符表
      */
-    PUBLIC class GlobalSegmentDescriptorManager :
-        Platform::Descriptor< GlobalSegmentDescriptor >
+    PUBLIC class GlobalSegmentDescriptorTable :
+        Platform::Descriptor< GlobalSegmentDescriptor, GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT, SEGMENT_DESCRIPTOR_COUNT >
     {
     public:
-        /**
-         * @brief 初始化全局描述符
-         * @param _descriptor 要绑定的全局描述符表
-         * @param _num 要绑定的全局描述符数量
-         */
-        explicit( TRUE ) GlobalSegmentDescriptorManager( IN GlobalSegmentDescriptor _descriptor[ GLOBAL_SEGMENT_DESCRIPTOR_TABLE_COUNT ][ SEGMENT_DESCRIPTOR_COUNT ], IN Lib::Types::uint16_t _num ) noexcept;
-        virtual ~GlobalSegmentDescriptorManager( VOID ) noexcept = default;
+        explicit GlobalSegmentDescriptorTable( VOID ) noexcept;
+        virtual ~GlobalSegmentDescriptorTable( VOID ) noexcept = default;
 
     public:
         /**
@@ -178,37 +180,6 @@ PUBLIC namespace QuantumNEC::Architecture {
         virtual auto read( VOID ) CONST->Lib::Types::Ptr< GlobalSegmentDescriptor > override;
 
     public:
-        /**
-         * @brief 为全局描述符制作段描述符
-         * @param descriptor 要绑定的全局描述符
-         * @param index 编号
-         */
-        STATIC auto make_descriptor(
-            IN Lib::Types::Ptr< GlobalSegmentDescriptor > descriptor,
-            IN Lib::Types::uint8_t index,
-            IN Lib::Types::uint64_t base,
-            IN Lib::Types::uint64_t limit,
-            IN Lib::Types::uint64_t access ) -> Lib::Types::L_Ref< GlobalSegmentDescriptor >;
-
-    public:
-        STATIC auto set_tss( IN Lib::Types::size_t count, Lib::Types::R_Ref< TaskStateSegmentDescriptor64 > _tss ) -> VOID {
-            tss[ count ] = _tss;
-        }
-        STATIC auto get_tss( IN Lib::Types::size_t count ) -> Lib::Types::L_Ref< TaskStateSegmentDescriptor64 > {
-            return tss[ count ];
-        }
-        STATIC auto set_tss_rsp0( IN Lib::Types::size_t count, Lib::Types::Ptr< VOID > pcb, IN Lib::Types::uint64_t task_stack_size ) -> VOID {
-            tss[ count ].rsp[ 0 ] = reinterpret_cast< Lib::Types::uint64_t >( pcb ) + task_stack_size;
-        }
-        STATIC auto set_tss_iomap_base( IN Lib::Types::size_t count, IN Lib::Types::uint16_t iomap_base ) -> VOID {
-            tss[ count ].io_map_base_address = iomap_base;
-        }
-        STATIC auto load_tr( IN Lib::Types::size_t segment ) -> VOID;
-
-    private:
-        /**
-         * @brief TSS描述符
-         */
         inline STATIC TaskStateSegmentDescriptor64 tss[ TASK_STATE_SEGMENT_DESCRIPTOR_COUNT ] { };
     };
 }

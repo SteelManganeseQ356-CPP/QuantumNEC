@@ -4,6 +4,7 @@
 .GLOBAL InterruptHandler\n
 .section .text
 InterruptHandler\n:
+    CLI
     PUSH 0                                    
     PUSH \n
     JMP save_all_registers
@@ -12,7 +13,8 @@ InterruptHandler\n:
 .macro HANDLE_ENTRY_ERROR n
 .GLOBAL InterruptHandler\n
 .section .text
-InterruptHandler\n:                   
+InterruptHandler\n:
+    CLI
     NOP
     PUSH \n
     JMP save_all_registers
@@ -21,7 +23,6 @@ InterruptHandler\n:
 .EXTERN general_interrupt_handler
 .GLOBAL save_all_registers
 save_all_registers:
-    CLI
     PUSH R15
     PUSH R14
     PUSH R13
@@ -45,9 +46,9 @@ save_all_registers:
     PUSH RAX
     MOV  RAX, DS
     PUSH RAX
-    MOV  RAX, SS
-    MOV  DS, RAX
-    MOV  ES, RAX
+    // MOV  RAX, 0x10
+    // MOV  DS, RAX
+    // MOV  ES, RAX
     MOV  RDI, RSP
     CALL general_interrupt_handler
 .GLOBAL return_from_isr

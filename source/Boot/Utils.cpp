@@ -1,45 +1,32 @@
-#include <Boot/Utils.hpp>
-#include <Boot/Include.hpp>
-#include <Boot/Data.hpp>
-namespace QuantumNEC::Boot {
-
-bool PowerU64( IN UINT64 X, IN UINTN Y ) {
-    if ( !X || !Y ) {
-        return !X ? false : true;
-    }
-    UINT64 Result { X };
-    while ( --Y ) {
-        Result *= X;
-    }
-    return Result;
-}
-}     // namespace QuantumNEC::Boot
-VOID operator delete( VOID *, size_t ) noexcept {
+#include <Boot/utils.hpp>
+#include <Library/MemoryAllocationLib.h>
+using namespace QuantumNEC::Boot;
+auto operator delete( VOID *, unsigned long int ) noexcept -> VOID {
     return;
 }
-VOID operator delete( VOID *address ) noexcept {
+auto operator delete( VOID *address ) noexcept -> VOID {
     if ( !address )
         return;
     gBS->FreePool( address );
     return;
 }
-VOID operator delete[]( VOID *address ) noexcept {
+auto operator delete[]( VOID *address ) noexcept -> VOID {
     operator delete( address );
     return;
 }
-VOID *operator new( size_t size ) noexcept {
+auto operator new( unsigned long int size ) noexcept -> VOID * {
     if ( size < 1 ) {
         return nullptr;
     }
-    VOID *RetVal { };
-    if ( gBS->AllocatePool( EfiLoaderData, static_cast< UINTN >( size ), &RetVal ) != EFI_SUCCESS ) {
+    VOID *frame { };
+    if ( gBS->AllocatePool( EfiLoaderData, static_cast< uint64_t >( size ), &frame ) != EFI_SUCCESS ) {
         return nullptr;
     }
-    return RetVal;
+    return frame;
 }
-VOID *operator new[]( size_t cb ) noexcept {
+auto operator new[]( unsigned long int cb ) noexcept -> VOID * {
     return operator new( cb );
 }
-VOID *operator new( size_t, VOID *address ) noexcept {
+auto operator new( unsigned long int, VOID *address ) noexcept -> VOID * {
     return address;
 }

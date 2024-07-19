@@ -1,51 +1,32 @@
 #pragma once
-#include <Boot/Acpi.hpp>
-#include <Boot/Data.hpp>
-#include <Boot/ELF.hpp>
-#include <Boot/Font.hpp>
-#include <Boot/Graphics.hpp>
-#include <Boot/Logger.hpp>
-#include <Boot/Memory.hpp>
-#include <Boot/Motion.hpp>
+#include <Boot/base.hpp>
+#include <Boot/memory.hpp>
 namespace QuantumNEC::Boot {
+class BootService
+{
+public:
+    explicit BootService( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable ) noexcept;
+    ~BootService( VOID ) noexcept {
+    }
 
-typedef struct
-{
-    GraphicsConfig GraphicsData;
-    MemoryConfig MemoryData;
-    AcpiConfig AcpiData;
-    UnicodeTTF FontData;
-    BmpConfig BmpData;
-    auto set( VOID ) -> VOID {
-    }
-    auto put( VOID ) -> VOID {
-    }
-} _packed BootConfig;
-class BootServiceMain :
-    public BootServiceGraphics,
-    public BootServiceELF,
-    public BootServiceMemory,
-    public BootServiceAcpi,
-    public BootServiceFont
-{
 public:
     /**
      * @brief 禁用计时器
      */
-    auto closeTimer( VOID ) -> EFI_STATUS;
+    auto close_timer( VOID ) -> EFI_STATUS {
+        // 禁用看门狗计时器
+        return gBS->SetWatchdogTimer( 0, 0, 0, NULL );
+    }
     /**
-     * @brief 跳转内核
-     * @param _config 启动时获取的信息，要传递给内核
+     * @brief 退出启动时服务
      */
-    auto jumpToKernel( IN BootConfig *_config ) -> EFI_STATUS;
+    auto exit_boot_service( IN MemoryService &ms ) {
+        return gBS->ExitBootServices( GlobalImageHandle, ms.get_memory_key( ) );
+    }
 
-public:
-    explicit BootServiceMain( IN BootConfig * ) noexcept( true );
-    virtual ~BootServiceMain( VOID ) noexcept( true ) = default;
+    inline STATIC EFI_HANDLE GlobalImageHandle { };
+
+    inline STATIC EFI_SYSTEM_TABLE *GlobalSystemTable { };
 };
-inline auto initializeGlobalData( IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable ) -> VOID {     // 初始化全局变量
-    Boot::GlobalImageHandle = ImageHandle;
-    Boot::GlobalSystemTable = SystemTable;
-    return;
-}
+
 }     // namespace QuantumNEC::Boot

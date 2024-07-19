@@ -1,4 +1,4 @@
-#include "Arch/x86_64/platform/syscall.hpp"
+#include "Kernel/Task/process.hpp"
 #include <Arch/Arch.hpp>
 #include <Kernel/kernel.hpp>
 #include <Kernel/memory.hpp>
@@ -10,43 +10,8 @@ using namespace QuantumNEC::Lib::Types;
 
 //////////////////////////////////////分割线///////////////////////////////////////////////
 /////////////////////////////////////以下为测试/////////////////////////////////////////////
-Lib::Types::int64_t ThreadA( Lib::Types::uint64_t code ) {
-    // Kernel::Task::MessageManagement message { };
-    // message->se
-
-    Lib::IO::sout << "Thread A : " << code << '\n';
-    Lib::IO::sout << "PID:" << Kernel::Task::get_current< Kernel::Task::ThreadPCB >( )->PID << '\n';
-
-    while ( true )
-        ;
-
-    return 0;
-}
-Lib::Types::int64_t ThreadB( Lib::Types::uint64_t code ) {
-    Lib::IO::sout << "Thread B : " << code << '\n';
-    Lib::IO::sout << "PID:" << Kernel::Task::get_current< Kernel::Task::ThreadPCB >( )->PID << '\n';
-    while ( true )
-        ;
-
-    return 0;
-}
-Lib::Types::int64_t ThreadC( Lib::Types::uint64_t code ) {
-    Lib::IO::sout << "Thread C : " << code << '\n';
-    Lib::IO::sout << "PID:" << Kernel::Task::get_current< Kernel::Task::ThreadPCB >( )->PID << '\n';
-
-    while ( true )
-        ;
-
-    return 0;
-}
 
 Lib::Types::int64_t ProcC( Lib::Types::uint64_t code ) {
-    // Kernel::Message message { };
-    // while ( true ) {
-    //     message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_RECEIVE, Kernel::ANY );
-    //     Lib::IO::sout << "C:" << 3 << "\n";
-    //     message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 3 );
-    // }
     Lib::IO::sout << "Process C: " << code << '\n';
 
     while ( true )
@@ -55,12 +20,6 @@ Lib::Types::int64_t ProcC( Lib::Types::uint64_t code ) {
 }
 Lib::Types::int64_t ProcD( Lib::Types::uint64_t code ) {
     Lib::IO::sout << "Process D: " << code << "\n";
-
-    // Kernel::Message message { };
-    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 2 );
-    // Lib::IO::sout << "D\n";
-    // message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 2 );
-
     while ( true )
         ;
 
@@ -73,11 +32,16 @@ Lib::Types::int64_t ProcE( Lib::Types::uint64_t code ) {
     //     Lib::IO::sout << "E:" << ++i << '\n';
 
     // }
+
     Lib::IO::sout << "Process E: " << code << "\n";
-    // int i = 0;
+    ASM( "INT $0x80\n\t" ::"a"( 3 ), "D"( 3 ) );
+    // Kernel::Message message { };
     // while ( true ) {
-    //     Lib::IO::sout << "E: " << ++i << "\n";
+    //     message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_RECEIVE, Kernel::ANY );
+    //     Lib::IO::sout << "E:\n";
+    //     message.send_receive( Architecture::ArchitectureManager< TARGET_ARCH >::SyscallFunction::MESSAGE_SEND, 4 );
     // }
+
     while ( true )
         ;
     return 0;
@@ -92,6 +56,7 @@ Lib::Types::int64_t ProcF( Lib::Types::uint64_t code ) {
         ;
     return 0;
 }
+
 //////////////////////////////////////分割线///////////////////////////////////////////////
 
 _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
@@ -114,7 +79,6 @@ _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
 
     Lib::STL::strcpy( b, buf );
     Lib::IO::sout << b << " " << (void *)b << "\n";
-
     delete[] b;
 
     auto c = new char[ 0x12 ];
@@ -134,21 +98,25 @@ _C_LINK auto micro_kernel_entry( IN Ptr< BootConfig > config ) -> SystemStatus {
     auto g = new char[ 0x200000 ];
     Lib::STL::strcpy( g, buf );
     Lib::IO::sout << g << ' ' << (void *)g << '\n';
+    {
+        Lib::STL::string str { "Hell oworl" };
+        str += " CAO\n";
+        Lib::IO::sout << str.c_str( );
+    }
 
     Lib::IO::sout << "Test 2 : Make 2 processes-------------------------------\n";
     /* 开启中断 */
-    //__asm__ __volatile__( "int $0x80\n\t" );
 
-    task.create( ProcC, 100, Kernel::Task::TaskType::PF_USER_PROCESS, "Process C", 100, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
-    task.create( ProcD, 20, Kernel::Task::TaskType::PF_USER_PROCESS, "Process D", 31, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
-    task.create( ProcE, 20, Kernel::Task::TaskType::PF_USER_PROCESS, "Process E", 31, static_cast< Lib::Types::int64_t >( Kernel::Task::TaskFlags::FPU_UNUSED ) );
+    task.create( "Process C", 31, Kernel::TASK_FLAG_FPU_UNUSED | Kernel::TASK_FLAG_USER_PROCESS, ProcC, 0 );
+    task.create( "Process D", 31, Kernel::TASK_FLAG_FPU_UNUSED | Kernel::TASK_FLAG_USER_PROCESS, ProcD, 0 );
     // Kernel::Task::create( ProcE, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process E", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
     // Kernel::Task::create( ThreadA, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread A", 1000, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
     // Kernel::Task::create( ThreadB, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread B", 31, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
     // Kernel::Task::create( ProcF, 20, Kernel::Task::TaskType::PF_KERNEL_PROCESS, "Process F", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
     // Kernel::Task::create( ThreadC, 20, Kernel::Task::TaskType::PF_KERNEL_THREAD, "Thread C", 100, static_cast< Lib::Types::int64_t >( Kernel::TaskManagement::TaskFlags::FPU_UNUSED ) );
 
-    task.block( Kernel::Task::TaskStatus::BLOCKED );
+    task.main_task->block( Kernel::TaskStatus::BLOCKED );     // 锁死主进程，相当于直接抛弃
+
     Architecture::ArchitectureManager< TARGET_ARCH >::enable_interrupt( );
 
     while ( true )

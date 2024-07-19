@@ -28,7 +28,7 @@ PUBLIC namespace QuantumNEC::Architecture {
             MESSAGE_RECEIVE,
             MESSAGE_SEND_RECEIVE,
         };
-        using SyscallEntry = Lib::Types::FuncPtr< Lib::Types::Ptr< Architecture::CPUs::InterruptFrame >, Lib::Types::Ptr< Architecture::CPUs::InterruptFrame > >;
+        using SyscallEntry = Lib::Types::FuncPtr< Lib::Types::Ptr< Architecture::InterruptDescriptorTable::InterruptFrame >, Lib::Types::Ptr< Architecture::InterruptDescriptorTable::InterruptFrame > >;
 
     public:
         explicit Syscall( VOID ) noexcept;
@@ -37,25 +37,18 @@ PUBLIC namespace QuantumNEC::Architecture {
     public:
         STATIC auto set_syscall_table( IN Lib::Types::uint64_t index, IN SyscallEntry entry ) -> VOID;
         STATIC auto get_syscall_table( VOID ) -> Lib::Types::Ptr< SyscallEntry >;
-
-    public:
-        /**
-         * @brief 消息发送-接收函数
-         * 用处是发送或者接收函数，可视作一个系统调用
-         * @param function 功能(发送，接收或者两个都要)
-         * @param source_destination 发送者/接收者
-         */
-        STATIC auto send_receive( IN SyscallFunction function, IN Lib::Types::uint64_t source_destination ) -> SyscallStatus;
     };
     PUBLIC inline auto __syscall( IN Syscall::SyscallFunction function, IN auto arg1, IN auto arg2, IN auto arg3, IN auto arg4, IN auto arg5, IN auto arg6 ) {
         Syscall::SyscallStatus state { };
+        register auto _a0 __asm__( "rax" ) = function;
         register auto _a1 __asm__( "rdi" ) = arg1;
         register auto _a2 __asm__( "rsi" ) = arg2;
         register auto _a3 __asm__( "rdx" ) = arg3;
         register auto _a4 __asm__( "rcx" ) = arg4;
         register auto _a5 __asm__( "r8" ) = arg5;
         register auto _a6 __asm__( "r9" ) = arg6;
-        ASM( "INT $0x80\n\t" : "=a"( state ) : "a"( function ), "r"( _a1 ), "r"( _a2 ), "r"( _a3 ), "r"( _a4 ), "r"( _a5 ), "r"( _a6 ) : "memory", "cc", "r11" );
+
+        ASM( "INT $0x80\n\t" : "=a"( state ) : "r"( _a0 ), "r"( _a1 ), "r"( _a2 ), "r"( _a3 ), "r"( _a4 ), "r"( _a5 ), "r"( _a6 ) : "memory", "cc", "r11" );
         return state;
     }
 }

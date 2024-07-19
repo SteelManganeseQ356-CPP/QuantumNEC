@@ -1,5 +1,5 @@
 #include <Kernel/Memory/heap.hpp>
-#include <Kernel/Memory/paging.hpp>
+#include <Kernel/Memory/page.hpp>
 #include <Lib/Base/symbol.hpp>
 #include <Lib/STL/string>
 PUBLIC namespace QuantumNEC::Lib::Base {

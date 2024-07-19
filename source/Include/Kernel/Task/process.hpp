@@ -1,5 +1,4 @@
 #pragma once
-#include "Lib/Types/type_base.hpp"
 #include <Lib/Types/Uefi.hpp>
 #include <Lib/Types/type_bool.hpp>
 #include <Arch/Arch.hpp>
@@ -10,226 +9,200 @@
 #include <Lib/STL/list>
 #include <Lib/STL/string>
 #include <Lib/IO/Stream/iostream>
+#include <Kernel/Task/pid.hpp>
+#include <concepts>
 PUBLIC namespace QuantumNEC::Kernel {
-    PUBLIC constexpr CONST auto TASK_STACK_SIZE { 65536 };     // 64KB
+    PUBLIC constexpr CONST auto TASK_STACK_SIZE { 65536ull };     // 64KB
     PUBLIC constexpr CONST auto TASK_STACK_MAGIC { 0x1145141919810ULL };
-    PUBLIC constexpr CONST auto TASK_NAME_SIZE { 32 };
-    PUBLIC constexpr CONST auto PID_COUNT { 1024 };
-    PUBLIC class Process
+    PUBLIC constexpr CONST auto TASK_NAME_SIZE { 32ull };
+    PUBLIC constexpr CONST auto TASK_FLAG_THREAD { 1ull << 0 };
+    PUBLIC constexpr CONST auto TASK_FLAG_KERNEL_PROCESS { 1ull << 1 };
+    PUBLIC constexpr CONST auto TASK_FLAG_USER_PROCESS { 1ull << 2 };
+    PUBLIC constexpr CONST auto TASK_FLAG_FPU_USED { 1ull << 3 };
+    PUBLIC constexpr CONST auto TASK_FLAG_FPU_UNUSED { 1ull << 4 };
+    PUBLIC constexpr CONST auto TASK_FLAG_FPU_ENABLE { 1ull << 5 };
+
+    PUBLIC using TaskArg = Lib::Types::uint64_t;
+    PUBLIC using TaskReturnValue = Lib::Types::int64_t;
+    PUBLIC using TaskFunction = Lib::Types::FuncPtr< TaskReturnValue, TaskArg >;
+
+    PUBLIC enum class TaskStatus : Lib::Types::int64_t {
+        RUNNING,
+        READY,
+        BLOCKED,
+        SENDING,
+        RECEIVING,
+        WAITING,
+        HANGING,
+        DIED,
+    };
+    PUBLIC inline Lib::STL::ListTable all_task_group { };
+    PUBLIC inline Lib::STL::ListTable ready_task_group { };
+
+    PUBLIC template < typename Frame >
+        requires std::is_compound_v< Frame > && requires( Frame f, IN TaskFunction _entry, IN TaskArg _arg, IN Lib::Types::int64_t _flags ) {
+            { f.make( _entry, _arg, _flags ) } -> std::same_as< Lib::Types::BOOL >;
+        }
+    struct TaskPCB
     {
-    public:
-        using TaskArg = Lib::Types::uint64_t;
-        using TaskReturnValue = Lib::Types::int64_t;
-        using TaskFunction = Lib::Types::FuncPtr< TaskReturnValue, TaskArg >;
+        // 连接每个任务
+        Lib::STL::ListNode all_task_queue;         // 所有任务队列
+        Lib::STL::ListNode general_task_queue;     // 通用任务队列
+        // 记录内存分布
+        Lib::Types::Ptr< Lib::Types::uint64_t > page_directory;     // 任务所持有的页表地址
+        Lib::Base::Allocate allocate_table;                         // 虚拟地址表，在page_directory不为空时有效
+        // 记录寄存器状态
+        volatile Lib::Types::Ptr< Frame > cpu_frame;                                                          // 保存的CPU寄存器状态信息
+        volatile Lib::Types::Ptr< Architecture::ArchitectureManager< TARGET_ARCH >::FPUFrame > fpu_frame;     // 保存的FPU寄存器状态信息
+        // 进程间通信需要的
+        Message message;     // 进程消息体
+        // 任务信息
+        Lib::Types::uint64_t PID;                      // 任务ID
+        Lib::Types::char_t name[ TASK_NAME_SIZE ];     // 任务名
+        volatile TaskStatus status;                    // 任务状态
+        Lib::Types::int64_t counter;                   // 任务总时间片
+        Lib::Types::int64_t ticks;                     // 每次在处理器上执行的时间嘀嗒数
+        Lib::Types::int64_t signal;                    // 任务持有的信号
+        Lib::Types::int64_t priority;                  // 任务优先级
+        Lib::Types::int64_t flags;                     // 任务特殊标志
+        Lib::Types::uint64_t stack_magic;              // 用于检测栈的溢出
 
-        enum class TaskType : Lib::Types::uint64_t {
-            PF_KERNEL_THREAD = ( 1 << 0 ),
-            PF_USER_THREAD = ( 1 << 1 ),
-            PF_KERNEL_PROCESS = ( 1 << 2 ),
-            PF_USER_PROCESS = ( 1 << 3 ),
-        };
-
-        enum class TaskStatus : Lib::Types::int64_t {
-            RUNNING,
-            READY,
-            BLOCKED,
-            SENDING,
-            RECEIVING,
-            WAITING,
-            HANGING,
-            DIED,
-        };
-        enum class TaskFlags : Lib::Types::uint64_t {
-            FPU_UNUSED = 0,
-            FPU_USED = 1,
-            FPU_ENABLED = 2,
-        };
-
-    public:
-        /**
-         * @brief 程序控制块PCB
-         * @tparam Frame PCB属于进程还是线程
-         */
-        template < typename Frame >
-        struct TaskPCB
-        {
+        explicit TaskPCB( IN CONST Lib::Types::char_t *_name, IN Lib::Types::int64_t _priority, IN Lib::Types::int64_t _flags, IN TaskFunction _entry, IN TaskArg _arg ) noexcept {
+            // 将任务pcb添加到队列
+            this->all_task_queue.container = this;
+            this->general_task_queue.container = this;
+            Lib::STL::list_add_to_end( &ready_task_group, &this->general_task_queue );
+            Lib::STL::list_add_to_end( &all_task_group, &this->all_task_queue );
             /*
-                内部是像这样的 :
-                栈底 ~ 栈顶 = 64KB
-                栈顶往前一个ProcessFrame大小就是处理机状态信息保存区，
-                处理机状态信息保存区往前就是FPU状态信息保存区
-                栈底 ~ FPU状态信息保存区开头这一片区域都是进程控制信息
-            */
-            // 连接每个任务
-            Lib::STL::ListNode all_task_queue;         // 所有任务队列
-            Lib::STL::ListNode general_task_queue;     // 通用任务队列
-            // 记录内存分布
-            Lib::Types::Ptr< Lib::Types::uint64_t > page_directory;     // 任务所持有的页表地址
-            Lib::Types::Ptr< VOID > stack;                              // 任务所持有的栈起始地址
-            Lib::Base::Allocate allocate_table;                         // 虚拟地址表，在page_directory不为空时有效
-            // 记录寄存器状态
-            volatile Lib::Types::Ptr< Frame > cpu_frame;                                                          // 保存的CPU寄存器状态信息
-            volatile Lib::Types::Ptr< Architecture::ArchitectureManager< TARGET_ARCH >::FPUFrame > fpu_frame;     // 保存的FPU寄存器状态信息
-            // 进程间通信需要的
-            Message message;     // 进程消息体
-            // 任务信息
-            Lib::Types::int64_t PID;                       // 任务ID
-            Lib::Types::char_t name[ TASK_NAME_SIZE ];     // 任务名
-            volatile TaskStatus status;                    // 任务状态
-            TaskType type;                                 // 任务类型
-            Lib::Types::int64_t counter;                   // 任务总时间片
-            Lib::Types::int64_t ticks;                     // 每次在处理器上执行的时间嘀嗒数
-            Lib::Types::int64_t signal;                    // 任务持有的信号
-            Lib::Types::int64_t priority;                  // 任务优先级
-            Lib::Types::int64_t flags;                     // 任务特殊标志
-            Lib::Types::uint64_t stack_magic;              // 用于检测栈的溢出
-
-            explicit( TRUE ) TaskPCB( VOID ) noexcept = default;
-            explicit( TRUE ) TaskPCB( IN Lib::Types::L_Ref< CONST TaskPCB< Frame > > object ) noexcept
-                :
-                all_task_queue { object.all_task_queue },
-                general_task_queue { object.general_task_queue },
-                page_directory { object.page_directory },
-                stack { object.stack },
-                allocate_table { object.allocate_table },
-                cpu_frame { object.cpu_frame },
-                fpu_frame { object.fpu_frame },
-                PID { object.PID },
-                name { },
-                status { object.status },
-                type { object.type },
-                counter { object.counter },
-                ticks { object.ticks },
-                signal { object.signal },
-                priority { object.priority },
-                flags { object.flags },
-                stack_magic { object.stack_magic } {
-                Lib::STL::strncpy( this->name, object.name, TASK_NAME_SIZE );
-            };
-            auto operator=( IN Lib::Types::L_Ref< CONST TaskPCB< Frame > > object ) -> Lib::Types::L_Ref< TaskPCB< Frame > > {
-                this->all_task_queue = object.all_task_queue;
-                this->general_task_queue = object.general_task_queue;
-                this->page_directory = object.page_directory;
-                this->stack = object.stack;
-                this->allocate_table = object.allocate_table;
-                this->cpu_frame = object.cpu_frame;
-                this->fpu_frame = object.fpu_frame;
-                this->PID = object.PID;
-                this->status = object.status;
-                this->type = object.type;
-                this->counter = object.counter;
-                this->ticks = object.ticks;
-                this->signal = object.signal;
-                this->priority = object.priority;
-                this->flags = object.flags;
-                this->stack_magic = object.stack_magic;
-                Lib::STL::strncpy( this->name, object.name, TASK_NAME_SIZE );
-                return *this;
+             * 分布如下
+             * ---------------------------------------64KB-----------------------------------------
+             * sizeof(TaskPCB)---cpu_frame---fpu_frame---进程栈 ( RSP 指向64KB尾巴 )
+             * Task PCB        ~ 存CPU状态  ~ FPU状态    ~ 空                  ~ TOP
+             */
+            // 分配 cpu frame
+            this->cpu_frame = reinterpret_cast< Lib::Types::Ptr< Frame > >( this + 1 );
+            // 分配 fpu frame
+            this->fpu_frame = reinterpret_cast< Lib::Types::Ptr< Architecture::ArchitectureManager< TARGET_ARCH >::FPUFrame > >( this->cpu_frame + 1 );
+            // 设置消息
+            this->message.send_to = NO_TASK;
+            this->message.receive_from = NO_TASK;
+            Lib::STL::list_init( &this->message.sender_list );
+            // 分配PID
+            this->PID = PidPool::allocate( );
+            // 设置进程名
+            Lib::STL::strncpy( this->name, _name, TASK_NAME_SIZE );
+            // 设置进程初始状态
+            this->status = TaskStatus::READY;
+            // 计算这个进程使用的总时间片
+            this->counter = 0;
+            // 这个进程可的使用时间
+            this->ticks = _priority;
+            // 暂时没啥用
+            this->signal = 0;
+            // 时间片越多优先级越高
+            this->priority = _priority;
+            // 标注，例如进程还是线程，内核级别还是用户级别，FPU的情况等
+            this->flags |= flags;
+            // 魔术字节
+            this->stack_magic = TASK_STACK_MAGIC;
+            // 制作页表
+            this->page_directory = ( ( _flags & TASK_FLAG_KERNEL_PROCESS ) ? NULL : ( ( _flags & TASK_FLAG_USER_PROCESS ) ? reinterpret_cast< decltype( this->page_directory ) >( Memory::memory_paging->make_page_table( ) ) : NULL ) );
+            this->allocate_table = Lib::Base::Allocate { sizeof( Lib::Base::Allocate ::AllocateTableEntry ) * 1024 };
+            this->allocate_table.free( USER_STACK_VIRTUAL_START_ADDRESS / PAGE_SIZE, ( USER_STACK_VIRTUAL_END_ADDRESS - USER_STACK_VIRTUAL_START_ADDRESS ) / PAGE_SIZE );
+            if ( !this->page_directory && ( _flags & TASK_FLAG_USER_PROCESS ) ) {
+                Lib::STL::memset( this, 0, TASK_STACK_SIZE );
+                Memory::page->free( this, 1, PageMemory::MemoryPageType::PAGE_2M );
             }
-        };
 
-    public:
+            if ( !this->cpu_frame->make( _entry, _arg, _flags ) ) {
+                // 如果分配失败那么就释放所有的内存并返回
+                Lib::STL::memset( this->cpu_frame, 0, sizeof( Frame ) );
+                Lib::STL::memset( this, 0, TASK_STACK_SIZE );
+                Memory::page->free( this, 1, PageMemory::MemoryPageType::PAGE_2M );
+            }
+        }
+        explicit TaskPCB( IN TaskPCB & ) = delete;
+        explicit TaskPCB( VOID ) = delete;
+        /**
+         * @brief 激活任务
+         * @param pcb 要激活的任务PCB
+         */
+
+        auto activate( IN Lib::Types::Ptr< TaskPCB< Frame > > pcb ) {
+            Memory::memory_paging->activate_page_table( pcb->page_directory );
+            if ( pcb->page_directory ) {
 #if defined( __x86_64__ )
-        using ProcessFrame = Architecture::ArchitectureManager< TARGET_ARCH >::InterruptFrame;     // 进程栈
+                Architecture::GlobalSegmentDescriptorTable::tss[ 0 ].set_rsp0< TASK_STACK_SIZE >( pcb );
 #elif defined( __aarch64__ )
 #else
 #error Not any registers
 #endif
-
-        using ProcessPCB = TaskPCB< ProcessFrame >;
-
-    public:
-        class PidPool
-        {
-        public:
-            auto allocate( VOID ) -> Lib::Types::uint64_t {
-                this->bitmap_.set_length( PID_COUNT );
-                this->bitmap_.set_bits( this->bits );
-                auto pid_index { this->bitmap_.allocate( 1 ) };
-                this->bitmap_.set( pid_index, 1 );
-                return pid_index + this->pid_head;
             }
+        }
+    };
 
-        private:
-            inline STATIC Lib::Types::uint64_t pid_head { };
-            inline STATIC Lib::Types::byte_t bits[ PID_COUNT ] { };
-            inline STATIC Lib::Base::Bitmap bitmap_ { };
-        };
-        inline STATIC PidPool pid_pool { };
+    PUBLIC struct ProcessFrame :
+#if defined( __x86_64__ )
+        Architecture::InterruptDescriptorTable::InterruptFrame
+#elif defined( __aarch64__ )
+#else
+#error Not any registers
+#endif
+    {
+        auto make( IN TaskFunction _entry, IN TaskArg _arg, IN Lib::Types::int64_t flags ) -> Lib::Types::BOOL;
+    };
 
+    PUBLIC class Process : public TaskPCB< ProcessFrame >
+    {
     public:
-        explicit Process( VOID ) noexcept;
-        virtual ~Process( VOID ) noexcept;
+        explicit Process( IN CONST Lib::Types::char_t *_name, IN Lib::Types::int64_t _priority, IN Lib::Types::int64_t _flags, IN TaskFunction _entry, IN TaskArg _arg ) noexcept :
+            TaskPCB< ProcessFrame > { _name, _priority, _flags, _entry, _arg } {
+        }
 
     public:
         /**
          * @brief 调度
          */
-        STATIC auto schedule( VOID ) -> VOID;
+        auto schedule( VOID ) -> VOID;
         /**
-         * @brief 获取当前进程/线程pcb
-         * @tparam PCB 要获取的PCB类型
-         * @return 获取到的PCB
+         * @brief 阻塞任务
          */
-        template < typename PCB >
-        STATIC auto get_current( VOID ) -> Lib::Types::Ptr< PCB > {
-            return reinterpret_cast< Lib::Types::Ptr< PCB > >( Architecture::ArchitectureManager< TARGET_ARCH >::get_rsp( ) & ~( TASK_STACK_SIZE - 1 ) );
-        }
+        auto block( IN TaskStatus state ) -> VOID;
         /**
-         * @brief 激活进程/线程
-         * @tparam PCB 要激活的PCB类型
-         * @param pcb 要激活的进程/线程PCB
+         * @brief 解除任务阻塞
+         * @param pcb 指向的任务PCB
          */
-        template < typename PCB >
-        STATIC auto activate_task( IN Lib::Types::Ptr< PCB > pcb ) -> VOID {
-            MemoryMap::activate_page_table( pcb->page_directory );
-            if ( pcb->page_directory ) {
-                Architecture::ArchitectureManager< TARGET_ARCH >::set_tss_rsp0( 0, pcb, TASK_STACK_SIZE );
-            }
-        }
+        auto unblock( IN Lib::Types::Ptr< Process > pcb ) -> VOID;
 
     public:
         /**
-         * @brief 创建任务
-         * @param entry 任务入口函数
-         * @param name 任务名
-         * @param type 任务PCB的类型
+         * @brief 查找任务
+         * @param PID 要找的任务ID
+         * @retval 找到返回该任务pcb地址，没有则是NULL
          */
-        STATIC auto create( IN TaskFunction entry, IN CONST TaskArg arg, IN CONST TaskType type, IN IN CONST Lib::Types::Ptr< CONST Lib::Types::char_t > name, IN Lib::Types::uint64_t priority, IN CONST Lib::Types::int64_t flags ) -> Lib::Types::Ptr< ProcessPCB >;
-        /**
-         * @brief 初始化进程栈
-         * @param frame 分配好栈的地址
-         * @param entry 线程入口函数
-         * @param arg 要传递给entry的参数
-         */
-        STATIC auto do_fork( OUT Lib::Types::Ptr< ProcessFrame > frame, IN TaskFunction entry, IN CONST TaskArg arg, IN CONST TaskType type ) -> Lib::Types::BOOL;
-
-    protected:
-        inline STATIC Lib::STL::ListTable all_task_queue { };
-        inline STATIC Lib::STL::ListTable ready_task_queue { };
-
-    public:
-        /**
-         * @brief 通过PID查找任务
-         * @param PID 要查找任务的PID
-         */
-        template < typename PCB >
-        STATIC auto find( IN Lib::Types::uint64_t PID ) -> Lib::Types::Ptr< PCB > {
+        auto find( IN Lib::Types::uint64_t PID ) {
             Lib::Types::Ptr< Lib::STL::ListNode > node {
                 Lib::STL::list_traversal(
-                    &all_task_queue,
-                    [ & ]( Lib::Types::Ptr< Lib::STL::ListNode > node, Lib::Types::uint32_t PID ) -> Lib::Types::BOOL { return reinterpret_cast< Lib::Types::Ptr< PCB > >( node->container )->PID == PID; },
+                    &all_task_group,
+                    [ & ]( Lib::Types::Ptr< Lib::STL::ListNode > node, Lib::Types::uint32_t PID ) -> Lib::Types::BOOL { return reinterpret_cast< Lib::Types::Ptr< Process > >( node->container )->PID == PID; },
                     PID )
             };
-            return !node ? NULL : reinterpret_cast< Lib::Types::Ptr< PCB > >( node->container );
+            return !node ? NULL : reinterpret_cast< Lib::Types::Ptr< Process > >( node->container );
         }
-
-    protected:
-        inline STATIC Lib::Types::Ptr< ProcessPCB > main_task;
-        inline STATIC Lib::Types::Ptr< ProcessPCB > idle_task;
-
-    public:
-        inline STATIC Lib::Types::Ptr< ProcessPCB > ready_task;
-        inline STATIC Lib::Types::Ptr< ProcessPCB > kernel_task;
     };
+    /**
+     * @brief 程序控制块PCB
+     * @tparam Frame PCB属于进程还是线程
+     */
+    PUBLIC template < typename PCB >
+    inline auto get_current( VOID )
+        requires std::is_compound_v< PCB > && requires( PCB *pcb, TaskStatus status ) {
+            { pcb->schedule( ) } -> std::same_as< VOID >;
+            { pcb->block( status ) } -> std::same_as< VOID >;
+            { pcb->unblock( pcb ) } -> std::same_as< VOID >;
+            { pcb->find( 0ull ) } -> std::same_as< PCB * >;
+        }
+    {
+        return reinterpret_cast< Lib::Types::Ptr< PCB > >( Architecture::ArchitectureManager< TARGET_ARCH >::get_rsp( ) & ~( TASK_STACK_SIZE - 1 ) );
+    }
 }

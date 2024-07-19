@@ -1,5 +1,5 @@
 #include <Kernel/Memory/map.hpp>
-#include <Kernel/Memory/paging.hpp>
+#include <Kernel/Memory/page.hpp>
 #include <Lib/IO/Stream/iostream>
 #include <Lib/STL/string>
 #include <Lib/Base/deflib.hpp>
@@ -16,7 +16,7 @@ PUBLIC namespace {
 
 PUBLIC namespace QuantumNEC::Kernel {
     PageMemory::PageMemory( IN Lib::Types::Ptr< Lib::Types::BootConfig > _config ) noexcept {                        // 计算可用内存数量
-        Lib::Types::Ptr< Lib::Types::EfiMemoryDescriptor > efi_memory_descriptor { _config->MemoryData.Buffer };     // memory map
+        Lib::Types::Ptr< Lib::Types::EfiMemoryDescriptor > efi_memory_descriptor { _config->memory_map.Buffer };     // memory map
         bitmap_.set_length( MEMORY_PAGE_DESCRIPTOR );
         bitmap_.set_bits( page_descriptor_entry );
         auto check_memory_type = [ &, this ]( Lib::Types::size_t n ) -> MemoryPageAttribute {
@@ -45,7 +45,7 @@ PUBLIC namespace QuantumNEC::Kernel {
                 return MemoryPageAttribute::UNDEF_MEMORY;     // 其他未定义内存
             }
         };
-        for ( Lib::Types::size_t i { }; i < _config->MemoryData.MemoryCount; ++i ) {
+        for ( Lib::Types::size_t i { }; i < _config->memory_map.MemoryCount; ++i ) {
             MemoryPageAttribute type { check_memory_type( i ) };
             Lib::Types::uint64_t start { efi_memory_descriptor[ i ].PhysicalStart }, end { start + ( efi_memory_descriptor[ i ].NumberOfPages << 12 ) };
             this->general_memory_total = end;

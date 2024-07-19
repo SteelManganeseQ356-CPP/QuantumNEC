@@ -1,32 +1,27 @@
 #pragma once
-#include <Boot/Data.hpp>
+#include <Boot/base.hpp>
 
 namespace QuantumNEC::Boot {
-typedef struct
+class MemoryService
 {
+private:
     EFI_MEMORY_DESCRIPTOR *Buffer;
-    UINTN MemorySize;
-    UINTN MemoryCount;
-    UINTN MemoryKey;
-    UINTN DescriptorSize;
-    UINT32 DescriptorVersion;
-    auto set( VOID ) -> VOID {
-    }
-    auto put( VOID ) -> VOID {
-    }
-} MemoryConfig;
-
-class BootServiceMemory : protected BootServiceDataManager< MemoryConfig >
-{
-public:
-    explicit BootServiceMemory( IN MemoryConfig * );
-    virtual ~BootServiceMemory( VOID ) = default;
+    uint64_t MemorySize;
+    uint64_t MemoryCount;
+    uint64_t MemoryKey;
+    uint64_t DescriptorSize;
+    uint32_t DescriptorVersion;
 
 public:
-    /**
-     * @brief 获取MemoryMap
-     * @return EFI_STATUS
-     */
-    auto getMemoryMap( VOID ) -> EFI_STATUS;
+    explicit MemoryService( VOID ) noexcept;
+    ~MemoryService( VOID ) noexcept {
+    }
+
+public:
+    constexpr auto get_memory_key( VOID ) {
+        return MemoryKey;
+    }
+
+private:
 };
 }     // namespace QuantumNEC::Boot
